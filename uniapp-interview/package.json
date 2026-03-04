@@ -1,0 +1,56 @@
+{
+  "name": "interview-mini",
+  "version": "1.0.0",
+  "description": "AI模拟面试小程序",
+  "private": true,
+  "scripts": {
+    "dev": "set NODE_OPTIONS=--openssl-legacy-provider && taro build --watch",
+    "dev:weapp": "set NODE_OPTIONS=--openssl-legacy-provider && taro build --type weapp --watch",
+    "dev:h5": "set NODE_OPTIONS=--openssl-legacy-provider && taro build --type h5 --watch",
+    "build": "set NODE_OPTIONS=--openssl-legacy-provider && taro build",
+    "build:weapp": "set NODE_OPTIONS=--openssl-legacy-provider && taro build --type weapp",
+    "build:h5": "set NODE_OPTIONS=--openssl-legacy-provider && taro build --type h5"
+  },
+  "browserslist": [
+    "last 3 versions",
+    "Android >= 4.4",
+    "ios >= 9"
+  ],
+  "dependencies": {
+    "@tarojs/components": "^3.6.30",
+    "@tarojs/mini-runner": "^3.6.37",
+    "@tarojs/plugin-framework-react": "^3.6.30",
+    "@tarojs/plugin-platform-alipay": "^3.6.30",
+    "@tarojs/plugin-platform-jd": "^3.6.30",
+    "@tarojs/plugin-platform-qq": "^3.6.30",
+    "@tarojs/plugin-platform-swan": "^3.6.30",
+    "@tarojs/plugin-platform-tt": "^3.6.30",
+    "@tarojs/plugin-platform-weapp": "^3.6.30",
+    "@tarojs/react": "^3.6.30",
+    "@tarojs/runtime": "^3.6.30",
+    "@tarojs/taro": "^3.6.30",
+    "@tarojs/webpack5-runner": "^3.6.30",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@tarojs/cli": "^3.6.30",
+    "@types/react": "^18.2.0",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
+    "babel-preset-taro": "^3.6.30",
+    "css-loader": "^6.10.0",
+    "eslint": "^8.57.0",
+    "eslint-config-taro": "^3.6.30",
+    "eslint-plugin-react": "^7.34.1",
+    "sass": "^1.72.0",
+    "sass-loader": "^14.1.1",
+    "style-loader": "^3.3.4",
+    "typescript": "^5.4.3",
+    "webpack": "^5.91.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

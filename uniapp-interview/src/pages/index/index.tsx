@@ -1,0 +1,94 @@
+import { View, Text, Button } from '@tarojs/components';
+import { useState, useEffect } from 'react';
+import Taro from '@tarojs/taro';
+import { historyApi } from '../../api/history';
+import './index.scss';
+
+export default function Index() {
+  const [loading, setLoading] = useState(true);
+  const [resumeCount, setResumeCount] = useState(0);
+  const [interviewCount, setInterviewCount] = useState(0);
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    setLoading(true);
+    try {
+      console.log('开始加载统计数据...');
+      const resumes = await historyApi.getResumes();
+      console.log('简历列表:', resumes);
+      if (resumes && Array.isArray(resumes)) {
+        const totalInterview = resumes.reduce((sum: number, r: any) => sum + (r.interviewCount || 0), 0);
+        setResumeCount(resumes.length);
+        setInterviewCount(totalInterview);
+      }
+    } catch (err) {
+      console.error('加载统计数据失败:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUploadResume = () => {
+    Taro.navigateTo({ url: '/pages/upload/index' });
+  };
+
+  const handleStartInterview = () => {
+    Taro.switchTab({ url: '/pages/interview/index' });
+  };
+
+  return (
+    <View className="index-page">
+      <View className="header">
+        <Text className="title">AI面试助手</Text>
+        <Text className="subtitle">智能面试准备，提升求职竞争力</Text>
+      </View>
+
+      {loading ? (
+        <View className="loading">
+          <Text>加载中...</Text>
+        </View>
+      ) : (
+        <View className="stats-card">
+          <View className="stat-item">
+            <Text className="stat-value">{resumeCount}</Text>
+            <Text className="stat-label">简历数</Text>
+          </View>
+          <View className="stat-item">
+            <Text className="stat-value">{interviewCount}</Text>
+            <Text className="stat-label">面试次数</Text>
+          </View>
+        </View>
+      )}
+
+      <View className="actions">
+        <Button className="action-btn primary" onClick={handleUploadResume}>
+          上传简历
+        </Button>
+        <Button className="action-btn secondary" onClick={handleStartInterview}>
+          开始面试
+        </Button>
+      </View>
+
+      <View className="features">
+        <View className="feature-item">
+          <Text className="feature-icon">📄</Text>
+          <Text className="feature-title">智能简历分析</Text>
+          <Text className="feature-desc">AI分析简历，提供优化建议</Text>
+        </View>
+        <View className="feature-item">
+          <Text className="feature-icon">💬</Text>
+          <Text className="feature-title">模拟面试</Text>
+          <Text className="feature-desc">与AI面试官进行实战演练</Text>
+        </View>
+        <View className="feature-item">
+          <Text className="feature-icon">📊</Text>
+          <Text className="feature-title">能力评估</Text>
+          <Text className="feature-desc">多维度评估，提升面试技巧</Text>
+        </View>
+      </View>
+    </View>
+  );
+}

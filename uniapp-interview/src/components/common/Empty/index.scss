@@ -1,0 +1,19 @@
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+}
+
+.empty-text {
+  color: #999;
+  font-size: 14px;
+}
+
+.empty-action {
+  margin-top: 20px;
+  background: #3B82F6;
+  color: #fff;
+  font-size: 14px;
+}
