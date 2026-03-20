@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 export interface UseVoicePlayerReturn {
   isPlaying: boolean;
@@ -14,6 +14,13 @@ export function useVoicePlayer(): UseVoicePlayerReturn {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isPlayingRef = useRef(false);
 
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      stopPlayback();
+    };
+  }, []);
+
   const playAudioStream = async (response: Response) => {
     setError(null);
     audioQueueRef.current = [];
@@ -28,6 +35,8 @@ export function useVoicePlayer(): UseVoicePlayerReturn {
         throw new Error('No response body');
       }
 
+      let currentEventType = '';
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -37,20 +46,25 @@ export function useVoicePlayer(): UseVoicePlayerReturn {
 
         for (const line of lines) {
           const trimmed = line.trim();
-          if (trimmed.startsWith('data:')) {
+          if (trimmed.startsWith('event:')) {
+            // Extract event type from "event: audio" or "event: end"
+            currentEventType = trimmed.slice(6).trim();
+          } else if (trimmed.startsWith('data:')) {
             try {
               const jsonStr = trimmed.slice(5).trim();
               const data = JSON.parse(jsonStr);
 
-              if (data.name === 'audio' && data.data?.chunk) {
-                audioQueueRef.current.push(data.data.chunk);
-              } else if (data.name === 'end') {
+              // Data is TtsStreamChunk: {chunk: string, index: number, isEnd: boolean}
+              if (currentEventType === 'audio' && data.chunk && !data.isEnd) {
+                audioQueueRef.current.push(data.chunk);
+              } else if (currentEventType === 'end' || data.isEnd) {
                 // End marker received
-              } else if (data.name === 'error') {
-                throw new Error(data.data?.message || 'TTS error');
+                break;
+              } else if (currentEventType === 'error') {
+                throw new Error(data.message || 'TTS error');
               }
             } catch (parseError) {
-              console.warn('Failed to parse SSE data:', trimmed);
+              console.warn('Failed to parse SSE data:', trimmed, parseError);
             }
           }
         }
@@ -85,14 +99,11 @@ export function useVoicePlayer(): UseVoicePlayerReturn {
       }
     };
 
-    audio.onerror = () => {
-      console.error('Audio playback error');
-      if (isPlayingRef.current && audioQueueRef.current.length > 0) {
-        playNextChunk(audio);
-      } else {
-        setIsPlaying(false);
-        isPlayingRef.current = false;
-      }
+    audio.onerror = (err) => {
+      console.error('Audio playback error:', err);
+      setError('Audio playback failed');
+      setIsPlaying(false);
+      isPlayingRef.current = false;
     };
 
     playNextChunk(audio);
