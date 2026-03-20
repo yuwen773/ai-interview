@@ -1,8 +1,9 @@
-import {useMemo, useRef} from 'react';
+import {useMemo, useRef, useState} from 'react';
 import {motion} from 'framer-motion';
 import {Virtuoso, type VirtuosoHandle} from 'react-virtuoso';
 import type {InterviewQuestion, InterviewSession} from '../types/interview';
 import {Send, User} from 'lucide-react';
+import {VoiceControlPanel} from './VoiceControlPanel';
 
 interface Message {
   type: 'interviewer' | 'user';
@@ -40,6 +41,7 @@ export default function InterviewChatPanel({
   onShowCompleteConfirm
 }: InterviewChatPanelProps) {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const [voiceMode, setVoiceMode] = useState(false);
 
   const progress = useMemo(() => {
     if (!session || !currentQuestion) return 0;
@@ -93,7 +95,26 @@ export default function InterviewChatPanel({
 
         {/* 输入区域 */}
             <div className="border-t border-slate-200 dark:border-slate-600 p-4 bg-slate-50 dark:bg-slate-700/50">
-          <div className="flex gap-3">
+          {/* 语音控制面板 */}
+          {voiceMode && currentQuestion && (
+            <VoiceControlPanel
+              sessionId={session.sessionId}
+              questionIndex={currentQuestion.questionIndex}
+              onAnswerSubmitted={(hasNext) => {
+                // For voice mode, refresh session state to get next question
+                if (hasNext) {
+                  // Refresh to get next question
+                  window.location.reload(); // Simple reload for now
+                } else {
+                  // Interview completed
+                  // onInterviewComplete?.();
+                }
+              }}
+              disabled={isSubmitting}
+            />
+          )}
+
+          <div className="flex gap-3" style={{ display: voiceMode ? 'none' : 'flex' }}>
             <textarea
               value={answer}
               onChange={(e) => onAnswerChange(e.target.value)}
@@ -101,7 +122,7 @@ export default function InterviewChatPanel({
               placeholder="输入你的回答... (Ctrl/Cmd + Enter 提交)"
               className="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
               rows={3}
-              disabled={isSubmitting}
+              disabled={isSubmitting || voiceMode}
             />
             <div className="flex flex-col gap-2">
               <motion.button
@@ -127,6 +148,22 @@ export default function InterviewChatPanel({
                   </>
                 )}
               </motion.button>
+
+              {/* 语音模式切换按钮 */}
+              <motion.button
+                onClick={() => setVoiceMode(!voiceMode)}
+                disabled={isSubmitting}
+                className={`px-4 py-3 rounded-xl font-medium transition-colors ${
+                  voiceMode
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200'
+                }`}
+                whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
+                whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+              >
+                🎤 语音
+              </motion.button>
+
               <motion.button
                 onClick={() => onShowCompleteConfirm(true)}
                 disabled={isSubmitting}
