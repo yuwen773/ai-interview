@@ -30,6 +30,12 @@ import java.util.Map;
 @RestController
 public class InterviewController {
 
+    private static final long MAX_AUDIO_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    private static final String[] ALLOWED_AUDIO_TYPES = {
+        "audio/mpeg", "audio/mp3", "audio/wav", "audio/wave",
+        "audio/ogg", "audio/webm", "audio/mp4", "audio/x-m4a"
+    };
+
     private final InterviewSessionService sessionService;
     private final InterviewHistoryService historyService;
     private final InterviewPersistenceService persistenceService;
@@ -115,6 +121,20 @@ public class InterviewController {
             return Result.error(ErrorCode.BAD_REQUEST, "Audio file is empty");
         }
 
+        // Validate file size (max 10MB)
+        if (audioFile.getSize() > MAX_AUDIO_FILE_SIZE) {
+            return Result.error(ErrorCode.BAD_REQUEST,
+                String.format("Audio file size exceeds maximum allowed size of %d MB",
+                    MAX_AUDIO_FILE_SIZE / (1024 * 1024)));
+        }
+
+        // Validate file type
+        String contentType = audioFile.getContentType();
+        if (contentType == null || !isAllowedAudioType(contentType)) {
+            return Result.error(ErrorCode.BAD_REQUEST,
+                "Unsupported audio file type. Allowed types: MP3, WAV, OGG, WebM, M4A");
+        }
+
         // Step 1: ASR - transcribe audio to text
         String userAnswer;
         try {
@@ -128,7 +148,10 @@ public class InterviewController {
             return Result.error(ErrorCode.ASR_FAILED, "Speech recognition failed: " + e.getMessage());
         }
 
-        // Step 2: Get current question index
+        // Step 2: Get current question index from session
+        // Note: This lookup is necessary because submitAnswer() requires the questionIndex parameter.
+        // We use the session's current index since voice answers always advance to the next question.
+        // The submitAnswer() method will validate this index internally.
         InterviewSessionDTO session;
         try {
             session = sessionService.getSession(sessionId);
@@ -159,6 +182,18 @@ public class InterviewController {
      */
     private AnswerOutputStrategy getOutputStrategy(String mode) {
         return "voice".equalsIgnoreCase(mode) ? voiceOutputStrategy : textOutputStrategy;
+    }
+
+    /**
+     * Check if the content type is an allowed audio type
+     */
+    private boolean isAllowedAudioType(String contentType) {
+        for (String allowedType : ALLOWED_AUDIO_TYPES) {
+            if (allowedType.equalsIgnoreCase(contentType)) {
+                return true;
+            }
+        }
+        return false;
     }
     
     /**

@@ -1,5 +1,7 @@
 package interview.guide.modules.audio.strategy;
 
+import interview.guide.common.exception.ErrorCode;
+import interview.guide.common.result.Result;
 import interview.guide.modules.audio.service.TtsService;
 import interview.guide.modules.interview.model.SubmitAnswerResponse;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +22,8 @@ public class VoiceOutputStrategy implements AnswerOutputStrategy {
     public Object process(SubmitAnswerResponse response) {
         if (response.nextQuestion() == null) {
             log.warn("No next question available for voice output");
-            throw new IllegalStateException("No question available for voice output");
+            return Result.error(ErrorCode.INTERVIEW_ALREADY_COMPLETED,
+                "Interview has been completed, no next question available");
         }
 
         String questionText = response.nextQuestion().question();
