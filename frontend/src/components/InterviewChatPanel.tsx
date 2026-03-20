@@ -100,21 +100,12 @@ export default function InterviewChatPanel({
             <VoiceControlPanel
               sessionId={session.sessionId}
               questionIndex={currentQuestion.questionIndex}
-              onAnswerSubmitted={(hasNext) => {
-                // For voice mode, refresh session state to get next question
-                if (hasNext) {
-                  // Refresh to get next question
-                  window.location.reload(); // Simple reload for now
-                } else {
-                  // Interview completed
-                  // onInterviewComplete?.();
-                }
-              }}
               disabled={isSubmitting}
             />
           )}
 
-          <div className="flex gap-3" style={{ display: voiceMode ? 'none' : 'flex' }}>
+          {!voiceMode && (
+          <div className="flex gap-3">
             <textarea
               value={answer}
               onChange={(e) => onAnswerChange(e.target.value)}
@@ -122,7 +113,7 @@ export default function InterviewChatPanel({
               placeholder="输入你的回答... (Ctrl/Cmd + Enter 提交)"
               className="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
               rows={3}
-              disabled={isSubmitting || voiceMode}
+              disabled={isSubmitting}
             />
             <div className="flex flex-col gap-2">
               <motion.button
@@ -175,6 +166,7 @@ export default function InterviewChatPanel({
               </motion.button>
             </div>
           </div>
+          )}
         </div>
       </div>
     </div>
