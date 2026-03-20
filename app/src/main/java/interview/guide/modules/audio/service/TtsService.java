@@ -1,5 +1,8 @@
 package interview.guide.modules.audio.service;
 
+import com.alibaba.cloud.ai.dashscope.audio.tts.DashScopeAudioSpeechOptions;
+import com.alibaba.cloud.ai.dashscope.spec.DashScopeModel;
+import interview.guide.modules.audio.model.TtsStreamChunk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.audio.tts.TextToSpeechModel;
@@ -8,7 +11,12 @@ import org.springframework.ai.audio.tts.TextToSpeechResponse;
 import org.springframework.ai.openai.OpenAiAudioSpeechOptions;
 import org.springframework.ai.openai.api.OpenAiAudioApi;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 文字转语音 (TTS) 服务 - 使用 Spring AI TextToSpeechModel
@@ -76,6 +84,91 @@ public class TtsService {
             log.error("TTS stream synthesize failed: {}", e.getMessage(), e);
             return Flux.empty();
         }
+    }
+
+    /**
+     * Stream TTS output as SSE events
+     * @param text Text to synthesize
+     * @return SseEmitter that streams audio chunks
+     */
+    public SseEmitter streamTtsSse(String text) {
+        SseEmitter emitter = new SseEmitter(30000L); // 30 second timeout
+
+        if (text == null || text.isBlank()) {
+            try {
+                emitter.send(SseEmitter.event()
+                    .name("error")
+                    .data(Map.of("message", "Text is empty")));
+                emitter.complete();
+            } catch (IOException e) {
+                emitter.completeWithError(e);
+            }
+            return emitter;
+        }
+
+        // 使用 COSYVOICE_V3_FLASH 模型实现流式 TTS
+        // FLASH 版本专为流式场景优化，延迟更低，适合实时语音合成
+        DashScopeAudioSpeechOptions options = DashScopeAudioSpeechOptions.builder()
+                .model(DashScopeModel.AudioModel.COSYVOICE_V3_FLASH.getValue())
+                .textType("PlainText")
+                .voice("longanyang")
+                .format("mp3")
+                .sampleRate(22050)
+                .build();
+
+        TextToSpeechPrompt prompt = new TextToSpeechPrompt(text, options);
+
+        AtomicInteger chunkIndex = new AtomicInteger(0);
+
+        // 订阅流式响应，并添加完整的生命周期回调以确保资源正确清理
+        textToSpeechModel.stream(prompt)
+            .doOnComplete(() -> {
+                try {
+                    emitter.send(SseEmitter.event().name("end").data(TtsStreamChunk.end()));
+                    emitter.complete();
+                    log.info("TTS stream completed for text: {}", text.substring(0, Math.min(50, text.length())));
+                } catch (IOException e) {
+                    log.error("Error sending end event", e);
+                    emitter.completeWithError(e);
+                }
+            })
+            .doOnError(error -> {
+                log.error("TTS stream error", error);
+                emitter.completeWithError(error);
+            })
+            .doOnCancel(() -> {
+                log.warn("TTS stream cancelled by client for text: {}",
+                    text.substring(0, Math.min(50, text.length())));
+                emitter.complete();
+            })
+            .doOnSubscribe(subscription -> {
+                log.debug("TTS stream subscription started for text: {}",
+                    text.substring(0, Math.min(50, text.length())));
+            })
+            .subscribe(response -> {
+                try {
+                    byte[] audioBytes = response.getResult().getOutput();
+                    if (audioBytes != null && audioBytes.length > 0) {
+                        TtsStreamChunk chunk = TtsStreamChunk.audio(audioBytes, chunkIndex.getAndIncrement());
+                        emitter.send(SseEmitter.event().name("audio").data(chunk));
+                        log.debug("Sent TTS chunk {}, size: {} bytes", chunk.index(), audioBytes.length);
+                    }
+                } catch (IOException e) {
+                    log.error("Error sending audio chunk", e);
+                    emitter.completeWithError(e);
+                }
+            });
+
+        // 当 SseEmitter 完成或超时时，确保清理相关资源
+        emitter.onCompletion(() -> {
+            log.debug("SseEmitter completed for TTS stream");
+        });
+        emitter.onTimeout(() -> {
+            log.warn("SseEmitter timed out for TTS stream");
+            emitter.complete();
+        });
+
+        return emitter;
     }
 
     /**
