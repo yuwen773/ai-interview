@@ -5,7 +5,15 @@ import styles from './VoiceControlPanel.module.css';
 
 export interface VoiceControlPanelProps {
   sessionId: string;
+  /**
+   * Current question index (not sent to backend - backend tracks question state internally).
+   * Kept for potential future use or parent component tracking.
+   */
   questionIndex: number;
+  /**
+   * Callback invoked when answer is submitted (text mode only).
+   * For voice mode, parent should check backend for next question after audio completes.
+   */
   onAnswerSubmitted?: (hasNext: boolean, nextQuestionIndex: number) => void;
   disabled?: boolean;
 }
@@ -20,10 +28,12 @@ export function VoiceControlPanel({
   const { isPlaying, playAudioStream, error: playError } = useVoicePlayer();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [outputMode, setOutputMode] = useState<'text' | 'voice'>('voice');
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleToggleRecording = async () => {
     if (isRecording) {
       setIsSubmitting(true);
+      setSubmitError(null);
       try {
         const audioBlob = await stopRecording();
 
@@ -47,36 +57,39 @@ export function VoiceControlPanel({
 
         // Handle response based on output mode
         if (outputMode === 'voice') {
+          // For voice mode: SSE stream contains only audio chunks
+          // The parent component should handle navigation by calling
+          // the existing text endpoint to get the response data
           await playAudioStream(response);
-        }
 
-        // Parse response body for callback
-        const text = await response.clone().text();
-        if (text) {
-          try {
-            const data = JSON.parse(text);
-            if (data.success && onAnswerSubmitted) {
-              onAnswerSubmitted(
-                data.data.hasNextQuestion,
-                data.data.currentIndex
-              );
-            }
-          } catch {
-            // SSE stream, ignore JSON parse
+          // Note: onAnswerSubmitted is NOT called for voice mode
+          // because the SSE stream doesn't include interview response data.
+          // Parent component should call GET /api/interview/sessions/{sessionId}/question
+          // to check if there's a next question after audio playback completes.
+        } else {
+          // For text mode: Response is JSON with interview data
+          const data = await response.json();
+          if (data.success && onAnswerSubmitted) {
+            onAnswerSubmitted(
+              data.data.hasNextQuestion,
+              data.data.currentIndex
+            );
           }
         }
       } catch (err) {
+        const message = err instanceof Error ? err.message : 'Submission failed';
         console.error('Voice submission error:', err);
-        alert(err instanceof Error ? err.message : 'Submission failed');
+        setSubmitError(message);
       } finally {
         setIsSubmitting(false);
       }
     } else {
+      setSubmitError(null);
       await startRecording();
     }
   };
 
-  const error = recordError || playError;
+  const error = recordError || playError || submitError;
 
   return (
     <div className={styles.voicePanel}>

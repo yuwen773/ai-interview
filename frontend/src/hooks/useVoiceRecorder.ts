@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 export interface UseVoiceRecorderReturn {
   isRecording: boolean;
@@ -12,6 +12,17 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
   const [error, setError] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
+      }
+      streamRef.current?.getTracks().forEach(track => track.stop());
+    };
+  }, []);
 
   const startRecording = async () => {
     setError(null);
@@ -26,6 +37,8 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
           noiseSuppression: true
         }
       });
+
+      streamRef.current = stream;
 
       // Try different MIME types for browser compatibility
       let mimeType = 'audio/webm';
@@ -47,7 +60,8 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
       };
 
       mediaRecorder.onstop = () => {
-        stream.getTracks().forEach(track => track.stop());
+        streamRef.current?.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
       };
 
       mediaRecorder.start(100); // Collect data every 100ms
