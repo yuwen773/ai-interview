@@ -59,6 +59,7 @@ public enum ErrorCode {
     AI_SERVICE_ERROR(7003, "AI服务调用失败"),
     AI_API_KEY_INVALID(7004, "AI服务密钥无效"),
     AI_RATE_LIMIT_EXCEEDED(7005, "AI服务调用频率超限"),
+    ASR_FAILED(7006, "语音识别失败"),
 
     // ========== 限流模块错误 8xxx ==========
     RATE_LIMIT_EXCEEDED(8001, "请求过于频繁，请稍后再试");

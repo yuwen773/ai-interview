@@ -1,17 +1,22 @@
 package interview.guide.modules.interview;
 
 import interview.guide.common.annotation.RateLimit;
+import interview.guide.common.exception.BusinessException;
+import interview.guide.common.exception.ErrorCode;
 import interview.guide.common.result.Result;
+import interview.guide.modules.audio.strategy.AnswerOutputStrategy;
+import interview.guide.modules.audio.service.AsrService;
 import interview.guide.modules.interview.model.*;
 import interview.guide.modules.interview.service.InterviewHistoryService;
 import interview.guide.modules.interview.service.InterviewPersistenceService;
 import interview.guide.modules.interview.service.InterviewSessionService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -23,12 +28,29 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequiredArgsConstructor
 public class InterviewController {
-    
+
     private final InterviewSessionService sessionService;
     private final InterviewHistoryService historyService;
     private final InterviewPersistenceService persistenceService;
+    private final AsrService asrService;
+    private final AnswerOutputStrategy voiceOutputStrategy;
+    private final AnswerOutputStrategy textOutputStrategy;
+
+    public InterviewController(
+            InterviewSessionService sessionService,
+            InterviewHistoryService historyService,
+            InterviewPersistenceService persistenceService,
+            AsrService asrService,
+            @Qualifier("voiceOutputStrategy") AnswerOutputStrategy voiceOutputStrategy,
+            @Qualifier("textOutputStrategy") AnswerOutputStrategy textOutputStrategy) {
+        this.sessionService = sessionService;
+        this.historyService = historyService;
+        this.persistenceService = persistenceService;
+        this.asrService = asrService;
+        this.voiceOutputStrategy = voiceOutputStrategy;
+        this.textOutputStrategy = textOutputStrategy;
+    }
     
     /**
      * 创建面试会话
@@ -72,6 +94,71 @@ public class InterviewController {
         SubmitAnswerRequest request = new SubmitAnswerRequest(sessionId, questionIndex, answer);
         SubmitAnswerResponse response = sessionService.submitAnswer(request);
         return Result.success(response);
+    }
+
+    /**
+     * Submit answer via voice input
+     * Supports both text and voice output modes
+     */
+    @PostMapping("/api/interview/{sessionId}/answer/voice")
+    @RateLimit(dimensions = {RateLimit.Dimension.GLOBAL}, count = 10)
+    public Object submitVoiceAnswer(
+            @PathVariable String sessionId,
+            @RequestParam("file") MultipartFile audioFile,
+            @RequestParam(defaultValue = "voice") String outputMode) {
+
+        log.info("Voice answer submitted: sessionId={}, outputMode={}, fileSize={}",
+            sessionId, outputMode, audioFile.getSize());
+
+        // Validate audio file
+        if (audioFile.isEmpty()) {
+            return Result.error(ErrorCode.BAD_REQUEST, "Audio file is empty");
+        }
+
+        // Step 1: ASR - transcribe audio to text
+        String userAnswer;
+        try {
+            userAnswer = asrService.transcribe(audioFile);
+            if (userAnswer == null || userAnswer.isBlank()) {
+                return Result.error(ErrorCode.ASR_FAILED, "Speech recognition returned empty result");
+            }
+            log.info("ASR result: {}", userAnswer.substring(0, Math.min(100, userAnswer)));
+        } catch (Exception e) {
+            log.error("ASR processing failed", e);
+            return Result.error(ErrorCode.ASR_FAILED, "Speech recognition failed: " + e.getMessage());
+        }
+
+        // Step 2: Get current question index
+        InterviewSessionDTO session;
+        try {
+            session = sessionService.getSession(sessionId);
+        } catch (BusinessException e) {
+            log.error("Session not found: {}", sessionId);
+            return Result.error(e.getErrorCode(), e.getMessage());
+        }
+
+        int currentIndex = session.currentIndex();
+
+        // Step 3: Call existing service (NO CHANGES TO BUSINESS LOGIC)
+        SubmitAnswerRequest request = new SubmitAnswerRequest(sessionId, currentIndex, userAnswer);
+        SubmitAnswerResponse response;
+        try {
+            response = sessionService.submitAnswer(request);
+        } catch (BusinessException e) {
+            log.error("Submit answer failed", e);
+            return Result.error(e.getErrorCode(), e.getMessage());
+        }
+
+        // Step 4: Return based on output strategy
+        AnswerOutputStrategy strategy = getOutputStrategy(outputMode);
+        return strategy.process(response);
+    }
+
+    /**
+     * Get output strategy based on mode
+     */
+    private AnswerOutputStrategy getOutputStrategy(String mode) {
+        return "voice".equalsIgnoreCase(mode) ? voiceOutputStrategy : textOutputStrategy;
     }
     
     /**
