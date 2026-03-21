@@ -27,7 +27,7 @@ public class TtsService {
 
     public byte[] synthesize(String text) {
         log.info("TTS synthesize called: text={}", text);
-        if (text == null || text.isEmpty()) {
+        if (text == null || text.isBlank()) {
             return new byte[0];
         }
 
@@ -57,7 +57,7 @@ public class TtsService {
 
     public Flux<byte[]> synthesizeStream(String text) {
         log.info("TTS stream synthesize called: text={}", text);
-        if (text == null || text.isEmpty()) {
+        if (text == null || text.isBlank()) {
             return Flux.empty();
         }
 

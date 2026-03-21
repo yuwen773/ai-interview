@@ -6,12 +6,19 @@ import interview.guide.modules.interview.model.*;
 import interview.guide.modules.interview.service.InterviewHistoryService;
 import interview.guide.modules.interview.service.InterviewPersistenceService;
 import interview.guide.modules.interview.service.InterviewSessionService;
+import interview.guide.modules.interview.voice.InterviewTurnProcessor;
+import interview.guide.modules.interview.voice.model.CandidateInputMode;
+import interview.guide.modules.interview.voice.model.InterviewTurnInput;
+import interview.guide.modules.interview.voice.model.InterviewerOutputMode;
+import interview.guide.modules.interview.voice.model.NormalizedAnswer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -29,6 +36,7 @@ public class InterviewController {
     private final InterviewSessionService sessionService;
     private final InterviewHistoryService historyService;
     private final InterviewPersistenceService persistenceService;
+    private final InterviewTurnProcessor turnProcessor;
     
     /**
      * 创建面试会话
@@ -72,6 +80,33 @@ public class InterviewController {
         SubmitAnswerRequest request = new SubmitAnswerRequest(sessionId, questionIndex, answer);
         SubmitAnswerResponse response = sessionService.submitAnswer(request);
         return Result.success(response);
+    }
+
+    /**
+     * 识别语音答案（仅识别，不推进会话）
+     */
+    @PostMapping(
+        value = "/api/interview/sessions/{sessionId}/answers/voice/recognize",
+        consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    @RateLimit(dimensions = {RateLimit.Dimension.GLOBAL}, count = 10)
+    public Result<VoiceRecognizeResponse> recognizeVoiceAnswer(
+        @PathVariable String sessionId,
+        @RequestParam Integer questionIndex,
+        @RequestPart("file") MultipartFile file
+    ) {
+        log.info("识别语音答案: 会话{}, 问题{}", sessionId, questionIndex);
+        NormalizedAnswer normalizedAnswer = turnProcessor.recognize(
+            new InterviewTurnInput(
+                sessionId,
+                questionIndex,
+                null,
+                file,
+                CandidateInputMode.VOICE,
+                InterviewerOutputMode.TEXT
+            )
+        );
+        return Result.success(new VoiceRecognizeResponse(normalizedAnswer.recognizedText()));
     }
     
     /**
