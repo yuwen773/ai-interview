@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   CartesianGrid,
@@ -30,6 +30,24 @@ export default function GrowthCurvePage({ resumeId, onBack }: GrowthCurvePagePro
   const [resume, setResume] = useState<ResumeDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeRoles, setActiveRoles] = useState<Record<string, boolean>>({});
+  const [chartDims, setChartDims] = useState({ width: 0, height: 320 });
+  const chartRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const el = chartRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const { width } = entry.contentRect;
+        setChartDims({ width, height: Math.min(320, width * 0.5) });
+      }
+    });
+    ro.observe(el);
+    // initial measurement
+    const { width } = el.getBoundingClientRect();
+    setChartDims({ width, height: Math.min(320, width * 0.5) });
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -184,8 +202,8 @@ export default function GrowthCurvePage({ resumeId, onBack }: GrowthCurvePagePro
               </div>
             </div>
 
-            <div className="h-80 min-w-0">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={320}>
+            <div ref={chartRef} className="w-full" style={{ height: 320 }}>
+              <ResponsiveContainer width={chartDims.width || '100%'} height={320}>
                 <LineChart data={chartData} margin={{ top: 10, right: 24, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:stroke-slate-700" />
                   <XAxis dataKey="displayDate" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />

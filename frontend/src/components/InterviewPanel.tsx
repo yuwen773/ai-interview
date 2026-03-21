@@ -1,4 +1,4 @@
-import {useMemo, useState} from 'react';
+import {useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {motion} from 'framer-motion';
 import {CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import {formatDateOnly} from '../utils/date';
@@ -33,6 +33,23 @@ export default function InterviewPanel({
 }: InterviewPanelProps) {
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ sessionId: string } | null>(null);
+  const [chartDims, setChartDims] = useState({ width: 0, height: 192 });
+  const chartRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const el = chartRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const { width } = entry.contentRect;
+        setChartDims({ width, height: 192 });
+      }
+    });
+    ro.observe(el);
+    const { width } = el.getBoundingClientRect();
+    setChartDims({ width, height: 192 });
+    return () => ro.disconnect();
+  }, []);
 
   const handleDeleteClick = (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // 阻止触发卡片点击事件
@@ -106,8 +123,8 @@ export default function InterviewPanel({
             <span className="text-sm text-slate-500 dark:text-slate-400">共 {chartData.length} 场练习</span>
           </div>
 
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
+          <div ref={chartRef} className="w-full" style={{ height: 192 }}>
+            <ResponsiveContainer width={chartDims.width || '100%'} height={192}>
               <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:stroke-slate-700"/>
                 <XAxis
