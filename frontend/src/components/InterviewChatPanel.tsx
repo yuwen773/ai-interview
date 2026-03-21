@@ -1,8 +1,8 @@
 import {useMemo, useRef} from 'react';
 import {motion} from 'framer-motion';
-import {Mic, RotateCcw, Send, Square, User} from 'lucide-react';
+import {Mic, RotateCcw, Send, Square, User, Volume2, VolumeX} from 'lucide-react';
 import {Virtuoso, type VirtuosoHandle} from 'react-virtuoso';
-import type {CandidateInputMode, InterviewQuestion, InterviewSession} from '../types/interview';
+import type {CandidateInputMode, InterviewQuestion, InterviewSession, InterviewerOutputMode} from '../types/interview';
 
 interface Message {
   type: 'interviewer' | 'user';
@@ -17,6 +17,8 @@ interface InterviewChatPanelProps {
   messages: Message[];
   candidateInputMode: CandidateInputMode;
   onCandidateInputModeChange: (mode: CandidateInputMode) => void;
+  interviewerOutputMode: InterviewerOutputMode;
+  onInterviewerOutputModeChange: (mode: InterviewerOutputMode) => void;
   answer: string;
   onAnswerChange: (answer: string) => void;
   recognizedText: string;
@@ -28,6 +30,10 @@ interface InterviewChatPanelProps {
   isRecording: boolean;
   isRecognizing: boolean;
   audioUrl: string | null;
+  isPlayingQuestionAudio: boolean;
+  isLoadingQuestionAudio: boolean;
+  onReplayQuestionAudio: () => void;
+  onStopQuestionAudio: () => void;
   onSubmit: () => void;
   onCompleteEarly: () => void;
   isSubmitting: boolean;
@@ -45,6 +51,8 @@ export default function InterviewChatPanel({
   messages,
   candidateInputMode,
   onCandidateInputModeChange,
+  interviewerOutputMode,
+  onInterviewerOutputModeChange,
   answer,
   onAnswerChange,
   recognizedText,
@@ -56,6 +64,10 @@ export default function InterviewChatPanel({
   isRecording,
   isRecognizing,
   audioUrl,
+  isPlayingQuestionAudio,
+  isLoadingQuestionAudio,
+  onReplayQuestionAudio,
+  onStopQuestionAudio,
   onSubmit,
   // onCompleteEarly, // 暂时未使用
   isSubmitting,
@@ -117,31 +129,59 @@ export default function InterviewChatPanel({
 
         <div className="border-t border-slate-200 dark:border-slate-600 p-4 bg-slate-50 dark:bg-slate-700/50 space-y-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="inline-flex rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 p-1">
-              <button
-                type="button"
-                onClick={() => onCandidateInputModeChange('text')}
-                disabled={isSubmitting || isRecognizing || isRecording}
-                className={`px-4 py-2 text-sm rounded-lg transition-colors ${
-                  candidateInputMode === 'text'
-                    ? 'bg-primary-500 text-white'
-                    : 'text-slate-600 dark:text-slate-300'
-                }`}
-              >
-                文字回答
-              </button>
-              <button
-                type="button"
-                onClick={() => onCandidateInputModeChange('voice')}
-                disabled={isSubmitting || isRecognizing || isRecording}
-                className={`px-4 py-2 text-sm rounded-lg transition-colors ${
-                  candidateInputMode === 'voice'
-                    ? 'bg-primary-500 text-white'
-                    : 'text-slate-600 dark:text-slate-300'
-                }`}
-              >
-                语音回答
-              </button>
+            <div className="flex gap-3 flex-wrap">
+              <div className="inline-flex rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 p-1">
+                <button
+                  type="button"
+                  onClick={() => onCandidateInputModeChange('text')}
+                  disabled={isSubmitting || isRecognizing || isRecording}
+                  className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                    candidateInputMode === 'text'
+                      ? 'bg-primary-500 text-white'
+                      : 'text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  文字回答
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onCandidateInputModeChange('voice')}
+                  disabled={isSubmitting || isRecognizing || isRecording}
+                  className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                    candidateInputMode === 'voice'
+                      ? 'bg-primary-500 text-white'
+                      : 'text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  语音回答
+                </button>
+              </div>
+              <div className="inline-flex rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 p-1">
+                <button
+                  type="button"
+                  onClick={() => onInterviewerOutputModeChange('text')}
+                  disabled={isSubmitting || isRecognizing || isRecording}
+                  className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                    interviewerOutputMode === 'text'
+                      ? 'bg-primary-500 text-white'
+                      : 'text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  仅文字
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onInterviewerOutputModeChange('textVoice')}
+                  disabled={isSubmitting || isRecognizing || isRecording}
+                  className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                    interviewerOutputMode === 'textVoice'
+                      ? 'bg-primary-500 text-white'
+                      : 'text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  文字+语音
+                </button>
+              </div>
             </div>
             <motion.button
               onClick={() => onShowCompleteConfirm(true)}
@@ -157,6 +197,41 @@ export default function InterviewChatPanel({
           {error && (
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
               {error}
+            </div>
+          )}
+
+          {interviewerOutputMode === 'textVoice' && (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">题目语音播报</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {isLoadingQuestionAudio ? '正在生成题目语音...' : isPlayingQuestionAudio ? '播放中，可随时停止' : '当前题目可重新播放'}
+                </p>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <motion.button
+                  type="button"
+                  onClick={onReplayQuestionAudio}
+                  disabled={isSubmitting || isRecognizing || isRecording || isLoadingQuestionAudio}
+                  className="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  whileHover={{ scale: isSubmitting || isRecognizing || isRecording || isLoadingQuestionAudio ? 1 : 1.02 }}
+                  whileTap={{ scale: isSubmitting || isRecognizing || isRecording || isLoadingQuestionAudio ? 1 : 0.98 }}
+                >
+                  <Volume2 className="w-4 h-4" />
+                  {isLoadingQuestionAudio ? '生成中' : isPlayingQuestionAudio ? '重新播放' : '播放题目'}
+                </motion.button>
+                <motion.button
+                  type="button"
+                  onClick={onStopQuestionAudio}
+                  disabled={!isPlayingQuestionAudio && !isLoadingQuestionAudio}
+                  className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  whileHover={{ scale: !isPlayingQuestionAudio && !isLoadingQuestionAudio ? 1 : 1.02 }}
+                  whileTap={{ scale: !isPlayingQuestionAudio && !isLoadingQuestionAudio ? 1 : 0.98 }}
+                >
+                  <VolumeX className="w-4 h-4" />
+                  停止播放
+                </motion.button>
+              </div>
             </div>
           )}
 

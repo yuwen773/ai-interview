@@ -3,12 +3,19 @@ import type {
   CreateInterviewRequest,
   CurrentQuestionResponse,
   InterviewReport,
+  InterviewerOutputMode,
   InterviewSession,
   SubmitAnswerRequest,
   SubmitAnswerResponse,
   VoiceRecognizeResponse
 } from '../types/interview';
 import { getErrorMessage, request } from './request';
+
+const baseURL = import.meta.env.PROD ? '' : 'http://localhost:8080';
+
+function toBackendOutputMode(mode: InterviewerOutputMode): 'TEXT' | 'TEXT_VOICE' {
+  return mode === 'textVoice' ? 'TEXT_VOICE' : 'TEXT';
+}
 
 export const interviewApi = {
   inferAudioFileName(file: Blob, preferredName?: string): string {
@@ -58,7 +65,11 @@ export const interviewApi = {
   async submitAnswer(req: SubmitAnswerRequest): Promise<SubmitAnswerResponse> {
     return request.post<SubmitAnswerResponse>(
       `/api/interview/sessions/${req.sessionId}/answers`,
-      { questionIndex: req.questionIndex, answer: req.answer },
+      {
+        questionIndex: req.questionIndex,
+        answer: req.answer,
+        interviewerOutputMode: toBackendOutputMode(req.interviewerOutputMode ?? 'text'),
+      },
       {
         timeout: 180000, // 3分钟超时
       }
@@ -130,5 +141,26 @@ export const interviewApi = {
    */
   async completeInterview(sessionId: string): Promise<void> {
     return request.post<void>(`/api/interview/sessions/${sessionId}/complete`);
+  },
+
+  async openQuestionTtsStream(
+    text: string,
+    signal?: AbortSignal
+  ): Promise<ReadableStreamDefaultReader<Uint8Array>> {
+    const response = await fetch(`${baseURL}/api/interview/tts/stream`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+      signal,
+    });
+
+    if (!response.ok) {
+      throw new Error('题目语音生成失败');
+    }
+    if (!response.body) {
+      throw new Error('题目语音流不可用');
+    }
+
+    return response.body.getReader();
   },
 };

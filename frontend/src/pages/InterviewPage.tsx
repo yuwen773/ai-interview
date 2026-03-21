@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import {interviewApi} from '../api/interview';
 import {getErrorMessage} from '../api/request';
@@ -6,7 +6,8 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import InterviewConfigPanel from '../components/InterviewConfigPanel';
 import InterviewChatPanel from '../components/InterviewChatPanel';
 import {useRecording} from '../hooks/useRecording';
-import type {CandidateInputMode, InterviewQuestion, InterviewSession} from '../types/interview';
+import {useQuestionVoicePlayer} from '../hooks/useQuestionVoicePlayer';
+import type {CandidateInputMode, InterviewQuestion, InterviewSession, InterviewerOutputMode} from '../types/interview';
 
 type InterviewStage = 'config' | 'interview';
 
@@ -32,6 +33,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const [messages, setMessages] = useState<Message[]>([]);
   const [answer, setAnswer] = useState('');
   const [candidateInputMode, setCandidateInputMode] = useState<CandidateInputMode>('text');
+  const [interviewerOutputMode, setInterviewerOutputMode] = useState<InterviewerOutputMode>('text');
   const [recognizedText, setRecognizedText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRecognizing, setIsRecognizing] = useState(false);
@@ -42,6 +44,18 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [forceCreateNew, setForceCreateNew] = useState(false);
   const { isRecording, startRecording, stopRecording, audioUrl, clearRecording } = useRecording();
+  const lastAutoPlayedQuestionRef = useRef<string | null>(null);
+  const handleQuestionVoiceError = useCallback((message: string) => {
+    setError(message);
+  }, []);
+  const {
+    isPlaying: isPlayingQuestionAudio,
+    isLoading: isLoadingQuestionAudio,
+    playQuestion,
+    stopPlayback: stopQuestionAudio
+  } = useQuestionVoicePlayer({
+    onError: handleQuestionVoiceError
+  });
 
   // 检查是否有未完成的面试（组件挂载时和resumeId变化时）
   useEffect(() => {
@@ -84,10 +98,13 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     setForceCreateNew(true);  // 标记需要强制创建新会话
   };
 
-    const restoreSession = (sessionToRestore: InterviewSession) => {
+  const restoreSession = (sessionToRestore: InterviewSession) => {
+    stopQuestionAudio();
+    lastAutoPlayedQuestionRef.current = null;
     setSession(sessionToRestore);
     setError('');
     setCandidateInputMode('text');
+    setInterviewerOutputMode('text');
     resetVoiceAnswer();
 
         // 恢复当前问题
@@ -125,10 +142,13 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         setStage('interview');
   };
 
-    const startInterview = async () => {
+  const startInterview = async () => {
     setIsCreating(true);
     setError('');
+    stopQuestionAudio();
+    lastAutoPlayedQuestionRef.current = null;
     setCandidateInputMode('text');
+    setInterviewerOutputMode('text');
     resetVoiceAnswer();
 
         try {
@@ -195,14 +215,17 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       const response = await interviewApi.submitAnswer({
         sessionId: session.sessionId,
         questionIndex: currentQuestion.questionIndex,
-        answer: finalAnswer
+        answer: finalAnswer,
+        interviewerOutputMode
       });
+      setInterviewerOutputMode(response.interviewerOutputMode);
 
       setAnswer('');
       resetVoiceAnswer();
 
       if (response.hasNextQuestion && response.nextQuestion) {
         const nextQuestion = response.nextQuestion;
+        lastAutoPlayedQuestionRef.current = null;
         setCurrentQuestion(nextQuestion);
         setMessages(prev => [...prev, {
           type: 'interviewer',
@@ -211,6 +234,8 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
           questionIndex: nextQuestion.questionIndex
         }]);
       } else {
+        lastAutoPlayedQuestionRef.current = null;
+        stopQuestionAudio();
         onInterviewComplete();
       }
     } catch (err) {
@@ -232,6 +257,16 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     setError('');
     if (mode === 'text') {
       resetVoiceAnswer();
+    }
+  };
+
+  const handleInterviewerOutputModeChange = (mode: InterviewerOutputMode) => {
+    if (isSubmitting || isRecognizing || isRecording) return;
+    setError('');
+    setInterviewerOutputMode(mode);
+    if (mode === 'text') {
+      lastAutoPlayedQuestionRef.current = null;
+      stopQuestionAudio();
     }
   };
 
@@ -289,6 +324,8 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
 
     setIsSubmitting(true);
     try {
+      lastAutoPlayedQuestionRef.current = null;
+      stopQuestionAudio();
       await interviewApi.completeInterview(session.sessionId);
       setShowCompleteConfirm(false);
       // 面试已完成，评估将在后台进行，跳转到面试记录页
@@ -300,6 +337,35 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       setIsSubmitting(false);
     }
   };
+
+  const handleReplayQuestionAudio = async () => {
+    if (!currentQuestion || interviewerOutputMode !== 'textVoice') return;
+    setError('');
+    await playQuestion(currentQuestion.question);
+  };
+
+  useEffect(() => {
+    if (!currentQuestion) return;
+
+    if (interviewerOutputMode !== 'textVoice') {
+      stopQuestionAudio();
+      return;
+    }
+
+    const questionKey = `${currentQuestion.questionIndex}:${currentQuestion.question}`;
+    if (lastAutoPlayedQuestionRef.current === questionKey) {
+      return;
+    }
+
+    lastAutoPlayedQuestionRef.current = questionKey;
+    void playQuestion(currentQuestion.question);
+  }, [
+    currentQuestion?.questionIndex,
+    currentQuestion?.question,
+    interviewerOutputMode,
+    playQuestion,
+    stopQuestionAudio
+  ]);
 
     // 配置界面
   const renderConfig = () => {
@@ -331,6 +397,8 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         messages={messages}
         candidateInputMode={candidateInputMode}
         onCandidateInputModeChange={handleCandidateInputModeChange}
+        interviewerOutputMode={interviewerOutputMode}
+        onInterviewerOutputModeChange={handleInterviewerOutputModeChange}
         answer={answer}
         onAnswerChange={setAnswer}
         recognizedText={recognizedText}
@@ -342,6 +410,10 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         isRecording={isRecording}
         isRecognizing={isRecognizing}
         audioUrl={audioUrl}
+        isPlayingQuestionAudio={isPlayingQuestionAudio}
+        isLoadingQuestionAudio={isLoadingQuestionAudio}
+        onReplayQuestionAudio={handleReplayQuestionAudio}
+        onStopQuestionAudio={stopQuestionAudio}
         onSubmit={handleSubmitAnswer}
         onCompleteEarly={handleCompleteEarly}
         isSubmitting={isSubmitting}

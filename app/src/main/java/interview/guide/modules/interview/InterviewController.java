@@ -1,13 +1,17 @@
 package interview.guide.modules.interview;
 
 import interview.guide.common.annotation.RateLimit;
+import interview.guide.common.exception.BusinessException;
+import interview.guide.common.exception.ErrorCode;
 import interview.guide.common.result.Result;
+import interview.guide.modules.audio.adapter.TtsAdapter;
 import interview.guide.modules.interview.model.*;
 import interview.guide.modules.interview.service.InterviewHistoryService;
 import interview.guide.modules.interview.service.InterviewPersistenceService;
 import interview.guide.modules.interview.service.InterviewSessionService;
 import interview.guide.modules.interview.voice.InterviewTurnProcessor;
 import interview.guide.modules.interview.voice.model.CandidateInputMode;
+import interview.guide.modules.interview.voice.model.InterviewTurnResponse;
 import interview.guide.modules.interview.voice.model.InterviewTurnInput;
 import interview.guide.modules.interview.voice.model.InterviewerOutputMode;
 import interview.guide.modules.interview.voice.model.NormalizedAnswer;
@@ -16,12 +20,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Flux;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Map;
 
 /**
@@ -37,6 +44,7 @@ public class InterviewController {
     private final InterviewHistoryService historyService;
     private final InterviewPersistenceService persistenceService;
     private final InterviewTurnProcessor turnProcessor;
+    private final TtsAdapter ttsAdapter;
     
     /**
      * 创建面试会话
@@ -71,14 +79,23 @@ public class InterviewController {
      */
     @PostMapping("/api/interview/sessions/{sessionId}/answers")
     @RateLimit(dimensions = {RateLimit.Dimension.GLOBAL}, count = 10)
-    public Result<SubmitAnswerResponse> submitAnswer(
+    public Result<InterviewTurnResponse> submitAnswer(
             @PathVariable("sessionId") String sessionId,
             @RequestBody Map<String, Object> body) {
         Integer questionIndex = (Integer) body.get("questionIndex");
-        String answer = (String) body.get("answer");
+        String answer = (String) body.getOrDefault("answer", body.get("answerText"));
+        InterviewerOutputMode interviewerOutputMode = parseInterviewerOutputMode(body.get("interviewerOutputMode"));
         log.info("提交答案: 会话{}, 问题{}", sessionId, questionIndex);
-        SubmitAnswerRequest request = new SubmitAnswerRequest(sessionId, questionIndex, answer);
-        SubmitAnswerResponse response = sessionService.submitAnswer(request);
+        InterviewTurnResponse response = turnProcessor.process(
+            new InterviewTurnInput(
+                sessionId,
+                questionIndex,
+                answer,
+                null,
+                CandidateInputMode.TEXT,
+                interviewerOutputMode
+            )
+        );
         return Result.success(response);
     }
 
@@ -107,6 +124,23 @@ public class InterviewController {
             )
         );
         return Result.success(new VoiceRecognizeResponse(normalizedAnswer.recognizedText()));
+    }
+
+    /**
+     * 题目 TTS 流
+     */
+    @PostMapping(value = "/api/interview/tts/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @RateLimit(dimensions = {RateLimit.Dimension.GLOBAL}, count = 20)
+    public Flux<ServerSentEvent<String>> streamQuestionTts(@RequestBody TtsStreamRequest request) {
+        log.info("题目 TTS 流式合成，文本长度: {}", request.text() == null ? 0 : request.text().length());
+        byte[] audioBytes = ttsAdapter.synthesize(request.text());
+        if (audioBytes == null || audioBytes.length == 0) {
+            return Flux.empty();
+        }
+        return Flux.just(ServerSentEvent.<String>builder()
+                .event("audio")
+                .data(Base64.getEncoder().encodeToString(audioBytes))
+                .build());
     }
     
     /**
@@ -191,5 +225,20 @@ public class InterviewController {
         log.info("删除面试会话: {}", sessionId);
         persistenceService.deleteSessionBySessionId(sessionId);
         return Result.success(null);
+    }
+
+    private InterviewerOutputMode parseInterviewerOutputMode(Object rawMode) {
+        if (rawMode == null) {
+            return InterviewerOutputMode.TEXT;
+        }
+        String mode = rawMode.toString().trim();
+        if (mode.isEmpty()) {
+            return InterviewerOutputMode.TEXT;
+        }
+        return switch (mode) {
+            case "text", "TEXT" -> InterviewerOutputMode.TEXT;
+            case "textVoice", "TEXT_VOICE", "TEXTVOICE" -> InterviewerOutputMode.TEXT_VOICE;
+            default -> throw new BusinessException(ErrorCode.BAD_REQUEST, "不支持的输出模式: " + mode);
+        };
     }
 }

@@ -42,6 +42,22 @@ class TtsServiceTest {
     }
 
     @Test
+    @DisplayName("同步合成返回空音频时应回退到流式聚合")
+    void shouldFallbackToStreamAggregationWhenCallReturnsEmptyAudio() {
+        TextToSpeechModel model = mock(TextToSpeechModel.class);
+        TextToSpeechResponse emptyResponse = new TextToSpeechResponse(List.of(new Speech(new byte[0])));
+        TextToSpeechResponse first = new TextToSpeechResponse(List.of(new Speech(new byte[] {1})));
+        TextToSpeechResponse second = new TextToSpeechResponse(List.of(new Speech(new byte[] {2, 3})));
+        when(model.call(any(TextToSpeechPrompt.class))).thenReturn(emptyResponse);
+        when(model.stream(any(TextToSpeechPrompt.class))).thenReturn(Flux.just(first, second));
+        TtsService ttsService = new TtsService(model);
+
+        byte[] actual = ttsService.synthesize("你好");
+
+        assertArrayEquals(new byte[] {1, 2, 3}, actual);
+    }
+
+    @Test
     @DisplayName("流式合成应返回每个音频块")
     void shouldStreamAudioBytes() {
         TextToSpeechModel model = mock(TextToSpeechModel.class);

@@ -40,15 +40,19 @@ export interface SubmitAnswerRequest {
   sessionId: string;
   questionIndex: number;
   answer: string;
+  interviewerOutputMode?: InterviewerOutputMode;
 }
 
 export type CandidateInputMode = 'text' | 'voice';
+export type InterviewerOutputMode = 'text' | 'textVoice';
 
 export interface SubmitAnswerResponse {
+  recognizedText: string | null;
   hasNextQuestion: boolean;
   nextQuestion: InterviewQuestion | null;
-  currentIndex: number;
+  currentQuestionIndex: number;
   totalQuestions: number;
+  interviewerOutputMode: InterviewerOutputMode;
 }
 
 export interface VoiceRecognizeResponse {
