@@ -58,4 +58,19 @@ public interface InterviewSessionRepository extends JpaRepository<InterviewSessi
         Long resumeId,
         List<SessionStatus> statuses
     );
+
+    /**
+     * 查询成长曲线所需的已完成面试，并预加载答案，避免后续按会话逐条查询。
+     */
+    @Query("""
+        SELECT DISTINCT s
+        FROM InterviewSessionEntity s
+        LEFT JOIN FETCH s.answers
+        WHERE s.resume.id = :resumeId
+          AND s.status IN :statuses
+        """)
+    List<InterviewSessionEntity> findAllByResumeIdAndStatusInWithAnswers(
+        @Param("resumeId") Long resumeId,
+        @Param("statuses") List<SessionStatus> statuses
+    );
 }

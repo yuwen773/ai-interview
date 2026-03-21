@@ -251,6 +251,17 @@ public class InterviewPersistenceService {
     public List<InterviewSessionEntity> findByResumeId(Long resumeId) {
         return sessionRepository.findByResumeIdOrderByCreatedAtDesc(resumeId);
     }
+
+    /**
+     * 查询成长曲线所需的已完成会话。
+     */
+    public List<InterviewSessionEntity> findSessionsForGrowthCurve(Long resumeId) {
+        List<InterviewSessionEntity.SessionStatus> statuses = List.of(
+            InterviewSessionEntity.SessionStatus.COMPLETED,
+            InterviewSessionEntity.SessionStatus.EVALUATED
+        );
+        return sessionRepository.findAllByResumeIdAndStatusInWithAnswers(resumeId, statuses);
+    }
     
     /**
      * 删除简历的所有面试会话

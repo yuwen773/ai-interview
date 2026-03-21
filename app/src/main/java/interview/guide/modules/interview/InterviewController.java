@@ -10,6 +10,7 @@ import interview.guide.modules.interview.model.*;
 import interview.guide.modules.interview.service.InterviewHistoryService;
 import interview.guide.modules.interview.service.InterviewPersistenceService;
 import interview.guide.modules.interview.service.InterviewSessionService;
+import interview.guide.modules.interview.service.GrowthCurveService;
 import interview.guide.modules.interview.voice.InterviewTurnProcessor;
 import interview.guide.modules.interview.voice.VoiceTurnGuard;
 import interview.guide.modules.interview.voice.model.CandidateInputMode;
@@ -48,6 +49,7 @@ public class InterviewController {
     private final InterviewSessionService sessionService;
     private final InterviewHistoryService historyService;
     private final InterviewPersistenceService persistenceService;
+    private final GrowthCurveService growthCurveService;
     private final InterviewTurnProcessor turnProcessor;
     private final TtsAdapter ttsAdapter;
     private final VoiceTurnGuard voiceTurnGuard;
@@ -232,6 +234,14 @@ public class InterviewController {
     public Result<InterviewDetailDTO> getInterviewDetail(@PathVariable("sessionId") String sessionId) {
         InterviewDetailDTO detail = historyService.getInterviewDetail(sessionId);
         return Result.success(detail);
+    }
+
+    /**
+     * 查询同一简历下的成长曲线
+     */
+    @GetMapping("/api/interview/growth")
+    public Result<GrowthCurveDTO> getGrowthCurve(@RequestParam("resumeId") Long resumeId) {
+        return Result.success(growthCurveService.getGrowthCurve(resumeId));
     }
     
     /**
