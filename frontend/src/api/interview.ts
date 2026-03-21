@@ -1,14 +1,34 @@
-import { request } from './request';
 import type {
+  CandidateInputMode,
   CreateInterviewRequest,
   CurrentQuestionResponse,
   InterviewReport,
   InterviewSession,
   SubmitAnswerRequest,
-  SubmitAnswerResponse
+  SubmitAnswerResponse,
+  VoiceRecognizeResponse
 } from '../types/interview';
+import { getErrorMessage, request } from './request';
 
 export const interviewApi = {
+  inferAudioFileName(file: Blob, preferredName?: string): string {
+    if (preferredName) {
+      return preferredName;
+    }
+
+    const extensionMap: Record<string, string> = {
+      'audio/wav': 'wav',
+      'audio/wave': 'wav',
+      'audio/x-wav': 'wav',
+      'audio/webm': 'webm',
+      'audio/ogg': 'ogg',
+      'audio/mpeg': 'mp3',
+      'audio/mp3': 'mp3',
+    };
+
+    const extension = extensionMap[file.type] ?? 'bin';
+    return `answer.${extension}`;
+  },
   /**
    * 创建面试会话
    */
@@ -43,6 +63,35 @@ export const interviewApi = {
         timeout: 180000, // 3分钟超时
       }
     );
+  },
+
+  /**
+   * 识别语音答案（仅识别，不推进会话）
+   */
+  async recognizeVoiceAnswer(req: {
+    sessionId: string;
+    questionIndex: number;
+    file: Blob;
+    fileName?: string;
+    inputMode?: CandidateInputMode;
+  }): Promise<VoiceRecognizeResponse> {
+    if (req.inputMode && req.inputMode !== 'voice') {
+      throw new Error('当前不是语音答题模式');
+    }
+
+    const formData = new FormData();
+    formData.append('questionIndex', String(req.questionIndex));
+    formData.append('file', req.file, interviewApi.inferAudioFileName(req.file, req.fileName));
+
+    try {
+      return await request.upload<VoiceRecognizeResponse>(
+        `/api/interview/sessions/${req.sessionId}/answers/voice/recognize`,
+        formData,
+        { timeout: 120000 }
+      );
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
   },
 
   /**

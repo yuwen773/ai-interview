@@ -42,11 +42,17 @@ export interface SubmitAnswerRequest {
   answer: string;
 }
 
+export type CandidateInputMode = 'text' | 'voice';
+
 export interface SubmitAnswerResponse {
   hasNextQuestion: boolean;
   nextQuestion: InterviewQuestion | null;
   currentIndex: number;
   totalQuestions: number;
+}
+
+export interface VoiceRecognizeResponse {
+  recognizedText: string;
 }
 
 export interface CurrentQuestionResponse {

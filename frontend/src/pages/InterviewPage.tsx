@@ -1,10 +1,12 @@
 import {useEffect, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import {interviewApi} from '../api/interview';
+import {getErrorMessage} from '../api/request';
 import ConfirmDialog from '../components/ConfirmDialog';
 import InterviewConfigPanel from '../components/InterviewConfigPanel';
 import InterviewChatPanel from '../components/InterviewChatPanel';
-import type {InterviewQuestion, InterviewSession} from '../types/interview';
+import {useRecording} from '../hooks/useRecording';
+import type {CandidateInputMode, InterviewQuestion, InterviewSession} from '../types/interview';
 
 type InterviewStage = 'config' | 'interview';
 
@@ -29,13 +31,17 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const [currentQuestion, setCurrentQuestion] = useState<InterviewQuestion | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [answer, setAnswer] = useState('');
+  const [candidateInputMode, setCandidateInputMode] = useState<CandidateInputMode>('text');
+  const [recognizedText, setRecognizedText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRecognizing, setIsRecognizing] = useState(false);
   const [error, setError] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [checkingUnfinished, setCheckingUnfinished] = useState(false);
   const [unfinishedSession, setUnfinishedSession] = useState<InterviewSession | null>(null);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [forceCreateNew, setForceCreateNew] = useState(false);
+  const { isRecording, startRecording, stopRecording, audioUrl, clearRecording } = useRecording();
 
   // 检查是否有未完成的面试（组件挂载时和resumeId变化时）
   useEffect(() => {
@@ -61,6 +67,11 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     }
   };
 
+  const resetVoiceAnswer = () => {
+    setRecognizedText('');
+    clearRecording();
+  };
+
   const handleContinueUnfinished = () => {
     if (!unfinishedSession) return;
     setForceCreateNew(false);  // 重置强制创建标志
@@ -75,6 +86,9 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
 
     const restoreSession = (sessionToRestore: InterviewSession) => {
     setSession(sessionToRestore);
+    setError('');
+    setCandidateInputMode('text');
+    resetVoiceAnswer();
 
         // 恢复当前问题
     const currentQ = sessionToRestore.questions[sessionToRestore.currentQuestionIndex];
@@ -84,6 +98,8 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         // 如果当前问题已有答案，显示在输入框中
       if (currentQ.userAnswer) {
         setAnswer(currentQ.userAnswer);
+      } else {
+        setAnswer('');
       }
 
         // 恢复消息历史
@@ -112,6 +128,8 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     const startInterview = async () => {
     setIsCreating(true);
     setError('');
+    setCandidateInputMode('text');
+    resetVoiceAnswer();
 
         try {
       // 创建新面试（如果 forceCreateNew 为 true，则强制创建新会话）
@@ -136,6 +154,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       } else {
         // 全新的会话
         setSession(newSession);
+        setAnswer('');
 
                 if (newSession.questions.length > 0) {
           const firstQuestion = newSession.questions[0];
@@ -159,14 +178,16 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     }
   };
 
-    const handleSubmitAnswer = async () => {
-    if (!answer.trim() || !session || !currentQuestion) return;
+  const submitAnswerText = async (submittedAnswer: string) => {
+    if (!submittedAnswer.trim() || !session || !currentQuestion) return;
 
     setIsSubmitting(true);
+    setError('');
 
+    const finalAnswer = submittedAnswer.trim();
     const userMessage: Message = {
       type: 'user',
-      content: answer
+      content: finalAnswer
     };
     setMessages(prev => [...prev, userMessage]);
 
@@ -174,29 +195,93 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       const response = await interviewApi.submitAnswer({
         sessionId: session.sessionId,
         questionIndex: currentQuestion.questionIndex,
-        answer: answer.trim()
+        answer: finalAnswer
       });
 
       setAnswer('');
+      resetVoiceAnswer();
 
       if (response.hasNextQuestion && response.nextQuestion) {
-        setCurrentQuestion(response.nextQuestion);
+        const nextQuestion = response.nextQuestion;
+        setCurrentQuestion(nextQuestion);
         setMessages(prev => [...prev, {
           type: 'interviewer',
-          content: response.nextQuestion!.question,
-          category: response.nextQuestion!.category,
-          questionIndex: response.nextQuestion!.questionIndex
+          content: nextQuestion.question,
+          category: nextQuestion.category,
+          questionIndex: nextQuestion.questionIndex
         }]);
       } else {
-        // 面试已完成，评估将在后台进行，跳转到面试记录页
         onInterviewComplete();
       }
     } catch (err) {
-      setError('提交答案失败，请重试');
+      setMessages(prev => prev.slice(0, -1));
+      setError(getErrorMessage(err) || '提交答案失败，请重试');
       console.error(err);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSubmitAnswer = async () => {
+    await submitAnswerText(answer);
+  };
+
+  const handleCandidateInputModeChange = (mode: CandidateInputMode) => {
+    if (isSubmitting || isRecognizing || isRecording) return;
+    setCandidateInputMode(mode);
+    setError('');
+    if (mode === 'text') {
+      resetVoiceAnswer();
+    }
+  };
+
+  const handleStartRecording = async () => {
+    setError('');
+    try {
+      await startRecording();
+    } catch (err) {
+      setError(getErrorMessage(err) || '无法开始录音');
+      console.error(err);
+    }
+  };
+
+  const handleStopRecording = async () => {
+    if (!session || !currentQuestion) return;
+
+    setIsRecognizing(true);
+    setError('');
+
+    try {
+      const audioBlob = await stopRecording();
+      if (!audioBlob || audioBlob.size === 0) {
+        throw new Error('录音内容为空，请重新录音');
+      }
+
+      const response = await interviewApi.recognizeVoiceAnswer({
+        sessionId: session.sessionId,
+        questionIndex: currentQuestion.questionIndex,
+        file: audioBlob,
+        inputMode: candidateInputMode
+      });
+
+      setRecognizedText(response.recognizedText);
+    } catch (err) {
+      resetVoiceAnswer();
+      setError(getErrorMessage(err) || '语音识别失败，请重试或切回文字模式');
+      console.error(err);
+    } finally {
+      setIsRecognizing(false);
+    }
+  };
+
+  const handleSubmitRecognizedAnswer = async () => {
+    await submitAnswerText(recognizedText);
+  };
+
+  const handleRetryVoiceAnswer = () => {
+    if (isSubmitting || isRecognizing || isRecording) return;
+    setError('');
+    resetVoiceAnswer();
   };
 
   const handleCompleteEarly = async () => {
@@ -244,13 +329,25 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         session={session}
         currentQuestion={currentQuestion}
         messages={messages}
+        candidateInputMode={candidateInputMode}
+        onCandidateInputModeChange={handleCandidateInputModeChange}
         answer={answer}
         onAnswerChange={setAnswer}
+        recognizedText={recognizedText}
+        onRecognizedTextChange={setRecognizedText}
+        onStartRecording={handleStartRecording}
+        onStopRecording={handleStopRecording}
+        onRetryVoiceAnswer={handleRetryVoiceAnswer}
+        onSubmitRecognizedAnswer={handleSubmitRecognizedAnswer}
+        isRecording={isRecording}
+        isRecognizing={isRecognizing}
+        audioUrl={audioUrl}
         onSubmit={handleSubmitAnswer}
         onCompleteEarly={handleCompleteEarly}
         isSubmitting={isSubmitting}
         showCompleteConfirm={showCompleteConfirm}
         onShowCompleteConfirm={setShowCompleteConfirm}
+        error={error}
       />
     );
   };
