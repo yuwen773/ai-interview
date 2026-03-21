@@ -22,9 +22,11 @@ public class TtsService {
     private static final Logger log = LoggerFactory.getLogger(TtsService.class);
 
     private final TextToSpeechModel textToSpeechModel;
+    private final VoiceMetrics voiceMetrics;
 
-    public TtsService(TextToSpeechModel textToSpeechModel) {
+    public TtsService(TextToSpeechModel textToSpeechModel, VoiceMetrics voiceMetrics) {
         this.textToSpeechModel = textToSpeechModel;
+        this.voiceMetrics = voiceMetrics;
         log.info("TtsService initialized with TextToSpeechModel");
     }
 
@@ -34,19 +36,34 @@ public class TtsService {
             return new byte[0];
         }
 
+        // 同步 TTS 是前端最稳定的消费方式，但底层返回空音频时要自动回退到流式聚合。
+        long startTime = System.nanoTime();
         try {
             TextToSpeechPrompt prompt = new TextToSpeechPrompt(text, buildSpeechOptions());
             TextToSpeechResponse response = textToSpeechModel.call(prompt);
             byte[] audioData = response.getResult().getOutput();
             if (audioData == null || audioData.length == 0) {
                 log.warn("TTS synthesize completed but returned empty audio data, fallback to stream aggregation");
-                return collectStreamAudio(text);
+                byte[] fallbackAudio = collectStreamAudio(text);
+                if (fallbackAudio.length == 0) {
+                    voiceMetrics.recordTtsFailure(durationMs(startTime), text.length(), "sync_fallback", "empty_audio");
+                } else {
+                    voiceMetrics.recordTtsSuccess(durationMs(startTime), text.length(), "sync_fallback", fallbackAudio.length);
+                }
+                return fallbackAudio;
             }
             log.info("TTS synthesize completed, audio size: {} bytes", audioData.length);
+            voiceMetrics.recordTtsSuccess(durationMs(startTime), text.length(), "sync", audioData.length);
             return audioData;
         } catch (Exception e) {
             log.error("TTS synthesize failed: {}, fallback to stream aggregation", e.getMessage(), e);
-            return collectStreamAudio(text);
+            byte[] fallbackAudio = collectStreamAudio(text);
+            if (fallbackAudio.length == 0) {
+                voiceMetrics.recordTtsFailure(durationMs(startTime), text.length(), "sync_fallback", e.getMessage());
+            } else {
+                voiceMetrics.recordTtsSuccess(durationMs(startTime), text.length(), "sync_fallback", fallbackAudio.length);
+            }
+            return fallbackAudio;
         }
     }
 
@@ -56,14 +73,20 @@ public class TtsService {
             return Flux.empty();
         }
 
+        // 流式接口主要作为同步合成的降级路径，因此在这里顺手补齐完成/失败埋点。
+        long startTime = System.nanoTime();
         try {
             TextToSpeechPrompt prompt = new TextToSpeechPrompt(text, buildSpeechOptions());
 
             // 流式返回每个音频块
             return textToSpeechModel.stream(prompt)
-                    .map(response -> response.getResult().getOutput());
+                    .map(response -> response.getResult().getOutput())
+                    .filter(chunk -> chunk != null && chunk.length > 0)
+                    .doOnComplete(() -> voiceMetrics.recordTtsSuccess(durationMs(startTime), text.length(), "stream", -1))
+                    .doOnError(error -> voiceMetrics.recordTtsFailure(durationMs(startTime), text.length(), "stream", error.getMessage()));
         } catch (Exception e) {
             log.error("TTS stream synthesize failed: {}", e.getMessage(), e);
+            voiceMetrics.recordTtsFailure(durationMs(startTime), text.length(), "stream", e.getMessage());
             return Flux.empty();
         }
     }
@@ -99,5 +122,9 @@ public class TtsService {
             log.error("TTS stream aggregation failed: {}", e.getMessage(), e);
             return new byte[0];
         }
+    }
+
+    private long durationMs(long startTime) {
+        return (System.nanoTime() - startTime) / 1_000_000;
     }
 }

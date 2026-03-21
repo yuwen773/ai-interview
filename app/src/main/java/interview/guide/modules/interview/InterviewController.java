@@ -5,11 +5,13 @@ import interview.guide.common.exception.BusinessException;
 import interview.guide.common.exception.ErrorCode;
 import interview.guide.common.result.Result;
 import interview.guide.modules.audio.adapter.TtsAdapter;
+import interview.guide.modules.audio.service.VoiceMetrics;
 import interview.guide.modules.interview.model.*;
 import interview.guide.modules.interview.service.InterviewHistoryService;
 import interview.guide.modules.interview.service.InterviewPersistenceService;
 import interview.guide.modules.interview.service.InterviewSessionService;
 import interview.guide.modules.interview.voice.InterviewTurnProcessor;
+import interview.guide.modules.interview.voice.VoiceTurnGuard;
 import interview.guide.modules.interview.voice.model.CandidateInputMode;
 import interview.guide.modules.interview.voice.model.InterviewTurnResponse;
 import interview.guide.modules.interview.voice.model.InterviewTurnInput;
@@ -45,6 +47,8 @@ public class InterviewController {
     private final InterviewPersistenceService persistenceService;
     private final InterviewTurnProcessor turnProcessor;
     private final TtsAdapter ttsAdapter;
+    private final VoiceTurnGuard voiceTurnGuard;
+    private final VoiceMetrics voiceMetrics;
     
     /**
      * 创建面试会话
@@ -82,21 +86,29 @@ public class InterviewController {
     public Result<InterviewTurnResponse> submitAnswer(
             @PathVariable("sessionId") String sessionId,
             @RequestBody Map<String, Object> body) {
-        Integer questionIndex = (Integer) body.get("questionIndex");
+        Integer questionIndex = parseQuestionIndex(body.get("questionIndex"));
         String answer = (String) body.getOrDefault("answer", body.get("answerText"));
         InterviewerOutputMode interviewerOutputMode = parseInterviewerOutputMode(body.get("interviewerOutputMode"));
+        // 同一题在上一次请求完成前不允许再次提交，避免前端重复点击导致题目推进两次。
+        if (!voiceTurnGuard.tryAcquire("submit", sessionId, questionIndex)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "当前问题正在提交中，请勿重复操作");
+        }
         log.info("提交答案: 会话{}, 问题{}", sessionId, questionIndex);
-        InterviewTurnResponse response = turnProcessor.process(
-            new InterviewTurnInput(
-                sessionId,
-                questionIndex,
-                answer,
-                null,
-                CandidateInputMode.TEXT,
-                interviewerOutputMode
-            )
-        );
-        return Result.success(response);
+        try {
+            InterviewTurnResponse response = turnProcessor.process(
+                new InterviewTurnInput(
+                    sessionId,
+                    questionIndex,
+                    answer,
+                    null,
+                    CandidateInputMode.TEXT,
+                    interviewerOutputMode
+                )
+            );
+            return Result.success(response);
+        } finally {
+            voiceTurnGuard.release("submit", sessionId, questionIndex);
+        }
     }
 
     /**
@@ -112,18 +124,26 @@ public class InterviewController {
         @RequestParam Integer questionIndex,
         @RequestPart("file") MultipartFile file
     ) {
+        // 识别链路与提交流程解耦后，仍需要防止同一音频被重复上传触发多次 ASR。
+        if (!voiceTurnGuard.tryAcquire("recognize", sessionId, questionIndex)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "当前语音正在识别中，请勿重复上传");
+        }
         log.info("识别语音答案: 会话{}, 问题{}", sessionId, questionIndex);
-        NormalizedAnswer normalizedAnswer = turnProcessor.recognize(
-            new InterviewTurnInput(
-                sessionId,
-                questionIndex,
-                null,
-                file,
-                CandidateInputMode.VOICE,
-                InterviewerOutputMode.TEXT
-            )
-        );
-        return Result.success(new VoiceRecognizeResponse(normalizedAnswer.recognizedText()));
+        try {
+            NormalizedAnswer normalizedAnswer = turnProcessor.recognize(
+                new InterviewTurnInput(
+                    sessionId,
+                    questionIndex,
+                    null,
+                    file,
+                    CandidateInputMode.VOICE,
+                    InterviewerOutputMode.TEXT
+                )
+            );
+            return Result.success(new VoiceRecognizeResponse(normalizedAnswer.recognizedText()));
+        } finally {
+            voiceTurnGuard.release("recognize", sessionId, questionIndex);
+        }
     }
 
     /**
@@ -133,14 +153,23 @@ public class InterviewController {
     @RateLimit(dimensions = {RateLimit.Dimension.GLOBAL}, count = 20)
     public Flux<ServerSentEvent<String>> streamQuestionTts(@RequestBody TtsStreamRequest request) {
         log.info("题目 TTS 流式合成，文本长度: {}", request.text() == null ? 0 : request.text().length());
-        byte[] audioBytes = ttsAdapter.synthesize(request.text());
-        if (audioBytes == null || audioBytes.length == 0) {
+        long startTime = System.nanoTime();
+        try {
+            byte[] audioBytes = ttsAdapter.synthesize(request.text());
+            if (audioBytes == null || audioBytes.length == 0) {
+                // 题目播报属于增强能力，不应因为 TTS 失败而卡住文字面试主线。
+                voiceMetrics.recordTtsFailure(durationMs(startTime), request.text() == null ? 0 : request.text().length(), "controller", "empty_audio");
+                return Flux.empty();
+            }
+            return Flux.just(ServerSentEvent.<String>builder()
+                    .event("audio")
+                    .data(Base64.getEncoder().encodeToString(audioBytes))
+                    .build());
+        } catch (Exception exception) {
+            voiceMetrics.recordTtsFailure(durationMs(startTime), request.text() == null ? 0 : request.text().length(), "controller", exception.getMessage());
+            log.warn("题目 TTS 合成失败，不阻断面试流程: {}", exception.getMessage(), exception);
             return Flux.empty();
         }
-        return Flux.just(ServerSentEvent.<String>builder()
-                .event("audio")
-                .data(Base64.getEncoder().encodeToString(audioBytes))
-                .build());
     }
     
     /**
@@ -240,5 +269,27 @@ public class InterviewController {
             case "textVoice", "TEXT_VOICE", "TEXTVOICE" -> InterviewerOutputMode.TEXT_VOICE;
             default -> throw new BusinessException(ErrorCode.BAD_REQUEST, "不支持的输出模式: " + mode);
         };
+    }
+
+    private Integer parseQuestionIndex(Object rawQuestionIndex) {
+        // controller 直接接 Map 时，Jackson 可能给出 Integer/Long/String，统一在这里收口解析。
+        if (rawQuestionIndex instanceof Integer questionIndex) {
+            return questionIndex;
+        }
+        if (rawQuestionIndex instanceof Number number) {
+            return number.intValue();
+        }
+        if (rawQuestionIndex instanceof String text && !text.isBlank()) {
+            try {
+                return Integer.parseInt(text.trim());
+            } catch (NumberFormatException ignored) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "问题索引格式不正确");
+            }
+        }
+        throw new BusinessException(ErrorCode.BAD_REQUEST, "问题索引不能为空");
+    }
+
+    private long durationMs(long startTime) {
+        return (System.nanoTime() - startTime) / 1_000_000;
     }
 }

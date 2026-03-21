@@ -16,7 +16,10 @@ import reactor.core.publisher.Flux;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * 语音转文字 (ASR) 服务
@@ -27,72 +30,64 @@ import java.util.List;
 public class AsrService {
 
     private static final int MAX_AUDIO_FRAME_BYTES = 64 * 1024;
+    private static final Set<String> SUPPORTED_AUDIO_FORMATS = Set.of("wav", "mp3", "mpeg", "webm", "ogg", "opus", "mp4", "m4a");
     private static final Logger log = LoggerFactory.getLogger(AsrService.class);
     private final DashScopeAudioTranscriptionModel dashScopeAudioTranscriptionModel;
+    private final VoiceMetrics voiceMetrics;
 
-    public AsrService(@Qualifier("dashScopeAudioTranscriptionModel") DashScopeAudioTranscriptionModel dashScopeAudioTranscriptionModel) {
+    public AsrService(
+        @Qualifier("dashScopeAudioTranscriptionModel") DashScopeAudioTranscriptionModel dashScopeAudioTranscriptionModel,
+        VoiceMetrics voiceMetrics
+    ) {
         this.dashScopeAudioTranscriptionModel = dashScopeAudioTranscriptionModel;
+        this.voiceMetrics = voiceMetrics;
         log.info("AsrService initialized with TranscriptionModel");
 
     }
 
     /**
      * 语音转文字
-     * 返回模拟文本用于测试
      */
     public String transcribe(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             return "";
         }
 
-        log.info("ASR request: file size={} bytes, contentType={}", file.getSize(), file.getContentType());
-        DashScopeAudioTranscriptionOptions transcriptionOptions = DashScopeAudioTranscriptionOptions.builder()
-                .model(DashScopeModel.AudioModel.PARAFORMER_REALTIME_V2.getValue())
-                .format(resolveAudioFormat(file))
-                .sampleRate(16000)
-                .languageHints(List.of("zh", "en"))
-                .disfluencyRemovalEnabled(false)
-                .punctuationPredictionEnabled(true)
-                .build();
-        Flux<ByteBuffer> audioStream = Flux.fromIterable(splitAudioFrames(readBytes(file)));
+        // 识别链路要同时记录成功/失败和耗时，便于后续排查模型、网络或格式问题。
+        long startTime = System.nanoTime();
+        String format = "unknown";
+        long fileSize = file.getSize();
 
-        return dashScopeAudioTranscriptionModel.streamRecognition(audioStream, transcriptionOptions)
-                .map(RecognitionResult::getText)
-                .filter(output -> output != null && !output.isBlank())
-                .distinctUntilChanged()
-                .reduce((previous, current) -> current)
-                .blockOptional()
-                .orElse("");
-    }
+        try {
+            format = resolveAudioFormat(file);
+            log.info("ASR request: file size={} bytes, contentType={}, format={}", fileSize, file.getContentType(), format);
+            DashScopeAudioTranscriptionOptions transcriptionOptions = DashScopeAudioTranscriptionOptions.builder()
+                    .model(DashScopeModel.AudioModel.PARAFORMER_REALTIME_V2.getValue())
+                    .format(format)
+                    .sampleRate(16000)
+                    .languageHints(List.of("zh", "en"))
+                    .disfluencyRemovalEnabled(false)
+                    .punctuationPredictionEnabled(true)
+                    .build();
+            Flux<ByteBuffer> audioStream = Flux.fromIterable(splitAudioFrames(readBytes(file)));
 
+            String recognizedText = dashScopeAudioTranscriptionModel.streamRecognition(audioStream, transcriptionOptions)
+                    .map(RecognitionResult::getText)
+                    .filter(output -> output != null && !output.isBlank())
+                    .distinctUntilChanged()
+                    .reduce((previous, current) -> current)
+                    .blockOptional()
+                    .orElse("");
 
-
-    public void transcribeStream(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            return;
+            voiceMetrics.recordAsrSuccess(durationMs(startTime), format, fileSize);
+            return recognizedText;
+        } catch (BusinessException exception) {
+            voiceMetrics.recordAsrFailure(durationMs(startTime), format, fileSize, exception.getMessage());
+            throw exception;
+        } catch (Exception exception) {
+            voiceMetrics.recordAsrFailure(durationMs(startTime), format, fileSize, exception.getMessage());
+            throw exception;
         }
-
-//            DashScopeAudioTranscriptionOptions speechOptions = DashScopeAudioTranscriptionOptions.builder()
-//                    .model(DashScopeModel.AudioModel.QWEN3_TTS_FLASH.getValue())
-////                    .format(DashScopeAudioTranscriptionApi.AudioFormat.MP3)
-//                    .format("mp3")
-//                    .sampleRate(16000)
-//                    .build();
-        Flux<ByteBuffer> audioStream = Flux.fromIterable(splitAudioFrames(readBytes(file)));
-        Flux<RecognitionResult> responseStream = dashScopeAudioTranscriptionModel.streamRecognition(
-                audioStream,
-                DashScopeAudioTranscriptionOptions.builder()
-                        .model(DashScopeModel.AudioModel.PARAFORMER_REALTIME_V2.getValue())
-                        .format(resolveAudioFormat(file))
-                        .sampleRate(16000)
-                        .build()
-        );
-
-        responseStream.subscribe(response -> {
-            String text = response.getText();
-            // 处理实时转录结果
-            System.out.println("Transcribed: " + text);
-        });
     }
 
     private byte[] readBytes(MultipartFile file) {
@@ -104,6 +99,7 @@ public class AsrService {
     }
 
     private List<ByteBuffer> splitAudioFrames(byte[] audioBytes) {
+        // 实时 ASR 对单帧大小更敏感，这里按固定上限切片，避免大文件一次性推送失败。
         List<ByteBuffer> frames = new ArrayList<>((audioBytes.length / MAX_AUDIO_FRAME_BYTES) + 1);
         for (int offset = 0; offset < audioBytes.length; offset += MAX_AUDIO_FRAME_BYTES) {
             int length = Math.min(MAX_AUDIO_FRAME_BYTES, audioBytes.length - offset);
@@ -113,28 +109,46 @@ public class AsrService {
     }
 
     private String resolveAudioFormat(MultipartFile file) {
+        // 浏览器上传的 content-type 和文件后缀经常不完全一致，优先收集多个候选值再统一判定。
+        Set<String> candidates = new LinkedHashSet<>();
         String contentType = file.getContentType();
         if (contentType != null && contentType.contains("/")) {
-            String subtype = contentType.substring(contentType.indexOf('/') + 1);
+            String subtype = contentType.substring(contentType.indexOf('/') + 1).toLowerCase(Locale.ROOT);
             if (subtype.contains("codecs=opus")) {
-                return "opus";
+                candidates.add("opus");
             }
 
             int codecSeparator = subtype.indexOf(';');
             if (codecSeparator >= 0) {
                 subtype = subtype.substring(0, codecSeparator);
             }
-            return subtype.toLowerCase();
+            candidates.add(subtype);
+            if ("x-wav".equals(subtype) || "wave".equals(subtype)) {
+                candidates.add("wav");
+            }
+            if ("mpeg".equals(subtype)) {
+                candidates.add("mp3");
+            }
         }
 
         String originalFilename = file.getOriginalFilename();
         if (originalFilename != null) {
             int lastDotIndex = originalFilename.lastIndexOf('.');
             if (lastDotIndex >= 0 && lastDotIndex < originalFilename.length() - 1) {
-                return originalFilename.substring(lastDotIndex + 1).toLowerCase();
+                candidates.add(originalFilename.substring(lastDotIndex + 1).toLowerCase(Locale.ROOT));
             }
         }
 
-        throw new BusinessException(ErrorCode.BAD_REQUEST, "无法识别音频格式");
+        for (String candidate : candidates) {
+            if (SUPPORTED_AUDIO_FORMATS.contains(candidate)) {
+                return "mpeg".equals(candidate) ? "mp3" : candidate;
+            }
+        }
+
+        throw new BusinessException(ErrorCode.BAD_REQUEST, "仅支持 wav/mp3/webm/ogg/opus/m4a 音频格式");
+    }
+
+    private long durationMs(long startTime) {
+        return (System.nanoTime() - startTime) / 1_000_000;
     }
 }
