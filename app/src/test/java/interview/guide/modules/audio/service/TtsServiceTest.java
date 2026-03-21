@@ -22,7 +22,7 @@ class TtsServiceTest {
     @Test
     @DisplayName("空白文本应返回空字节数组")
     void shouldReturnEmptyBytesForBlankText() {
-        TtsService ttsService = new TtsService(mock(TextToSpeechModel.class));
+        TtsService ttsService = new TtsService(mock(TextToSpeechModel.class), mock(VoiceMetrics.class));
 
         assertEquals(0, ttsService.synthesize("   ").length);
     }
@@ -34,7 +34,7 @@ class TtsServiceTest {
         byte[] expected = new byte[] {1, 2, 3};
         TextToSpeechResponse response = new TextToSpeechResponse(List.of(new Speech(expected)));
         when(model.call(any(TextToSpeechPrompt.class))).thenReturn(response);
-        TtsService ttsService = new TtsService(model);
+        TtsService ttsService = new TtsService(model, mock(VoiceMetrics.class));
 
         byte[] actual = ttsService.synthesize("你好");
 
@@ -50,7 +50,7 @@ class TtsServiceTest {
         TextToSpeechResponse second = new TextToSpeechResponse(List.of(new Speech(new byte[] {2, 3})));
         when(model.call(any(TextToSpeechPrompt.class))).thenReturn(emptyResponse);
         when(model.stream(any(TextToSpeechPrompt.class))).thenReturn(Flux.just(first, second));
-        TtsService ttsService = new TtsService(model);
+        TtsService ttsService = new TtsService(model, mock(VoiceMetrics.class));
 
         byte[] actual = ttsService.synthesize("你好");
 
@@ -64,7 +64,7 @@ class TtsServiceTest {
         TextToSpeechResponse first = new TextToSpeechResponse(List.of(new Speech(new byte[] {1})));
         TextToSpeechResponse second = new TextToSpeechResponse(List.of(new Speech(new byte[] {2, 3})));
         when(model.stream(any(TextToSpeechPrompt.class))).thenReturn(Flux.just(first, second));
-        TtsService ttsService = new TtsService(model);
+        TtsService ttsService = new TtsService(model, mock(VoiceMetrics.class));
 
         List<byte[]> chunks = ttsService.synthesizeStream("你好").collectList().block();
 

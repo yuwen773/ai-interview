@@ -2,6 +2,7 @@ package interview.guide.modules.interview;
 
 import interview.guide.common.result.Result;
 import interview.guide.modules.audio.adapter.TtsAdapter;
+import interview.guide.modules.audio.service.VoiceMetrics;
 import interview.guide.modules.interview.model.InterviewQuestionDTO;
 import interview.guide.modules.interview.model.TtsStreamRequest;
 import interview.guide.modules.interview.model.VoiceRecognizeResponse;
@@ -9,6 +10,7 @@ import interview.guide.modules.interview.service.InterviewHistoryService;
 import interview.guide.modules.interview.service.InterviewPersistenceService;
 import interview.guide.modules.interview.service.InterviewSessionService;
 import interview.guide.modules.interview.voice.InterviewTurnProcessor;
+import interview.guide.modules.interview.voice.VoiceTurnGuard;
 import interview.guide.modules.interview.voice.model.CandidateInputMode;
 import interview.guide.modules.interview.voice.model.InterviewTurnResponse;
 import interview.guide.modules.interview.voice.model.InterviewTurnInput;
@@ -40,7 +42,9 @@ class InterviewControllerTest {
         InterviewPersistenceService persistenceService = mock(InterviewPersistenceService.class);
         InterviewTurnProcessor turnProcessor = mock(InterviewTurnProcessor.class);
         TtsAdapter ttsAdapter = mock(TtsAdapter.class);
-        InterviewController controller = new InterviewController(sessionService, historyService, persistenceService, turnProcessor, ttsAdapter);
+        InterviewController controller = new InterviewController(
+            sessionService, historyService, persistenceService, turnProcessor, ttsAdapter, new VoiceTurnGuard(), mock(VoiceMetrics.class)
+        );
         MockMultipartFile file = new MockMultipartFile("file", "answer.webm", "audio/webm", new byte[] {1, 2, 3});
         when(turnProcessor.recognize(any())).thenReturn(
             new NormalizedAnswer("识别后的文本", "识别后的文本", CandidateInputMode.VOICE)
@@ -63,7 +67,9 @@ class InterviewControllerTest {
         InterviewPersistenceService persistenceService = mock(InterviewPersistenceService.class);
         InterviewTurnProcessor turnProcessor = mock(InterviewTurnProcessor.class);
         TtsAdapter ttsAdapter = mock(TtsAdapter.class);
-        InterviewController controller = new InterviewController(sessionService, historyService, persistenceService, turnProcessor, ttsAdapter);
+        InterviewController controller = new InterviewController(
+            sessionService, historyService, persistenceService, turnProcessor, ttsAdapter, new VoiceTurnGuard(), mock(VoiceMetrics.class)
+        );
         InterviewTurnResponse turnResponse = new InterviewTurnResponse(
             null,
             true,
@@ -95,7 +101,9 @@ class InterviewControllerTest {
         InterviewPersistenceService persistenceService = mock(InterviewPersistenceService.class);
         InterviewTurnProcessor turnProcessor = mock(InterviewTurnProcessor.class);
         TtsAdapter ttsAdapter = mock(TtsAdapter.class);
-        InterviewController controller = new InterviewController(sessionService, historyService, persistenceService, turnProcessor, ttsAdapter);
+        InterviewController controller = new InterviewController(
+            sessionService, historyService, persistenceService, turnProcessor, ttsAdapter, new VoiceTurnGuard(), mock(VoiceMetrics.class)
+        );
         when(ttsAdapter.synthesize("请介绍你的项目")).thenReturn(new byte[] {1, 2, 3});
 
         List<ServerSentEvent<String>> events = controller.streamQuestionTts(new TtsStreamRequest("请介绍你的项目"))

@@ -43,4 +43,14 @@ class VoiceCandidateInputStrategyTest {
 
         assertThrows(BusinessException.class, () -> strategy.normalize(input));
     }
+
+    @Test
+    @DisplayName("不支持的音频格式应抛出异常")
+    void shouldRejectUnsupportedAudioFormat() {
+        VoiceCandidateInputStrategy strategy = new VoiceCandidateInputStrategy(mock(AsrAdapter.class));
+        MockMultipartFile file = new MockMultipartFile("file", "speech.flac", "audio/flac", new byte[] {1});
+        InterviewTurnInput input = new InterviewTurnInput("session-1", 0, null, file, CandidateInputMode.VOICE, InterviewerOutputMode.TEXT);
+
+        assertThrows(BusinessException.class, () -> strategy.normalize(input));
+    }
 }

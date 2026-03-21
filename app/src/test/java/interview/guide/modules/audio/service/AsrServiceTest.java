@@ -31,7 +31,7 @@ class AsrServiceTest {
         when(completed.getText()).thenReturn("识别结果");
         when(model.streamRecognition(any(), any(DashScopeAudioTranscriptionOptions.class)))
                 .thenReturn(Flux.just(partial, completed));
-        AsrService asrService = new AsrService(model);
+        AsrService asrService = new AsrService(model, mock(VoiceMetrics.class));
         MockMultipartFile file = new MockMultipartFile("file", "speech.wav", "audio/wav", new byte[] {1, 2, 3});
 
         String result = asrService.transcribe(file);
@@ -54,7 +54,7 @@ class AsrServiceTest {
         when(response.getText()).thenReturn("测试");
         when(model.streamRecognition(any(), any(DashScopeAudioTranscriptionOptions.class)))
                 .thenReturn(Flux.just(response));
-        AsrService asrService = new AsrService(model);
+        AsrService asrService = new AsrService(model, mock(VoiceMetrics.class));
         MockMultipartFile file = new MockMultipartFile(
                 "file",
                 "answer.webm",
@@ -76,7 +76,7 @@ class AsrServiceTest {
         DashScopeAudioTranscriptionModel model = mock(DashScopeAudioTranscriptionModel.class);
         when(model.streamRecognition(any(), any(DashScopeAudioTranscriptionOptions.class)))
                 .thenReturn(Flux.empty());
-        AsrService asrService = new AsrService(model);
+        AsrService asrService = new AsrService(model, mock(VoiceMetrics.class));
         MockMultipartFile file = new MockMultipartFile(
                 "file",
                 "speech.wav",
@@ -96,7 +96,7 @@ class AsrServiceTest {
     @DisplayName("空文件应直接返回空字符串")
     void shouldReturnEmptyStringForEmptyFile() {
         DashScopeAudioTranscriptionModel model = mock(DashScopeAudioTranscriptionModel.class);
-        AsrService asrService = new AsrService(model);
+        AsrService asrService = new AsrService(model, mock(VoiceMetrics.class));
         MockMultipartFile file = new MockMultipartFile("file", "speech.wav", "audio/wav", new byte[0]);
 
         String result = asrService.transcribe(file);
