@@ -1,9 +1,8 @@
-import {useMemo, useRef, useState} from 'react';
+import {useMemo, useRef} from 'react';
 import {motion} from 'framer-motion';
 import {Virtuoso, type VirtuosoHandle} from 'react-virtuoso';
 import type {InterviewQuestion, InterviewSession} from '../types/interview';
 import {Send, User} from 'lucide-react';
-import {VoiceControlPanel} from './VoiceControlPanel';
 
 interface Message {
   type: 'interviewer' | 'user';
@@ -41,7 +40,6 @@ export default function InterviewChatPanel({
   onShowCompleteConfirm
 }: InterviewChatPanelProps) {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
-  const [voiceMode, setVoiceMode] = useState(false);
 
   const progress = useMemo(() => {
     if (!session || !currentQuestion) return 0;
@@ -95,16 +93,6 @@ export default function InterviewChatPanel({
 
         {/* 输入区域 */}
             <div className="border-t border-slate-200 dark:border-slate-600 p-4 bg-slate-50 dark:bg-slate-700/50">
-          {/* 语音控制面板 */}
-          {voiceMode && currentQuestion && (
-            <VoiceControlPanel
-              sessionId={session.sessionId}
-              questionIndex={currentQuestion.questionIndex}
-              disabled={isSubmitting}
-            />
-          )}
-
-          {!voiceMode && (
           <div className="flex gap-3">
             <textarea
               value={answer}
@@ -139,22 +127,6 @@ export default function InterviewChatPanel({
                   </>
                 )}
               </motion.button>
-
-              {/* 语音模式切换按钮 */}
-              <motion.button
-                onClick={() => setVoiceMode(!voiceMode)}
-                disabled={isSubmitting}
-                className={`px-4 py-3 rounded-xl font-medium transition-colors ${
-                  voiceMode
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200'
-                }`}
-                whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
-                whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
-              >
-                🎤 语音
-              </motion.button>
-
               <motion.button
                 onClick={() => onShowCompleteConfirm(true)}
                 disabled={isSubmitting}
@@ -166,7 +138,6 @@ export default function InterviewChatPanel({
               </motion.button>
             </div>
           </div>
-          )}
         </div>
       </div>
     </div>

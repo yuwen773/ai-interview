@@ -15,3 +15,17 @@ spring:
       embedding:
         options:
           model: text-embedding-v3
+    model:
+      audio:
+        speech: dashscope
+        transcription: dashscope
+    dashscope:
+      api-key: sk-fab50c1332c64fb7b452dcc1e2ee56a1
+      audio:
+        speech:
+          options:
+            model: qwen3-tts-flash
+        transcription:
+          options:
+            model: qwen3-asr-flash
+

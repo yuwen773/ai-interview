@@ -164,6 +164,11 @@ public class KnowledgeBaseVectorService {
         }
     }
 
+    /**
+     * 构建检索出来的知识库的展示形式 【Expression】
+     * @param knowledgeBaseIds
+     * @return
+     */
     private String buildKbFilterExpression(List<Long> knowledgeBaseIds) {
         String values = knowledgeBaseIds.stream()
             .filter(Objects::nonNull)

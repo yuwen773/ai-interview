@@ -252,6 +252,12 @@ public class KnowledgeBaseQueryService {
         return question == null ? "" : question.trim();
     }
 
+    /**
+     * 检索相关文档
+     * @param queryContext 查询prompt
+     * @param knowledgeBaseIds 知识库ID列表
+     * @return 文档列表
+     */
     private List<Document> retrieveRelevantDocs(QueryContext queryContext, List<Long> knowledgeBaseIds) {
         for (String candidateQuery : queryContext.candidateQueries()) {
             if (candidateQuery.isBlank()) {

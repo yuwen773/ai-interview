@@ -1,5 +1,6 @@
 package interview.guide.modules.interview.listener;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import interview.guide.common.async.AbstractStreamConsumer;
 import interview.guide.common.constant.AsyncTaskStreamConstants;
 import interview.guide.common.model.AsyncTaskStatus;
@@ -13,8 +14,8 @@ import interview.guide.modules.interview.service.InterviewPersistenceService;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.stream.StreamMessageId;
 import org.springframework.stereotype.Component;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -104,10 +105,15 @@ public class EvaluateStreamConsumer extends AbstractStreamConsumer<EvaluateStrea
         }
 
         InterviewSessionEntity session = sessionOpt.get();
-        List<InterviewQuestionDTO> questions = objectMapper.readValue(
-            session.getQuestionsJson(),
-            new TypeReference<>() {}
-        );
+        List<InterviewQuestionDTO> questions = null;
+        try {
+            questions = objectMapper.readValue(
+                session.getQuestionsJson(),
+                new TypeReference<>() {}
+            );
+        } catch (JsonProcessingException e) {
+            log.error("会话问题解析失败: sessionId={}, error={}", sessionId, e.getMessage(), e);
+        }
 
         List<interview.guide.modules.interview.model.InterviewAnswerEntity> answers =
             persistenceService.findAnswersBySessionId(sessionId);

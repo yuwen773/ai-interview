@@ -47,11 +47,7 @@ public class AudioController {
     public ResponseEntity<?> textToSpeech(@RequestBody TtsRequest request) {
         try {
             log.info("TTS request: text={}", request.getText());
-            byte[] audio = ttsService.synthesize(
-                request.getText(),
-                request.getVoice(),
-                request.getSpeed()
-            );
+            byte[] audio = ttsService.synthesize(request.getText());
             log.info("TTS response: size={}", audio.length);
 
             if (audio.length == 0) {
@@ -74,9 +70,7 @@ public class AudioController {
     public Flux<String> streamTextToSpeech(@RequestBody TtsRequest request) {
         // 将字节流转换为 Base64 字符串流
         return ttsService.synthesizeStream(
-            request.getText(),
-            request.getVoice(),
-            request.getSpeed()
+            request.getText()
         ).map(bytes -> {
             // 将每个音频块编码为 Base64
             return java.util.Base64.getEncoder().encodeToString(bytes);

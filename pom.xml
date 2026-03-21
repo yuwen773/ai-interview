@@ -23,8 +23,11 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <!-- Spring & Spring AI -->
-        <spring-boot.version>4.0.1</spring-boot.version>
-        <spring-ai.version>2.0.0-M1</spring-ai.version>
+        <!-- Spring & Spring AI -->
+        <spring-boot.version>3.5.8</spring-boot.version>
+        <spring-ai.version>1.1.2</spring-ai.version>
+
+        <spring-ai-alibaba.version>1.1.2.0</spring-ai-alibaba.version>
 
         <!-- 其他依赖版本 -->
         <tika.version>2.9.2</tika.version>
@@ -53,6 +56,15 @@
                 <groupId>org.springframework.ai</groupId>
                 <artifactId>spring-ai-bom</artifactId>
                 <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Spring AI BOM -->
+            <dependency>
+                <groupId>com.alibaba.cloud.ai</groupId>
+                <artifactId>spring-ai-alibaba-bom</artifactId>
+                <version>${spring-ai-alibaba.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -130,6 +142,13 @@
     </dependencyManagement>
 
     <repositories>
+        <repository>
+            <id>central</id>
+            <name>Maven Central</name>
+            <url>https://repo1.maven.org/maven2/</url>  <!-- 官方稳定镜像 -->
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled></snapshots>
+        </repository>
         <repository>
             <id>aliyun-public</id>
             <name>Aliyun Public</name>
