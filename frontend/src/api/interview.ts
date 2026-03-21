@@ -155,7 +155,7 @@ export const interviewApi = {
     });
 
     if (!response.ok) {
-      throw new Error('题目语音生成失败');
+      throw new Error('题目语音生成失败，请稍后重试');
     }
     if (!response.body) {
       throw new Error('题目语音流不可用');

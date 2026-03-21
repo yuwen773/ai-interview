@@ -27,6 +27,7 @@ interface InterviewChatPanelProps {
   onStopRecording: () => void;
   onRetryVoiceAnswer: () => void;
   onSubmitRecognizedAnswer: () => void;
+  onSwitchToTextMode: () => void;
   isRecording: boolean;
   isRecognizing: boolean;
   audioUrl: string | null;
@@ -61,6 +62,7 @@ export default function InterviewChatPanel({
   onStopRecording,
   onRetryVoiceAnswer,
   onSubmitRecognizedAnswer,
+  onSwitchToTextMode,
   isRecording,
   isRecognizing,
   audioUrl,
@@ -76,6 +78,8 @@ export default function InterviewChatPanel({
   error
 }: InterviewChatPanelProps) {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
+  // 把提交、识别、录音统一视为忙碌态，避免多个入口各自漏掉禁用条件。
+  const isBusy = isSubmitting || isRecognizing || isRecording;
 
   const progress = useMemo(() => {
     if (!session || !currentQuestion) return 0;
@@ -84,6 +88,10 @@ export default function InterviewChatPanel({
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      // 快捷键和按钮提交共用同一层防护，避免键盘操作绕过禁用态。
+      if (isBusy) {
+        return;
+      }
       if (candidateInputMode === 'voice' && recognizedText.trim()) {
         onSubmitRecognizedAnswer();
         return;
@@ -134,7 +142,7 @@ export default function InterviewChatPanel({
                 <button
                   type="button"
                   onClick={() => onCandidateInputModeChange('text')}
-                  disabled={isSubmitting || isRecognizing || isRecording}
+                  disabled={isBusy}
                   className={`px-4 py-2 text-sm rounded-lg transition-colors ${
                     candidateInputMode === 'text'
                       ? 'bg-primary-500 text-white'
@@ -146,7 +154,7 @@ export default function InterviewChatPanel({
                 <button
                   type="button"
                   onClick={() => onCandidateInputModeChange('voice')}
-                  disabled={isSubmitting || isRecognizing || isRecording}
+                  disabled={isBusy}
                   className={`px-4 py-2 text-sm rounded-lg transition-colors ${
                     candidateInputMode === 'voice'
                       ? 'bg-primary-500 text-white'
@@ -160,7 +168,7 @@ export default function InterviewChatPanel({
                 <button
                   type="button"
                   onClick={() => onInterviewerOutputModeChange('text')}
-                  disabled={isSubmitting || isRecognizing || isRecording}
+                  disabled={isBusy}
                   className={`px-4 py-2 text-sm rounded-lg transition-colors ${
                     interviewerOutputMode === 'text'
                       ? 'bg-primary-500 text-white'
@@ -172,7 +180,7 @@ export default function InterviewChatPanel({
                 <button
                   type="button"
                   onClick={() => onInterviewerOutputModeChange('textVoice')}
-                  disabled={isSubmitting || isRecognizing || isRecording}
+                  disabled={isBusy}
                   className={`px-4 py-2 text-sm rounded-lg transition-colors ${
                     interviewerOutputMode === 'textVoice'
                       ? 'bg-primary-500 text-white'
@@ -185,18 +193,38 @@ export default function InterviewChatPanel({
             </div>
             <motion.button
               onClick={() => onShowCompleteConfirm(true)}
-              disabled={isSubmitting || isRecognizing || isRecording}
+              disabled={isBusy}
               className="px-6 py-3 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-medium hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              whileHover={{ scale: isSubmitting || isRecognizing || isRecording ? 1 : 1.02 }}
-              whileTap={{ scale: isSubmitting || isRecognizing || isRecording ? 1 : 0.98 }}
+              whileHover={{ scale: isBusy ? 1 : 1.02 }}
+              whileTap={{ scale: isBusy ? 1 : 0.98 }}
             >
               提前交卷
             </motion.button>
           </div>
 
           {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
-              {error}
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300 space-y-3">
+              <p>{error}</p>
+              {candidateInputMode === 'voice' && !isRecording && (
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={onRetryVoiceAnswer}
+                    disabled={isBusy}
+                    className="px-3 py-2 rounded-lg bg-red-100 text-red-700 transition-colors hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-900/40 dark:text-red-200 dark:hover:bg-red-900/60"
+                  >
+                    重试语音
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onSwitchToTextMode}
+                    disabled={isBusy}
+                    className="px-3 py-2 rounded-lg bg-white text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  >
+                    切回文字作答
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -212,10 +240,10 @@ export default function InterviewChatPanel({
                 <motion.button
                   type="button"
                   onClick={onReplayQuestionAudio}
-                  disabled={isSubmitting || isRecognizing || isRecording || isLoadingQuestionAudio}
+                  disabled={isBusy || isLoadingQuestionAudio}
                   className="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  whileHover={{ scale: isSubmitting || isRecognizing || isRecording || isLoadingQuestionAudio ? 1 : 1.02 }}
-                  whileTap={{ scale: isSubmitting || isRecognizing || isRecording || isLoadingQuestionAudio ? 1 : 0.98 }}
+                  whileHover={{ scale: isBusy || isLoadingQuestionAudio ? 1 : 1.02 }}
+                  whileTap={{ scale: isBusy || isLoadingQuestionAudio ? 1 : 0.98 }}
                 >
                   <Volume2 className="w-4 h-4" />
                   {isLoadingQuestionAudio ? '生成中' : isPlayingQuestionAudio ? '重新播放' : '播放题目'}
@@ -244,14 +272,14 @@ export default function InterviewChatPanel({
                 placeholder="输入你的回答... (Ctrl/Cmd + Enter 提交)"
                 className="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
                 rows={3}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isRecognizing}
               />
               <motion.button
                 onClick={onSubmit}
-                disabled={!answer.trim() || isSubmitting}
+                disabled={!answer.trim() || isSubmitting || isRecognizing}
                 className="px-6 py-3 bg-primary-500 text-white rounded-xl font-medium hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 self-start"
-                whileHover={{ scale: isSubmitting || !answer.trim() ? 1 : 1.02 }}
-                whileTap={{ scale: isSubmitting || !answer.trim() ? 1 : 0.98 }}
+                whileHover={{ scale: isSubmitting || isRecognizing || !answer.trim() ? 1 : 1.02 }}
+                whileTap={{ scale: isSubmitting || isRecognizing || !answer.trim() ? 1 : 0.98 }}
               >
                 {isSubmitting ? (
                   <>
@@ -299,17 +327,17 @@ export default function InterviewChatPanel({
                     ) : (
                       <motion.button
                         onClick={onStartRecording}
-                        disabled={isRecognizing || isSubmitting}
+                        disabled={isRecognizing || isSubmitting || isLoadingQuestionAudio}
                         className="px-5 py-3 bg-primary-500 text-white rounded-xl font-medium hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                        whileHover={{ scale: isRecognizing || isSubmitting ? 1 : 1.02 }}
-                        whileTap={{ scale: isRecognizing || isSubmitting ? 1 : 0.98 }}
+                        whileHover={{ scale: isRecognizing || isSubmitting || isLoadingQuestionAudio ? 1 : 1.02 }}
+                        whileTap={{ scale: isRecognizing || isSubmitting || isLoadingQuestionAudio ? 1 : 0.98 }}
                       >
                         <Mic className="w-4 h-4" />
                         开始录音
                       </motion.button>
                     )}
                     <div className="px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-sm text-slate-600 dark:text-slate-300">
-                      {isRecording ? '录音中...' : isRecognizing ? '正在识别语音...' : '尚未录音'}
+                      {isRecording ? '录音中...' : isRecognizing ? '正在识别语音...' : audioUrl ? '录音已完成，等待识别结果或重新录音' : '尚未录音'}
                     </div>
                   </div>
                 </>
@@ -342,10 +370,10 @@ export default function InterviewChatPanel({
                     </motion.button>
                     <motion.button
                       onClick={onRetryVoiceAnswer}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || isRecognizing}
                       className="px-5 py-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-medium hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                      whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
-                      whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+                      whileHover={{ scale: isSubmitting || isRecognizing ? 1 : 1.02 }}
+                      whileTap={{ scale: isSubmitting || isRecognizing ? 1 : 0.98 }}
                     >
                       <RotateCcw className="w-4 h-4" />
                       重录

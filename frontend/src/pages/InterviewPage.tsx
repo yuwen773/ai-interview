@@ -35,6 +35,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const [candidateInputMode, setCandidateInputMode] = useState<CandidateInputMode>('text');
   const [interviewerOutputMode, setInterviewerOutputMode] = useState<InterviewerOutputMode>('text');
   const [recognizedText, setRecognizedText] = useState('');
+  const [originalRecognizedText, setOriginalRecognizedText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [error, setError] = useState('');
@@ -45,6 +46,11 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const [forceCreateNew, setForceCreateNew] = useState(false);
   const { isRecording, startRecording, stopRecording, audioUrl, clearRecording } = useRecording();
   const lastAutoPlayedQuestionRef = useRef<string | null>(null);
+  // 用 ref 做轻量级幂等保护，避免状态更新异步时同一动作被快速连点触发多次。
+  const submitInFlightRef = useRef(false);
+  const recognizeInFlightRef = useRef(false);
+  const createInFlightRef = useRef(false);
+  const completeInFlightRef = useRef(false);
   const handleQuestionVoiceError = useCallback((message: string) => {
     setError(message);
   }, []);
@@ -82,7 +88,9 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   };
 
   const resetVoiceAnswer = () => {
+    // 语音答题相关状态需要一起清空，避免切模式或重录后遗留上一次识别结果。
     setRecognizedText('');
+    setOriginalRecognizedText('');
     clearRecording();
   };
 
@@ -143,6 +151,8 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   };
 
   const startInterview = async () => {
+    if (createInFlightRef.current) return;
+    createInFlightRef.current = true;
     setIsCreating(true);
     setError('');
     stopQuestionAudio();
@@ -194,13 +204,15 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       console.error(err);
       setForceCreateNew(false);  // 出错时也重置标志
     } finally {
+      createInFlightRef.current = false;
       setIsCreating(false);
     }
   };
 
   const submitAnswerText = async (submittedAnswer: string) => {
-    if (!submittedAnswer.trim() || !session || !currentQuestion) return;
+    if (!submittedAnswer.trim() || !session || !currentQuestion || submitInFlightRef.current) return;
 
+    submitInFlightRef.current = true;
     setIsSubmitting(true);
     setError('');
 
@@ -243,6 +255,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       setError(getErrorMessage(err) || '提交答案失败，请重试');
       console.error(err);
     } finally {
+      submitInFlightRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -272,6 +285,8 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
 
   const handleStartRecording = async () => {
     setError('');
+    // 录音与题目播报共用音频输出设备，开始录音前先停播，减少回声和串音。
+    stopQuestionAudio();
     try {
       await startRecording();
     } catch (err) {
@@ -281,8 +296,9 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   };
 
   const handleStopRecording = async () => {
-    if (!session || !currentQuestion) return;
+    if (!session || !currentQuestion || recognizeInFlightRef.current) return;
 
+    recognizeInFlightRef.current = true;
     setIsRecognizing(true);
     setError('');
 
@@ -300,16 +316,22 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       });
 
       setRecognizedText(response.recognizedText);
+      setOriginalRecognizedText(response.recognizedText);
     } catch (err) {
       resetVoiceAnswer();
       setError(getErrorMessage(err) || '语音识别失败，请重试或切回文字模式');
       console.error(err);
     } finally {
+      recognizeInFlightRef.current = false;
       setIsRecognizing(false);
     }
   };
 
   const handleSubmitRecognizedAnswer = async () => {
+    // 先记录“识别文本是否被人工修改”，后续可据此评估 ASR 质量。
+    if (originalRecognizedText && recognizedText.trim() && originalRecognizedText.trim() !== recognizedText.trim()) {
+      console.info('voice_telemetry event=recognition_edited');
+    }
     await submitAnswerText(recognizedText);
   };
 
@@ -320,8 +342,9 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   };
 
   const handleCompleteEarly = async () => {
-    if (!session) return;
+    if (!session || completeInFlightRef.current) return;
 
+    completeInFlightRef.current = true;
     setIsSubmitting(true);
     try {
       lastAutoPlayedQuestionRef.current = null;
@@ -334,8 +357,16 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       setError('提前交卷失败，请重试');
       console.error(err);
     } finally {
+      completeInFlightRef.current = false;
       setIsSubmitting(false);
     }
+  };
+
+  const handleSwitchToTextMode = () => {
+    if (isSubmitting || isRecognizing || isRecording) return;
+    setCandidateInputMode('text');
+    setError('');
+    resetVoiceAnswer();
   };
 
   const handleReplayQuestionAudio = async () => {
@@ -352,6 +383,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       return;
     }
 
+    // 同一道题只自动播报一次，用户手动重播走显式按钮，不在 effect 里重复触发。
     const questionKey = `${currentQuestion.questionIndex}:${currentQuestion.question}`;
     if (lastAutoPlayedQuestionRef.current === questionKey) {
       return;
@@ -407,6 +439,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         onStopRecording={handleStopRecording}
         onRetryVoiceAnswer={handleRetryVoiceAnswer}
         onSubmitRecognizedAnswer={handleSubmitRecognizedAnswer}
+        onSwitchToTextMode={handleSwitchToTextMode}
         isRecording={isRecording}
         isRecognizing={isRecognizing}
         audioUrl={audioUrl}
