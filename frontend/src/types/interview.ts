@@ -52,7 +52,7 @@ export interface SubmitAnswerResponse {
   nextQuestion: InterviewQuestion | null;
   currentQuestionIndex: number;
   totalQuestions: number;
-  interviewerOutputMode: InterviewerOutputMode;
+  interviewerOutputMode?: InterviewerOutputMode;
 }
 
 export interface VoiceRecognizeResponse {

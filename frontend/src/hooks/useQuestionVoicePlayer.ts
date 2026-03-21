@@ -1,82 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { interviewApi } from '../api/interview';
-
-function decodeBase64Chunk(base64: string): Uint8Array {
-  const binary = window.atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-}
-
-function mergeAudioChunks(chunks: Uint8Array[]): Uint8Array {
-  const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-  const merged = new Uint8Array(totalLength);
-  let offset = 0;
-  chunks.forEach((chunk) => {
-    merged.set(chunk, offset);
-    offset += chunk.length;
-  });
-  return merged;
-}
-
-async function readSseAudioChunks(
-  reader: ReadableStreamDefaultReader<Uint8Array>,
-  signal?: AbortSignal
-): Promise<Uint8Array[]> {
-  const decoder = new TextDecoder();
-  const audioChunks: Uint8Array[] = [];
-  let buffer = '';
-
-  while (true) {
-    if (signal?.aborted) {
-      throw new DOMException('Aborted', 'AbortError');
-    }
-
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
-    }
-
-    buffer += decoder.decode(value, { stream: true });
-    buffer = buffer.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    const events = buffer.split('\n\n');
-    buffer = events.pop() ?? '';
-
-    events.forEach((eventBlock) => {
-      const data = eventBlock
-        .split('\n')
-        .filter((line) => line.startsWith('data:'))
-        .map((line) => line.slice(5).trim())
-        .join('');
-
-      if (data) {
-        audioChunks.push(decodeBase64Chunk(data));
-      }
-    });
-  }
-
-  const trailingData = buffer
-    .split('\n')
-    .filter((line) => line.startsWith('data:'))
-    .map((line) => line.slice(5).trim())
-    .join('');
-  if (trailingData) {
-    audioChunks.push(decodeBase64Chunk(trailingData));
-  }
-
-  return audioChunks;
-}
+import { fetchQuestionAudioBlob } from '../utils/interviewVoiceAudio';
 
 interface UseQuestionVoicePlayerOptions {
   onError?: (message: string) => void;
 }
 
+interface PlayQuestionOptions {
+  sessionId: string;
+  questionIndex: number;
+}
+
 interface UseQuestionVoicePlayerReturn {
   isPlaying: boolean;
   isLoading: boolean;
-  playQuestion: (text: string) => Promise<void>;
+  playQuestion: (text: string, options: PlayQuestionOptions) => Promise<void>;
   stopPlayback: () => void;
 }
 
@@ -131,14 +68,15 @@ export function useQuestionVoicePlayer(
     setIsLoading(false);
   }, []);
 
-  const playQuestion = useCallback(async (text: string) => {
+  const playQuestion = useCallback(async (text: string, options: PlayQuestionOptions) => {
     const trimmedText = text.trim();
     if (!trimmedText) {
       stopPlayback();
       return;
     }
 
-    if (cachedQuestionTextRef.current === trimmedText && objectUrlRef.current) {
+    const cacheKey = `${options.sessionId}:${options.questionIndex}:${trimmedText}`;
+    if (cachedQuestionTextRef.current === cacheKey && objectUrlRef.current) {
       stopPlayback();
       await playCachedAudio();
       return;
@@ -152,19 +90,17 @@ export function useQuestionVoicePlayer(
     setIsLoading(true);
 
     try {
-      const reader = await interviewApi.openQuestionTtsStream(trimmedText, abortController.signal);
-      const chunks = await readSseAudioChunks(reader, abortController.signal);
+      const audioBlob = await fetchQuestionAudioBlob({
+        sessionId: options.sessionId,
+        questionIndex: options.questionIndex,
+        text: trimmedText,
+      }, abortController.signal);
       if (abortController.signal.aborted) {
         return;
       }
-      if (chunks.length === 0) {
-        throw new Error('题目语音生成失败');
-      }
-
-      const audioBlob = new Blob([mergeAudioChunks(chunks)], { type: 'audio/mpeg' });
       const objectUrl = URL.createObjectURL(audioBlob);
       objectUrlRef.current = objectUrl;
-      cachedQuestionTextRef.current = trimmedText;
+      cachedQuestionTextRef.current = cacheKey;
       await playCachedAudio();
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {

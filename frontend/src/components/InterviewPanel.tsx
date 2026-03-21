@@ -5,6 +5,7 @@ import {formatDateOnly} from '../utils/date';
 import {getScoreColor} from '../utils/score';
 import type {InterviewItem} from '../api/history';
 import {historyApi} from '../api/history';
+import {deleteSessionAudio} from '../utils/interviewVoiceCache';
 import ConfirmDialog from './ConfirmDialog';
 import {Calendar, ChevronRight, Download, MessageSquare, Mic, Trash2, TrendingUp} from 'lucide-react';
 
@@ -45,6 +46,7 @@ export default function InterviewPanel({
     setDeletingSessionId(sessionId);
     try {
       await historyApi.deleteInterview(sessionId);
+      await deleteSessionAudio(sessionId);
       onDeleteInterview(sessionId);
       setDeleteConfirm(null);
     } catch (err) {

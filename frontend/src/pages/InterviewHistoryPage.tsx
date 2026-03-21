@@ -2,6 +2,7 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import {EvaluateStatus, historyApi, InterviewItem} from '../api/history';
 import {formatDate} from '../utils/date';
+import {deleteSessionAudio} from '../utils/interviewVoiceCache';
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
 import {
   AlertCircle,
@@ -252,6 +253,7 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview 
     setDeletingSessionId(deleteItem.sessionId);
     try {
       await historyApi.deleteInterview(deleteItem.sessionId);
+      await deleteSessionAudio(deleteItem.sessionId);
       await loadAllInterviews();
       setDeleteItem(null);
     } catch (err) {

@@ -6,8 +6,10 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import InterviewConfigPanel from '../components/InterviewConfigPanel';
 import InterviewChatPanel from '../components/InterviewChatPanel';
 import {useRecording} from '../hooks/useRecording';
+import {useQuestionVoicePrefetch} from '../hooks/useQuestionVoicePrefetch';
 import {useQuestionVoicePlayer} from '../hooks/useQuestionVoicePlayer';
-import type {CandidateInputMode, InterviewQuestion, InterviewSession, InterviewerOutputMode} from '../types/interview';
+import type {CandidateInputMode, InterviewQuestion, InterviewSession} from '../types/interview';
+import {deleteSessionAudio} from '../utils/interviewVoiceCache';
 
 type InterviewStage = 'config' | 'interview';
 
@@ -33,7 +35,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const [messages, setMessages] = useState<Message[]>([]);
   const [answer, setAnswer] = useState('');
   const [candidateInputMode, setCandidateInputMode] = useState<CandidateInputMode>('text');
-  const [interviewerOutputMode, setInterviewerOutputMode] = useState<InterviewerOutputMode>('text');
+  const [questionVoiceEnabled, setQuestionVoiceEnabled] = useState(false);
   const [recognizedText, setRecognizedText] = useState('');
   const [originalRecognizedText, setOriginalRecognizedText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -62,6 +64,22 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   } = useQuestionVoicePlayer({
     onError: handleQuestionVoiceError
   });
+  useQuestionVoicePrefetch({
+    sessionId: session?.sessionId ?? null,
+    questions: session?.questions ?? [],
+    currentQuestionIndex: currentQuestion?.questionIndex ?? session?.currentQuestionIndex ?? 0,
+    questionVoiceEnabled,
+    enabled: stage === 'interview',
+    windowSize: 3,
+  });
+
+  const cleanupSessionVoiceCache = useCallback(async (sessionId: string) => {
+    try {
+      await deleteSessionAudio(sessionId);
+    } catch (error) {
+      console.warn('question_voice_cache_cleanup_failed', { sessionId, error });
+    }
+  }, []);
 
   // 检查是否有未完成的面试（组件挂载时和resumeId变化时）
   useEffect(() => {
@@ -112,7 +130,6 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     setSession(sessionToRestore);
     setError('');
     setCandidateInputMode('text');
-    setInterviewerOutputMode('text');
     resetVoiceAnswer();
 
         // 恢复当前问题
@@ -158,7 +175,6 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     stopQuestionAudio();
     lastAutoPlayedQuestionRef.current = null;
     setCandidateInputMode('text');
-    setInterviewerOutputMode('text');
     resetVoiceAnswer();
 
         try {
@@ -228,9 +244,8 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         sessionId: session.sessionId,
         questionIndex: currentQuestion.questionIndex,
         answer: finalAnswer,
-        interviewerOutputMode
+        interviewerOutputMode: questionVoiceEnabled ? 'textVoice' : 'text'
       });
-      setInterviewerOutputMode(response.interviewerOutputMode);
 
       setAnswer('');
       resetVoiceAnswer();
@@ -248,6 +263,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       } else {
         lastAutoPlayedQuestionRef.current = null;
         stopQuestionAudio();
+        await cleanupSessionVoiceCache(session.sessionId);
         onInterviewComplete();
       }
     } catch (err) {
@@ -273,11 +289,11 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     }
   };
 
-  const handleInterviewerOutputModeChange = (mode: InterviewerOutputMode) => {
+  const handleQuestionVoiceEnabledChange = (enabled: boolean) => {
     if (isSubmitting || isRecognizing || isRecording) return;
     setError('');
-    setInterviewerOutputMode(mode);
-    if (mode === 'text') {
+    setQuestionVoiceEnabled(enabled);
+    if (!enabled) {
       lastAutoPlayedQuestionRef.current = null;
       stopQuestionAudio();
     }
@@ -350,6 +366,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       lastAutoPlayedQuestionRef.current = null;
       stopQuestionAudio();
       await interviewApi.completeInterview(session.sessionId);
+      await cleanupSessionVoiceCache(session.sessionId);
       setShowCompleteConfirm(false);
       // 面试已完成，评估将在后台进行，跳转到面试记录页
       onInterviewComplete();
@@ -370,15 +387,18 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   };
 
   const handleReplayQuestionAudio = async () => {
-    if (!currentQuestion || interviewerOutputMode !== 'textVoice') return;
+    if (!currentQuestion || !session) return;
     setError('');
-    await playQuestion(currentQuestion.question);
+    await playQuestion(currentQuestion.question, {
+      sessionId: session.sessionId,
+      questionIndex: currentQuestion.questionIndex,
+    });
   };
 
   useEffect(() => {
     if (!currentQuestion) return;
 
-    if (interviewerOutputMode !== 'textVoice') {
+    if (!questionVoiceEnabled) {
       stopQuestionAudio();
       return;
     }
@@ -390,11 +410,18 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     }
 
     lastAutoPlayedQuestionRef.current = questionKey;
-    void playQuestion(currentQuestion.question);
+    if (!session) {
+      return;
+    }
+    void playQuestion(currentQuestion.question, {
+      sessionId: session.sessionId,
+      questionIndex: currentQuestion.questionIndex,
+    });
   }, [
+    session?.sessionId,
     currentQuestion?.questionIndex,
     currentQuestion?.question,
-    interviewerOutputMode,
+    questionVoiceEnabled,
     playQuestion,
     stopQuestionAudio
   ]);
@@ -429,8 +456,8 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         messages={messages}
         candidateInputMode={candidateInputMode}
         onCandidateInputModeChange={handleCandidateInputModeChange}
-        interviewerOutputMode={interviewerOutputMode}
-        onInterviewerOutputModeChange={handleInterviewerOutputModeChange}
+        questionVoiceEnabled={questionVoiceEnabled}
+        onQuestionVoiceEnabledChange={handleQuestionVoiceEnabledChange}
         answer={answer}
         onAnswerChange={setAnswer}
         recognizedText={recognizedText}
