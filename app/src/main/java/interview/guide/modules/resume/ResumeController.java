@@ -63,7 +63,7 @@ public class ResumeController {
      * 获取简历详情（包含分析历史）
      */
     @GetMapping("/api/resumes/{id}/detail")
-    public Result<ResumeDetailDTO> getResumeDetail(@PathVariable Long id) {
+    public Result<ResumeDetailDTO> getResumeDetail(@PathVariable("id") Long id) {
         ResumeDetailDTO detail = historyService.getResumeDetail(id);
         return Result.success(detail);
     }
@@ -72,7 +72,7 @@ public class ResumeController {
      * 导出简历分析报告为PDF
      */
     @GetMapping("/api/resumes/{id}/export")
-    public ResponseEntity<byte[]> exportAnalysisPdf(@PathVariable Long id) {
+    public ResponseEntity<byte[]> exportAnalysisPdf(@PathVariable("id") Long id) {
         try {
             var result = historyService.exportAnalysisPdf(id);
             String filename = URLEncoder.encode(result.filename(), StandardCharsets.UTF_8);
@@ -94,7 +94,7 @@ public class ResumeController {
      * @return 删除结果
      */
     @DeleteMapping("/api/resumes/{id}")
-    public Result<Void> deleteResume(@PathVariable Long id) {
+    public Result<Void> deleteResume(@PathVariable("id") Long id) {
         deleteService.deleteResume(id);
         return Result.success(null);
     }
@@ -108,7 +108,7 @@ public class ResumeController {
      */
     @PostMapping("/api/resumes/{id}/reanalyze")
     @RateLimit(dimensions = {RateLimit.Dimension.GLOBAL, RateLimit.Dimension.IP}, count = 2)
-    public Result<Void> reanalyze(@PathVariable Long id) {
+    public Result<Void> reanalyze(@PathVariable("id") Long id) {
         uploadService.reanalyze(id);
         return Result.success(null);
     }

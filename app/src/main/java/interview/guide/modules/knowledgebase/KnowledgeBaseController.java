@@ -63,7 +63,7 @@ public class KnowledgeBaseController {
      * 获取知识库详情
      */
     @GetMapping("/api/knowledgebase/{id}")
-    public Result<KnowledgeBaseListItemDTO> getKnowledgeBase(@PathVariable Long id) {
+    public Result<KnowledgeBaseListItemDTO> getKnowledgeBase(@PathVariable("id") Long id) {
         return listService.getKnowledgeBase(id)
                 .map(Result::success)
                 .orElse(Result.error("知识库不存在"));
@@ -73,7 +73,7 @@ public class KnowledgeBaseController {
      * 删除知识库
      */
     @DeleteMapping("/api/knowledgebase/{id}")
-    public Result<Void> deleteKnowledgeBase(@PathVariable Long id) {
+    public Result<Void> deleteKnowledgeBase(@PathVariable("id") Long id) {
         deleteService.deleteKnowledgeBase(id);
         return Result.success(null);
     }
@@ -112,7 +112,7 @@ public class KnowledgeBaseController {
      * 根据分类获取知识库列表
      */
     @GetMapping("/api/knowledgebase/category/{category}")
-    public Result<List<KnowledgeBaseListItemDTO>> getByCategory(@PathVariable String category) {
+    public Result<List<KnowledgeBaseListItemDTO>> getByCategory(@PathVariable("category") String category) {
         return Result.success(listService.listByCategory(category));
     }
 
@@ -128,7 +128,7 @@ public class KnowledgeBaseController {
      * 更新知识库分类
      */
     @PutMapping("/api/knowledgebase/{id}/category")
-    public Result<Void> updateCategory(@PathVariable Long id, @RequestBody Map<String, String> body) {
+    public Result<Void> updateCategory(@PathVariable("id") Long id, @RequestBody Map<String, String> body) {
         listService.updateCategory(id, body.get("category"));
         return Result.success(null);
     }
@@ -151,7 +151,7 @@ public class KnowledgeBaseController {
      * 下载知识库文件
      */
     @GetMapping("/api/knowledgebase/{id}/download")
-    public ResponseEntity<byte[]> downloadKnowledgeBase(@PathVariable Long id) {
+    public ResponseEntity<byte[]> downloadKnowledgeBase(@PathVariable("id") Long id) {
         var entity = listService.getEntityForDownload(id);
         byte[] fileContent = listService.downloadFile(id);
 
@@ -196,7 +196,7 @@ public class KnowledgeBaseController {
      */
     @PostMapping("/api/knowledgebase/{id}/revectorize")
     @RateLimit(dimensions = {RateLimit.Dimension.GLOBAL, RateLimit.Dimension.IP}, count = 2)
-    public Result<Void> revectorize(@PathVariable Long id) {
+    public Result<Void> revectorize(@PathVariable("id") Long id) {
         uploadService.revectorize(id);
         return Result.success(null);
     }
