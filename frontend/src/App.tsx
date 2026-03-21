@@ -8,6 +8,7 @@ import type { UploadKnowledgeBaseResponse } from './api/knowledgebase';
 const UploadPage = lazy(() => import('./pages/UploadPage'));
 const HistoryList = lazy(() => import('./pages/HistoryPage'));
 const ResumeDetailPage = lazy(() => import('./pages/ResumeDetailPage'));
+const GrowthCurvePage = lazy(() => import('./pages/GrowthCurvePage'));
 const Interview = lazy(() => import('./pages/InterviewPage'));
 const InterviewHistoryPage = lazy(() => import('./pages/InterviewHistoryPage'));
 const KnowledgeBaseQueryPage = lazy(() => import('./pages/KnowledgeBaseQueryPage'));
@@ -61,11 +62,36 @@ function ResumeDetailWrapper() {
     navigate(`/interview/${resumeId}`, { state: { resumeText } });
   };
 
+  const handleViewGrowth = () => {
+    navigate(`/history/${resumeId}/growth`);
+  };
+
   return (
     <ResumeDetailPage
       resumeId={parseInt(resumeId, 10)}
       onBack={handleBack}
       onStartInterview={handleStartInterview}
+      onViewGrowth={handleViewGrowth}
+    />
+  );
+}
+
+function GrowthCurveWrapper() {
+  const { resumeId } = useParams<{ resumeId: string }>();
+  const navigate = useNavigate();
+
+  if (!resumeId) {
+    return <Navigate to="/history" replace />;
+  }
+
+  const handleBack = () => {
+    navigate(`/history/${resumeId}`);
+  };
+
+  return (
+    <GrowthCurvePage
+      resumeId={parseInt(resumeId, 10)}
+      onBack={handleBack}
     />
   );
 }
@@ -152,6 +178,9 @@ function App() {
 
             {/* 简历详情 */}
             <Route path="history/:resumeId" element={<ResumeDetailWrapper />} />
+
+            {/* 成长曲线 */}
+            <Route path="history/:resumeId/growth" element={<GrowthCurveWrapper />} />
 
             {/* 面试记录列表 */}
             <Route path="interviews" element={<InterviewHistoryWrapper />} />

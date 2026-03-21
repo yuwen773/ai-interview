@@ -89,6 +89,28 @@ export interface InterviewDetail extends InterviewItem {
   answers: AnswerItem[];
 }
 
+export interface GrowthCurveCategoryScore {
+  category: string;
+  score: number;
+}
+
+export interface GrowthCurveScorePoint {
+  date: string;
+  overallScore: number;
+  categoryScores: GrowthCurveCategoryScore[];
+}
+
+export interface JobRoleGrowthCurve {
+  jobRole: 'JAVA_BACKEND' | 'WEB_FRONTEND' | 'PYTHON_ALGORITHM';
+  jobLabel: string;
+  scorePoints: GrowthCurveScorePoint[];
+}
+
+export interface GrowthCurve {
+  resumeId: number;
+  byJobRole: JobRoleGrowthCurve[];
+}
+
 export const historyApi = {
   /**
    * 获取所有简历列表
@@ -109,6 +131,15 @@ export const historyApi = {
    */
   async getInterviewDetail(sessionId: string): Promise<InterviewDetail> {
     return request.get<InterviewDetail>(`/api/interview/sessions/${sessionId}/details`);
+  },
+
+  /**
+   * 获取同一简历下的成长曲线
+   */
+  async getGrowthCurve(resumeId: number): Promise<GrowthCurve> {
+    return request.get<GrowthCurve>('/api/interview/growth', {
+      params: { resumeId },
+    });
   },
 
   /**

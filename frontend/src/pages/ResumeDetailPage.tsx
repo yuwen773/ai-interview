@@ -6,18 +6,19 @@ import AnalysisPanel from '../components/AnalysisPanel';
 import InterviewPanel from '../components/InterviewPanel';
 import InterviewDetailPanel from '../components/InterviewDetailPanel';
 import {formatDateOnly} from '../utils/date';
-import {CheckSquare, ChevronLeft, Clock, Download, MessageSquare, Mic} from 'lucide-react';
+import {CheckSquare, ChevronLeft, Clock, Download, MessageSquare, Mic, TrendingUp} from 'lucide-react';
 
 interface ResumeDetailPageProps {
   resumeId: number;
   onBack: () => void;
   onStartInterview: (resumeText: string, resumeId: number) => void;
+  onViewGrowth: () => void;
 }
 
 type TabType = 'analysis' | 'interview';
 type DetailViewType = 'list' | 'interviewDetail';
 
-export default function ResumeDetailPage({ resumeId, onBack, onStartInterview }: ResumeDetailPageProps) {
+export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, onViewGrowth }: ResumeDetailPageProps) {
   const location = useLocation();
   const [resume, setResume] = useState<ResumeDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -262,6 +263,17 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview }:
         </div>
 
         <div className="flex gap-3">
+          {detailView !== 'interviewDetail' && (
+            <motion.button
+              onClick={onViewGrowth}
+              className="px-5 py-2.5 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-50 transition-all flex items-center gap-2"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <TrendingUp className="w-4 h-4" />
+              成长曲线
+            </motion.button>
+          )}
           {detailView === 'interviewDetail' && selectedInterview && (
             <motion.button
               onClick={() => handleExportInterviewPdf(selectedInterview.sessionId)}
