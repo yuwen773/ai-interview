@@ -8,7 +8,7 @@ import InterviewChatPanel from '../components/InterviewChatPanel';
 import {useRecording} from '../hooks/useRecording';
 import {useQuestionVoicePrefetch} from '../hooks/useQuestionVoicePrefetch';
 import {useQuestionVoicePlayer} from '../hooks/useQuestionVoicePlayer';
-import type {CandidateInputMode, InterviewQuestion, InterviewSession} from '../types/interview';
+import type {CandidateInputMode, InterviewQuestion, InterviewSession, JobRole, JobRoleDTO} from '../types/interview';
 import {deleteSessionAudio} from '../utils/interviewVoiceCache';
 
 type InterviewStage = 'config' | 'interview';
@@ -29,6 +29,9 @@ interface InterviewProps {
 
 export default function Interview({ resumeText, resumeId, onBack, onInterviewComplete }: InterviewProps) {
   const [stage, setStage] = useState<InterviewStage>('config');
+  const [jobRoles, setJobRoles] = useState<JobRoleDTO[]>([]);
+  const [selectedJobRole, setSelectedJobRole] = useState<JobRole | null>(null);
+  const [loadingRoles, setLoadingRoles] = useState(true);
   const [questionCount, setQuestionCount] = useState(8);
   const [session, setSession] = useState<InterviewSession | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<InterviewQuestion | null>(null);
@@ -81,29 +84,55 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     }
   }, []);
 
-  // 检查是否有未完成的面试（组件挂载时和resumeId变化时）
+  // 初始化配置页数据：岗位列表 + 未完成会话。
   useEffect(() => {
-    if (resumeId) {
-      checkUnfinishedSession();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resumeId]);
+    let cancelled = false;
 
-  const checkUnfinishedSession = async () => {
-    if (!resumeId) return;
+    const loadConfigData = async () => {
+      setLoadingRoles(true);
+      setCheckingUnfinished(Boolean(resumeId));
+      setError('');
 
-    setCheckingUnfinished(true);
-    try {
-      const foundSession = await interviewApi.findUnfinishedSession(resumeId);
-      if (foundSession) {
+      try {
+        const [roles, foundSession] = await Promise.all([
+          interviewApi.getJobRoles(),
+          resumeId ? interviewApi.findUnfinishedSession(resumeId) : Promise.resolve(null),
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        setJobRoles(roles);
         setUnfinishedSession(foundSession);
+        setSelectedJobRole((currentRole) => {
+          if (foundSession?.jobRole) {
+            return foundSession.jobRole;
+          }
+          if (currentRole && roles.some((role) => role.code === currentRole)) {
+            return currentRole;
+          }
+          return null;
+        });
+      } catch (err) {
+        if (!cancelled) {
+          console.error('加载面试配置失败', err);
+          setError('加载岗位配置失败，请刷新后重试');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingRoles(false);
+          setCheckingUnfinished(false);
+        }
       }
-    } catch (err) {
-      console.error('检查未完成面试失败', err);
-    } finally {
-      setCheckingUnfinished(false);
-    }
-  };
+    };
+
+    void loadConfigData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [resumeId]);
 
   const resetVoiceAnswer = () => {
     // 语音答题相关状态需要一起清空，避免切模式或重录后遗留上一次识别结果。
@@ -115,11 +144,12 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const handleContinueUnfinished = () => {
     if (!unfinishedSession) return;
     setForceCreateNew(false);  // 重置强制创建标志
+    setSelectedJobRole(unfinishedSession.jobRole);
     restoreSession(unfinishedSession);
     setUnfinishedSession(null);
   };
 
-    const handleStartNew = () => {
+  const handleStartNew = () => {
     setUnfinishedSession(null);
     setForceCreateNew(true);  // 标记需要强制创建新会话
   };
@@ -168,7 +198,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   };
 
   const startInterview = async () => {
-    if (createInFlightRef.current) return;
+    if (createInFlightRef.current || !selectedJobRole) return;
     createInFlightRef.current = true;
     setIsCreating(true);
     setError('');
@@ -183,6 +213,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         resumeText,
         questionCount,
         resumeId,
+        jobRole: selectedJobRole,
         forceCreate: forceCreateNew
       });
 
@@ -428,12 +459,27 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
 
     // 配置界面
   const renderConfig = () => {
+    const distributionMap: Record<JobRole, string> = {
+      JAVA_BACKEND: '题目分布：项目经历 + MySQL + Redis + Java 基础/集合/并发 + Spring / Spring Boot',
+      WEB_FRONTEND: '题目分布：项目经历 + JavaScript / TypeScript + HTML / CSS + 浏览器 / 网络 + React + 工程化',
+      PYTHON_ALGORITHM: '题目分布：项目经历 + Python 核心 + 算法与数据结构 + 工程实践',
+    };
+
     return (
       <InterviewConfigPanel
+        roles={jobRoles}
+        selectedJobRole={selectedJobRole}
+        onJobRoleChange={setSelectedJobRole}
+        jobDistributionText={
+          selectedJobRole
+            ? distributionMap[selectedJobRole]
+            : '请选择岗位后查看对应题目分布'
+        }
         questionCount={questionCount}
         onQuestionCountChange={setQuestionCount}
         onStart={startInterview}
         isCreating={isCreating}
+        loadingRoles={loadingRoles}
         checkingUnfinished={checkingUnfinished}
         unfinishedSession={unfinishedSession}
         onContinueUnfinished={handleContinueUnfinished}

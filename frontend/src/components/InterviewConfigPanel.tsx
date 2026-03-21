@@ -1,11 +1,17 @@
 import {AnimatePresence, motion} from 'framer-motion';
-import type {InterviewSession} from '../types/interview';
+import JobRoleSelector from './JobRoleSelector';
+import type {InterviewSession, JobRole, JobRoleDTO} from '../types/interview';
 
 interface InterviewConfigPanelProps {
+  roles: JobRoleDTO[];
+  selectedJobRole: JobRole | null;
+  onJobRoleChange: (role: JobRole) => void;
+  jobDistributionText: string;
   questionCount: number;
   onQuestionCountChange: (count: number) => void;
   onStart: () => void;
   isCreating: boolean;
+  loadingRoles: boolean;
   checkingUnfinished: boolean;
   unfinishedSession: InterviewSession | null;
   onContinueUnfinished: () => void;
@@ -19,10 +25,15 @@ interface InterviewConfigPanelProps {
  * 面试配置面板组件
  */
 export default function InterviewConfigPanel({
+  roles,
+  selectedJobRole,
+  onJobRoleChange,
+  jobDistributionText,
   questionCount,
   onQuestionCountChange,
   onStart,
   isCreating,
+  loadingRoles,
   checkingUnfinished,
   unfinishedSession,
   onContinueUnfinished,
@@ -32,6 +43,7 @@ export default function InterviewConfigPanel({
   error
 }: InterviewConfigPanelProps) {
   const questionCounts = [6, 8, 10, 12, 15];
+  const canStart = !isCreating && !loadingRoles && !!selectedJobRole;
 
   return (
       <motion.div
@@ -92,7 +104,7 @@ export default function InterviewConfigPanel({
                 <div className="flex-1">
                     <h3 className="font-semibold text-amber-900 dark:text-amber-300 mb-1">检测到未完成的模拟面试</h3>
                     <p className="text-sm text-amber-700 dark:text-amber-400">
-                    已完成 {unfinishedSession.currentQuestionIndex} / {unfinishedSession.totalQuestions} 题
+                    当前简历已有未完成面试，只能继续该岗位或强制开始新面试。当前岗位为“{unfinishedSession.jobLabel}”，已完成 {unfinishedSession.currentQuestionIndex} / {unfinishedSession.totalQuestions} 题。
                   </p>
                 </div>
               </div>
@@ -119,6 +131,23 @@ export default function InterviewConfigPanel({
         </AnimatePresence>
 
         <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+              目标岗位
+            </label>
+            {loadingRoles ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400">
+                正在加载岗位列表...
+              </div>
+            ) : (
+              <JobRoleSelector
+                roles={roles}
+                selectedRole={selectedJobRole}
+                onSelect={onJobRoleChange}
+              />
+            )}
+          </div>
+
           <div>
               <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
               题目数量
@@ -153,7 +182,7 @@ export default function InterviewConfigPanel({
           </div>
 
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-            题目分布：项目经历(20%) + MySQL(20%) + Redis(20%) + Java基础/集合/并发(30%) + Spring(10%)
+            {jobDistributionText}
           </p>
 
           <AnimatePresence>
@@ -180,10 +209,10 @@ export default function InterviewConfigPanel({
             </motion.button>
             <motion.button
               onClick={onStart}
-              disabled={isCreating}
+              disabled={!canStart}
               className="px-8 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
-              whileHover={{ scale: isCreating ? 1 : 1.02, y: isCreating ? 0 : -1 }}
-              whileTap={{ scale: isCreating ? 1 : 0.98 }}
+              whileHover={{ scale: canStart ? 1.02 : 1, y: canStart ? -1 : 0 }}
+              whileTap={{ scale: canStart ? 0.98 : 1 }}
             >
               {isCreating ? (
                 <>
@@ -196,7 +225,7 @@ export default function InterviewConfigPanel({
                 </>
               ) : (
                 <>
-                  开始面试 →
+                  {selectedJobRole ? '开始面试 →' : '请选择岗位'}
                 </>
               )}
             </motion.button>

@@ -244,6 +244,11 @@ function InterviewItemCard({
         <p className="font-medium text-slate-800 dark:text-white truncate">
           模拟面试 #{total - index}
         </p>
+        {interview.jobLabel && (
+          <p className="mt-1 text-xs font-medium text-primary-600 dark:text-primary-400">
+            {interview.jobLabel}
+          </p>
+        )}
         <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
           <span className="flex items-center gap-1">
             <Calendar className="w-4 h-4" />

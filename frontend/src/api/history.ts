@@ -40,6 +40,8 @@ export interface AnalysisItem {
 export interface InterviewItem {
   id: number;
   sessionId: string;
+  jobRole?: 'JAVA_BACKEND' | 'WEB_FRONTEND' | 'PYTHON_ALGORITHM';
+  jobLabel?: string;
   totalQuestions: number;
   status: string;
   evaluateStatus?: EvaluateStatus;

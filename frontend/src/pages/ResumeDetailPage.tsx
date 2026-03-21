@@ -253,6 +253,11 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview }:
                 : `上传于 ${formatDateOnly(resume.uploadedAt)}`
               }
             </p>
+            {detailView === 'interviewDetail' && selectedInterview?.jobLabel && (
+              <p className="mt-2 text-sm font-medium text-primary-600 dark:text-primary-400">
+                岗位：{selectedInterview.jobLabel}
+              </p>
+            )}
           </div>
         </div>
 

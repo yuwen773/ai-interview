@@ -50,6 +50,7 @@ export default function InterviewDetailPanel({ interview }: InterviewDetailPanel
         <ScoreCard
         score={interview.overallScore}
         feedback={interview.overallFeedback}
+        jobLabel={interview.jobLabel}
         scorePercent={scorePercent}
         circumference={circumference}
         strokeDashoffset={strokeDashoffset}
@@ -79,12 +80,14 @@ export default function InterviewDetailPanel({ interview }: InterviewDetailPanel
 function ScoreCard({
   score,
   feedback,
+  jobLabel,
   // scorePercent, // 暂时未使用
   circumference,
   strokeDashoffset
 }: {
   score: number | null;
   feedback: string | null;
+  jobLabel?: string;
   scorePercent: number;
   circumference: number;
   strokeDashoffset: number;
@@ -92,6 +95,11 @@ function ScoreCard({
   return (
     <div className="bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 rounded-2xl p-8 text-white">
       <div className="flex flex-col items-center text-center">
+        {jobLabel && (
+          <span className="mb-4 inline-flex rounded-full bg-white/15 px-3 py-1 text-sm font-medium text-white/90 ring-1 ring-white/20">
+            {jobLabel}
+          </span>
+        )}
         {/* 圆环进度条 */}
         <div className="relative w-32 h-32 mb-6">
           <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
