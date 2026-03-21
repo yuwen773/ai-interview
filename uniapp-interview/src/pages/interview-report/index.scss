@@ -24,6 +24,16 @@
     font-size: 14px;
     color: #999;
   }
+
+  .job-tag {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 13px;
+  }
 }
 
 .section {
@@ -95,6 +105,14 @@
   }
 }
 
+.summary-card {
+  .summary-text {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.7;
+  }
+}
+
 .suggestions {
   .suggestion-item {
     display: flex;
@@ -112,6 +130,11 @@
       line-height: 1.6;
     }
   }
+}
+
+.empty-text {
+  font-size: 14px;
+  color: #94a3b8;
 }
 
 .actions {

@@ -4,6 +4,7 @@ export interface CreateInterviewRequest {
   questionCount: number;
   jobRole: JobRole;
   jobDescription?: string;
+  forceCreate?: boolean;
 }
 
 export interface InterviewSession {
@@ -18,14 +19,25 @@ export interface InterviewSession {
 }
 
 export interface Question {
-  index: number;
-  content: string;
-  type?: QuestionType;
+  questionIndex: number;
+  question: string;
+  type: QuestionType;
   category: string;
-  keyPoints?: string[];
+  userAnswer?: string | null;
+  score?: number | null;
+  feedback?: string | null;
+  isFollowUp?: boolean;
+  parentQuestionIndex?: number | null;
 }
 
 export type JobRole = 'JAVA_BACKEND' | 'WEB_FRONTEND' | 'PYTHON_ALGORITHM';
+
+export interface JobRoleDTO {
+  code: JobRole;
+  label: string;
+  description: string;
+  techKeywords: string[];
+}
 
 export type QuestionType =
   | 'GENERAL'
@@ -46,10 +58,9 @@ export type QuestionType =
   | 'ENGINEERING';
 
 export interface CurrentQuestionResponse {
-  question: string;
-  questionIndex: number;
-  totalQuestions: number;
   completed: boolean;
+  question?: Question;
+  message?: string;
 }
 
 export interface SubmitAnswerRequest {
@@ -59,32 +70,44 @@ export interface SubmitAnswerRequest {
 }
 
 export interface SubmitAnswerResponse {
-  nextQuestion?: string;
+  hasNextQuestion: boolean;
+  nextQuestion?: Question | null;
   currentIndex: number;
   totalQuestions: number;
-  completed: boolean;
-  feedback?: AnswerFeedback;
-}
-
-export interface AnswerFeedback {
-  score: number;
-  feedback: string;
-  referenceAnswer?: string;
 }
 
 export interface InterviewReport {
   sessionId: string;
-  jobRole?: JobRole;
-  jobLabel?: string;
-  totalScore: number;
-  dimensions: ReportDimension[];
-  suggestions: string[];
+  jobRole: JobRole;
+  jobLabel: string;
+  totalQuestions: number;
+  overallScore: number;
+  categoryScores: ReportDimension[];
+  questionDetails: QuestionEvaluation[];
+  overallFeedback: string;
   strengths: string[];
-  createdAt: string;
+  improvements: string[];
+  referenceAnswers: ReferenceAnswer[];
 }
 
 export interface ReportDimension {
-  name: string;
+  category: string;
+  score: number;
+  questionCount: number;
+}
+
+export interface QuestionEvaluation {
+  questionIndex: number;
+  question: string;
+  category: string;
+  userAnswer: string;
   score: number;
   feedback: string;
+}
+
+export interface ReferenceAnswer {
+  questionIndex: number;
+  question: string;
+  referenceAnswer: string;
+  keyPoints: string[];
 }

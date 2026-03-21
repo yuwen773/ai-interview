@@ -8,6 +8,7 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
   const [resumeCount, setResumeCount] = useState(0);
   const [interviewCount, setInterviewCount] = useState(0);
+  const [defaultResumeId, setDefaultResumeId] = useState<number | null>(null);
 
   useEffect(() => {
     loadStats();
@@ -23,6 +24,9 @@ export default function Index() {
         const totalInterview = resumes.reduce((sum: number, r: any) => sum + (r.interviewCount || 0), 0);
         setResumeCount(resumes.length);
         setInterviewCount(totalInterview);
+        const storedResumeId = Number(Taro.getStorageSync('currentResumeId'));
+        const matchedResume = resumes.find((item) => item.id === storedResumeId);
+        setDefaultResumeId(matchedResume?.id ?? resumes[0]?.id ?? null);
       }
     } catch (err) {
       console.error('加载统计数据失败:', err);
@@ -36,7 +40,12 @@ export default function Index() {
   };
 
   const handleStartInterview = () => {
-    Taro.switchTab({ url: '/pages/interview/index' });
+    if (!defaultResumeId) {
+      Taro.showToast({ title: '请先进入简历详情选择简历', icon: 'none' });
+      return;
+    }
+    Taro.setStorageSync('currentResumeId', String(defaultResumeId));
+    Taro.navigateTo({ url: `/pages/interview-config/index?resumeId=${defaultResumeId}` });
   };
 
   return (

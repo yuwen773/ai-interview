@@ -79,9 +79,8 @@ export default function ResumeDetail() {
       Taro.showToast({ title: '请等待分析完成', icon: 'none' });
       return;
     }
-    // 将 resumeId 存入全局，供面试页面读取
-    Taro.setStorageSync('currentResumeId', id);
-    Taro.switchTab({ url: '/pages/interview/index' });
+    Taro.setStorageSync('currentResumeId', String(id));
+    Taro.navigateTo({ url: `/pages/interview-config/index?resumeId=${id}` });
   };
 
   if (loading) {

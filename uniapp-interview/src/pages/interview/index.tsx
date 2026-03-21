@@ -1,10 +1,11 @@
 import { View, Text, Button, Textarea, ScrollView } from '@tarojs/components';
-import { useState, useEffect } from 'react';
-import Taro from '@tarojs/taro';
+import { useEffect, useState } from 'react';
+import Taro, { useRouter } from '@tarojs/taro';
 import { interviewApi } from '../../api/interview';
 import { resumeApi } from '../../api/resume';
 import Loading from '../../components/common/Loading';
 import Empty from '../../components/common/Empty';
+import type { InterviewSession, JobRole, Question } from '../../types/interview';
 import './index.scss';
 
 interface Message {
@@ -13,28 +14,81 @@ interface Message {
 }
 
 export default function Interview() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [sessionId, setSessionId] = useState<string>('');
-  const [question, setQuestion] = useState<string>('');
-  const [answer, setAnswer] = useState<string>('');
+  const [sessionId, setSessionId] = useState('');
+  const [jobLabel, setJobLabel] = useState('');
+  const [question, setQuestion] = useState<Question | null>(null);
+  const [answer, setAnswer] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [progress, setProgress] = useState({ current: 0, total: 5 });
 
   useEffect(() => {
-    // 优先从 URL 参数获取，否则从 storage 获取
-    let resumeId = Taro.getCurrentInstance().router?.params.resumeId;
-    if (!resumeId) {
-      resumeId = Taro.getStorageSync('currentResumeId');
-    }
-    if (resumeId) {
-      createSession(resumeId);
-    }
-  }, []);
+    const params = router.params || {};
+    const resumeId = params.resumeId || Taro.getStorageSync('currentResumeId');
+    const sessionIdParam = params.sessionId;
+    const jobRole = (params.jobRole || Taro.getStorageSync('currentInterviewJobRole')) as JobRole | '';
+    const forceCreate = params.forceCreate === 'true';
 
-  const createSession = async (resumeId: string) => {
+    if (sessionIdParam) {
+      void restoreSession(sessionIdParam);
+      return;
+    }
+
+    if (!resumeId) {
+      return;
+    }
+
+    if (!jobRole) {
+      Taro.navigateTo({ url: `/pages/interview-config/index?resumeId=${resumeId}` });
+      return;
+    }
+
+    void createSession(String(resumeId), jobRole, forceCreate);
+  }, [router.params]);
+
+  const applySession = (session: InterviewSession) => {
+    const currentQuestion = session.questions?.[session.currentQuestionIndex] ?? null;
+    setSessionId(session.sessionId);
+    setJobLabel(session.jobLabel);
+    setQuestion(currentQuestion);
+    setAnswer(currentQuestion?.userAnswer || '');
+    setProgress({
+      current: Math.min(session.currentQuestionIndex + 1, session.totalQuestions),
+      total: session.totalQuestions || 5,
+    });
+
+    const restoredMessages: Message[] = [];
+    session.questions.forEach((item, index) => {
+      if (index > session.currentQuestionIndex) {
+        return;
+      }
+      restoredMessages.push({ role: 'assistant', content: item.question });
+      if (item.userAnswer) {
+        restoredMessages.push({ role: 'user', content: item.userAnswer });
+      }
+    });
+
+    setMessages(restoredMessages);
+  };
+
+  const restoreSession = async (currentSessionId: string) => {
     setLoading(true);
     try {
-      // 先获取简历详情，获取 resumeText
+      const session = await interviewApi.getSession(currentSessionId);
+      Taro.setStorageSync('currentInterviewJobRole', session.jobRole);
+      applySession(session);
+    } catch (error) {
+      console.error('恢复面试失败:', error);
+      Taro.showToast({ title: '恢复面试失败', icon: 'none' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createSession = async (resumeId: string, jobRole: JobRole, forceCreate = false) => {
+    setLoading(true);
+    try {
       const resumeDetail = await resumeApi.getDetail(resumeId);
       const resumeText = resumeDetail.resumeText;
 
@@ -43,51 +97,53 @@ export default function Interview() {
         return;
       }
 
-      // 创建面试会话，传递简历文本
-      const res = await interviewApi.createSession({
+      const session = await interviewApi.createSession({
         resumeId: Number(resumeId),
-        resumeText: resumeText,
-        questionCount: 5
+        resumeText,
+        questionCount: 5,
+        jobRole,
+        forceCreate,
       });
-      // 从 questions 数组获取当前问题
-      const firstQuestion = res.questions?.[0]?.content || '';
-      setSessionId(res.sessionId);
-      setQuestion(firstQuestion);
-      setProgress({ current: 1, total: res.totalQuestions || 5 });
-      setMessages([{ role: 'assistant', content: firstQuestion }]);
-    } catch (err) {
+
+      Taro.setStorageSync('currentResumeId', resumeId);
+      Taro.setStorageSync('currentInterviewJobRole', session.jobRole);
+      applySession(session);
+    } catch (error) {
+      console.error('创建面试失败:', error);
       Taro.showToast({ title: '创建面试失败', icon: 'none' });
-      console.error('创建面试失败:', err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSubmitAnswer = async () => {
-    if (!answer.trim()) {
+    if (!answer.trim() || !question) {
       Taro.showToast({ title: '请输入答案', icon: 'none' });
       return;
     }
 
     setLoading(true);
     try {
-      setMessages([...messages, { role: 'user', content: answer }]);
+      const currentAnswer = answer;
+      setMessages((prev) => [...prev, { role: 'user', content: currentAnswer }]);
 
       const res = await interviewApi.submitAnswer({
         sessionId,
-        answer,
-        questionIndex: progress.current - 1,
+        answer: currentAnswer,
+        questionIndex: question.questionIndex,
       });
 
-      if (res.completed) {
+      if (!res.hasNextQuestion || !res.nextQuestion) {
         Taro.navigateTo({ url: `/pages/interview-report/index?sessionId=${sessionId}` });
-      } else {
-        setQuestion(res.nextQuestion || '');
-        setProgress({ current: (res.currentIndex || 1) + 1, total: res.totalQuestions || 5 });
-        setMessages([...messages, { role: 'user', content: answer }, { role: 'assistant', content: res.nextQuestion || '' }]);
-        setAnswer('');
+        return;
       }
-    } catch (err) {
+
+      setQuestion(res.nextQuestion);
+      setProgress({ current: res.currentIndex + 1, total: res.totalQuestions || 5 });
+      setMessages((prev) => [...prev, { role: 'assistant', content: res.nextQuestion?.question || '' }]);
+      setAnswer('');
+    } catch (error) {
+      console.error('提交答案失败:', error);
       Taro.showToast({ title: '提交失败', icon: 'none' });
     } finally {
       setLoading(false);
@@ -101,9 +157,9 @@ export default function Interview() {
   if (!question && !sessionId) {
     return (
       <Empty
-        text="请先上传简历后再开始面试"
-        actionText="上传简历"
-        onAction={() => Taro.navigateTo({ url: '/pages/upload/index' })}
+        text="请先从岗位选择页开始面试"
+        actionText="选择岗位"
+        onAction={() => Taro.switchTab({ url: '/pages/index/index' })}
       />
     );
   }
@@ -111,6 +167,7 @@ export default function Interview() {
   return (
     <ScrollView className="interview-page" scrollY>
       <View className="progress">
+        <Text className="job-label">{jobLabel || '模拟面试'}</Text>
         <Text>第 {progress.current} 题 / 共 {progress.total} 题</Text>
         <View className="progress-bar">
           <View className="progress-fill" style={{ width: `${(progress.current / progress.total) * 100}%` }}></View>
@@ -119,7 +176,7 @@ export default function Interview() {
 
       <View className="question-card">
         <Text className="question-label">面试问题</Text>
-        <Text className="question-content">{question}</Text>
+        <Text className="question-content">{question?.question || ''}</Text>
       </View>
 
       <View className="answer-area">

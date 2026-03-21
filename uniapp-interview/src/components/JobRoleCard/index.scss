@@ -1,0 +1,64 @@
+.job-role-card {
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 28px;
+  transition: all 0.2s ease;
+
+  &.selected {
+    border-color: #2563eb;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.12);
+  }
+
+  &.disabled {
+    opacity: 0.6;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-size: 34px;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .selected-badge {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 22px;
+  }
+
+  .card-description {
+    display: block;
+    color: #4b5563;
+    font-size: 26px;
+    line-height: 1.7;
+    margin-bottom: 20px;
+  }
+
+  .keyword-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .keyword-tag {
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 22px;
+  }
+}
+
+.job-role-card-hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+}

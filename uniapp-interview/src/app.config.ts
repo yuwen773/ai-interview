@@ -3,6 +3,7 @@ export default defineAppConfig({
     'pages/index/index',
     'pages/upload/index',
     'pages/resume-detail/index',
+    'pages/interview-config/index',
     'pages/interview/index',
     'pages/interview-report/index',
   ],

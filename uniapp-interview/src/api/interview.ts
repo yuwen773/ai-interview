@@ -5,6 +5,7 @@ import type {
   CurrentQuestionResponse,
   InterviewReport,
   InterviewSession,
+  JobRoleDTO,
   SubmitAnswerRequest,
   SubmitAnswerResponse
 } from '../types/interview';
@@ -19,6 +20,13 @@ export const interviewApi = {
     return request.post<InterviewSession>('/interview/sessions', req, {
       timeout: 180000, // 3分钟超时，AI生成问题需要时间
     });
+  },
+
+  /**
+   * 获取岗位列表
+   */
+  async getJobRoles(): Promise<JobRoleDTO[]> {
+    return request.get<JobRoleDTO[]>('/interview/job-roles');
   },
 
   /**
