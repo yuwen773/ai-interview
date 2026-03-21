@@ -457,6 +457,8 @@ public class AnswerEvaluationService {
 
         return new InterviewReportDTO(
             sessionId,
+            null,
+            null,
             questions.size(),
             overallScore,
             categoryScores,

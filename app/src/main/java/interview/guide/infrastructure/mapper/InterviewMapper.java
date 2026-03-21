@@ -66,6 +66,8 @@ public interface InterviewMapper {
      * 注意：questions, strengths, improvements, referenceAnswers, answers 需要在 Service 层处理
      */
     @Mapping(target = "status", expression = "java(session.getStatus().toString())")
+    @Mapping(target = "jobRole", source = "session.jobRole")
+    @Mapping(target = "jobLabel", source = "session.jobLabelSnapshot")
     @Mapping(target = "evaluateStatus", expression = "java(session.getEvaluateStatus() != null ? session.getEvaluateStatus().name() : null)")
     @Mapping(target = "evaluateError", source = "session.evaluateError")
     @Mapping(target = "questions", source = "questions")
@@ -92,6 +94,8 @@ public interface InterviewMapper {
     @Mapping(target = "sessionId", ignore = true)
     @Mapping(target = "resume", ignore = true)
     @Mapping(target = "totalQuestions", ignore = true)
+    @Mapping(target = "jobRole", ignore = true)
+    @Mapping(target = "jobLabelSnapshot", ignore = true)
     @Mapping(target = "currentQuestionIndex", ignore = true)
     @Mapping(target = "questionsJson", ignore = true)
     @Mapping(target = "strengthsJson", ignore = true)
@@ -113,6 +117,8 @@ public interface InterviewMapper {
         java.util.Map<String, Object> map = new java.util.LinkedHashMap<>();
         map.put("id", session.getId());
         map.put("sessionId", session.getSessionId());
+        map.put("jobRole", session.getJobRole());
+        map.put("jobLabel", session.getJobLabelSnapshot());
         map.put("totalQuestions", session.getTotalQuestions());
         map.put("status", session.getStatus().toString());
         map.put("evaluateStatus", session.getEvaluateStatus() != null ? session.getEvaluateStatus().name() : null);

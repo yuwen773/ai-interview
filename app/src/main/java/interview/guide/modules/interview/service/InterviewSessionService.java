@@ -47,14 +47,16 @@ public class InterviewSessionService {
             if (unfinishedOpt.isPresent()) {
                 log.info("检测到未完成的面试会话，返回现有会话: resumeId={}, sessionId={}",
                     request.resumeId(), unfinishedOpt.get().sessionId());
+                log.info("创建会话请求命中未完成规则: resumeId={}, requestJobRole={}, returnedJobRole={}",
+                    request.resumeId(), request.jobRole(), unfinishedOpt.get().jobRole());
                 return unfinishedOpt.get();
             }
         }
 
         String sessionId = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
 
-        log.info("创建新面试会话: {}, 题目数量: {}, resumeId: {}",
-            sessionId, request.questionCount(), request.resumeId());
+        log.info("创建新面试会话: {}, 题目数量: {}, resumeId: {}, jobRole: {}",
+            sessionId, request.questionCount(), request.resumeId(), request.jobRole());
 
         // 获取历史问题
         List<String> historicalQuestions = null;
@@ -64,6 +66,7 @@ public class InterviewSessionService {
 
         // 生成面试问题
         List<InterviewQuestionDTO> questions = questionService.generateQuestions(
+            request.jobRole(),
             request.resumeText(),
             request.questionCount(),
             historicalQuestions
@@ -74,6 +77,8 @@ public class InterviewSessionService {
             sessionId,
             request.resumeText(),
             request.resumeId(),
+            request.jobRole(),
+            request.jobRole().getLabel(),
             questions,
             0,
             SessionStatus.CREATED
@@ -83,6 +88,7 @@ public class InterviewSessionService {
         if (request.resumeId() != null) {
             try {
                 persistenceService.saveSession(sessionId, request.resumeId(),
+                    request.jobRole(), request.jobRole().getLabel(),
                     questions.size(), questions);
             } catch (Exception e) {
                 log.warn("保存面试会话到数据库失败: {}", e.getMessage());
@@ -92,6 +98,8 @@ public class InterviewSessionService {
         return new InterviewSessionDTO(
             sessionId,
             request.resumeText(),
+            request.jobRole(),
+            request.jobRole().getLabel(),
             questions.size(),
             0,
             questions,
@@ -200,6 +208,8 @@ public class InterviewSessionService {
                 entity.getSessionId(),
                 entity.getResume().getResumeText(),
                 entity.getResume().getId(),
+                entity.getJobRole(),
+                entity.getJobLabelSnapshot(),
                 questions,
                 entity.getCurrentQuestionIndex(),
                 status
@@ -447,7 +457,7 @@ public class InterviewSessionService {
             sessionId,
             session.getResumeText(),
             questions
-        );
+        ).withJobInfo(session.getJobRole(), session.getJobLabel());
 
         // 更新 Redis 缓存状态
         sessionCache.updateSessionStatus(sessionId, SessionStatus.EVALUATED);
@@ -470,6 +480,8 @@ public class InterviewSessionService {
         return new InterviewSessionDTO(
             session.getSessionId(),
             session.getResumeText(),
+            session.getJobRole(),
+            session.getJobLabel(),
             questions.size(),
             session.getCurrentIndex(),
             questions,

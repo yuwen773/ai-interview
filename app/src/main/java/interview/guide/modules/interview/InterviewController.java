@@ -17,6 +17,7 @@ import interview.guide.modules.interview.voice.model.InterviewTurnResponse;
 import interview.guide.modules.interview.voice.model.InterviewTurnInput;
 import interview.guide.modules.interview.voice.model.InterviewerOutputMode;
 import interview.guide.modules.interview.voice.model.NormalizedAnswer;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -30,7 +31,9 @@ import reactor.core.publisher.Flux;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -55,10 +58,15 @@ public class InterviewController {
      */
     @PostMapping("/api/interview/sessions")
     @RateLimit(dimensions = {RateLimit.Dimension.GLOBAL, RateLimit.Dimension.IP}, count = 5)
-    public Result<InterviewSessionDTO> createSession(@RequestBody CreateInterviewRequest request) {
-        log.info("创建面试会话，题目数量: {}", request.questionCount());
+    public Result<InterviewSessionDTO> createSession(@Valid @RequestBody CreateInterviewRequest request) {
+        log.info("创建面试会话，题目数量: {}, 岗位: {}", request.questionCount(), request.jobRole());
         InterviewSessionDTO session = sessionService.createSession(request);
         return Result.success(session);
+    }
+
+    @GetMapping("/api/interview/job-roles")
+    public Result<List<JobRoleDTO>> getJobRoles() {
+        return Result.success(Arrays.stream(JobRole.values()).map(JobRoleDTO::from).toList());
     }
     
     /**

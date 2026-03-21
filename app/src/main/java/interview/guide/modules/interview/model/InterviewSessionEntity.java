@@ -33,6 +33,15 @@ public class InterviewSessionEntity {
     
     // 问题总数
     private Integer totalQuestions;
+
+    // 岗位编码快照（一期新建会话必填，旧数据可为空）
+    @Enumerated(EnumType.STRING)
+    @Column(name = "job_role", length = 50)
+    private JobRole jobRole;
+
+    // 岗位名称快照
+    @Column(name = "job_label_snapshot", length = 100)
+    private String jobLabelSnapshot;
     
     // 当前问题索引
     private Integer currentQuestionIndex = 0;
@@ -128,6 +137,22 @@ public class InterviewSessionEntity {
     
     public void setTotalQuestions(Integer totalQuestions) {
         this.totalQuestions = totalQuestions;
+    }
+
+    public JobRole getJobRole() {
+        return jobRole;
+    }
+
+    public void setJobRole(JobRole jobRole) {
+        this.jobRole = jobRole;
+    }
+
+    public String getJobLabelSnapshot() {
+        return jobLabelSnapshot;
+    }
+
+    public void setJobLabelSnapshot(String jobLabelSnapshot) {
+        this.jobLabelSnapshot = jobLabelSnapshot;
     }
     
     public Integer getCurrentQuestionIndex() {

@@ -7,6 +7,7 @@ import interview.guide.modules.interview.model.InterviewAnswerEntity;
 import interview.guide.modules.interview.model.InterviewQuestionDTO;
 import interview.guide.modules.interview.model.InterviewReportDTO;
 import interview.guide.modules.interview.model.InterviewSessionEntity;
+import interview.guide.modules.interview.model.JobRole;
 import interview.guide.modules.interview.repository.InterviewAnswerRepository;
 import interview.guide.modules.interview.repository.InterviewSessionRepository;
 import interview.guide.modules.resume.model.ResumeEntity;
@@ -41,7 +42,8 @@ public class InterviewPersistenceService {
      * 保存新的面试会话
      */
     @Transactional(rollbackFor = Exception.class)
-    public InterviewSessionEntity saveSession(String sessionId, Long resumeId, 
+    public InterviewSessionEntity saveSession(String sessionId, Long resumeId,
+                                              JobRole jobRole, String jobLabel,
                                               int totalQuestions, 
                                               List<InterviewQuestionDTO> questions) {
         try {
@@ -54,12 +56,14 @@ public class InterviewPersistenceService {
             session.setSessionId(sessionId);
             session.setResume(resumeOpt.get());
             session.setTotalQuestions(totalQuestions);
+            session.setJobRole(jobRole);
+            session.setJobLabelSnapshot(jobLabel);
             session.setCurrentQuestionIndex(0);
             session.setStatus(InterviewSessionEntity.SessionStatus.CREATED);
             session.setQuestionsJson(objectMapper.writeValueAsString(questions));
             
             InterviewSessionEntity saved = sessionRepository.save(session);
-            log.info("面试会话已保存: sessionId={}, resumeId={}", sessionId, resumeId);
+            log.info("面试会话已保存: sessionId={}, resumeId={}, jobRole={}", sessionId, resumeId, jobRole);
             
             return saved;
         } catch (JacksonException e) {

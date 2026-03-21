@@ -8,6 +8,8 @@ import java.util.List;
 public record InterviewSessionDTO(
     String sessionId,
     String resumeText,
+    JobRole jobRole,
+    String jobLabel,
     int totalQuestions,
     int currentQuestionIndex,
     List<InterviewQuestionDTO> questions,

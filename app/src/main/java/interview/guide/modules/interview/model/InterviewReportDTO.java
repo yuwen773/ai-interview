@@ -7,6 +7,8 @@ import java.util.List;
  */
 public record InterviewReportDTO(
     String sessionId,
+    JobRole jobRole,
+    String jobLabel,
     int totalQuestions,
     int overallScore,                          // 总分 (0-100)
     List<CategoryScore> categoryScores,        // 各类别得分
@@ -46,4 +48,20 @@ public record InterviewReportDTO(
         String referenceAnswer,
         List<String> keyPoints
     ) {}
+
+    public InterviewReportDTO withJobInfo(JobRole role, String label) {
+        return new InterviewReportDTO(
+            sessionId,
+            role,
+            label,
+            totalQuestions,
+            overallScore,
+            categoryScores,
+            questionDetails,
+            overallFeedback,
+            strengths,
+            improvements,
+            referenceAnswers
+        );
+    }
 }

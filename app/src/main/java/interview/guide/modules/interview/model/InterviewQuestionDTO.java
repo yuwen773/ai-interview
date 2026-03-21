@@ -15,6 +15,7 @@ public record InterviewQuestionDTO(
     Integer parentQuestionIndex // 追问关联的主问题索引
 ) {
     public enum QuestionType {
+        GENERAL,          // 通用能力
         PROJECT,          // 项目经历
         JAVA_BASIC,       // Java基础
         JAVA_COLLECTION,  // Java集合
@@ -22,7 +23,14 @@ public record InterviewQuestionDTO(
         MYSQL,            // MySQL
         REDIS,            // Redis
         SPRING,           // Spring
-        SPRING_BOOT       // Spring Boot
+        SPRING_BOOT,      // Spring Boot
+        JAVASCRIPT_TYPESCRIPT, // JavaScript / TypeScript
+        CSS_HTML,         // CSS / HTML
+        BROWSER_NETWORK,  // 浏览器与网络
+        REACT,            // React
+        PYTHON_CORE,      // Python 核心
+        ALGORITHM_DATA_STRUCTURE, // 算法与数据结构
+        ENGINEERING       // 工程化
     }
     
     /**

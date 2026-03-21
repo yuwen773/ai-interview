@@ -1,6 +1,7 @@
 package interview.guide.infrastructure.redis;
 
 import interview.guide.modules.interview.model.InterviewQuestionDTO;
+import interview.guide.modules.interview.model.JobRole;
 import interview.guide.modules.interview.model.InterviewSessionDTO.SessionStatus;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +51,8 @@ public class InterviewSessionCache {
         private String sessionId;
         private String resumeText;
         private Long resumeId;
+        private JobRole jobRole;
+        private String jobLabel;
         private String questionsJson;  // 序列化的问题列表
         private int currentIndex;
         private SessionStatus status;
@@ -57,12 +60,14 @@ public class InterviewSessionCache {
         public CachedSession() {
         }
 
-        public CachedSession(String sessionId, String resumeText, Long resumeId,
+        public CachedSession(String sessionId, String resumeText, Long resumeId, JobRole jobRole, String jobLabel,
                             List<InterviewQuestionDTO> questions, int currentIndex,
                             SessionStatus status, ObjectMapper objectMapper) {
             this.sessionId = sessionId;
             this.resumeText = resumeText;
             this.resumeId = resumeId;
+            this.jobRole = jobRole;
+            this.jobLabel = jobLabel;
             this.currentIndex = currentIndex;
             this.status = status;
             try {
@@ -84,12 +89,12 @@ public class InterviewSessionCache {
     /**
      * 保存会话到缓存
      */
-    public void saveSession(String sessionId, String resumeText, Long resumeId,
+    public void saveSession(String sessionId, String resumeText, Long resumeId, JobRole jobRole, String jobLabel,
                            List<InterviewQuestionDTO> questions, int currentIndex,
                            SessionStatus status) {
         String key = buildSessionKey(sessionId);
         CachedSession cachedSession = new CachedSession(
-            sessionId, resumeText, resumeId, questions, currentIndex, status, objectMapper
+            sessionId, resumeText, resumeId, jobRole, jobLabel, questions, currentIndex, status, objectMapper
         );
 
         redisService.set(key, cachedSession, SESSION_TTL);

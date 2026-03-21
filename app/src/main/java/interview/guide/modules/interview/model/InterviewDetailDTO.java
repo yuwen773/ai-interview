@@ -9,6 +9,8 @@ import java.util.List;
 public record InterviewDetailDTO(
     Long id,
     String sessionId,
+    JobRole jobRole,
+    String jobLabel,
     Integer totalQuestions,
     String status,
     String evaluateStatus,
@@ -38,4 +40,3 @@ public record InterviewDetailDTO(
         LocalDateTime answeredAt
     ) {}
 }
-
