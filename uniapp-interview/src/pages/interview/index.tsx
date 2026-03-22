@@ -325,14 +325,14 @@ export default function Interview() {
           onClick={handleSaveDraft}
           disabled={!canSaveDraft || loading}
         >
-          暂存答案
+          <Text>暂存答案</Text>
         </Button>
         <Button
           className="action-chip action-chip--secondary interview-page__secondary-action"
           onClick={handleCompleteEarly}
           disabled={!canCompleteEarly}
         >
-          提前结束
+          <Text>提前结束</Text>
         </Button>
         <Button
           className="interview-page__submit-btn"
