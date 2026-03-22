@@ -1,5 +1,5 @@
 import { View, Text, ScrollView } from '@tarojs/components';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { InterviewReport } from '@/types/interview';
 import './index.scss';
 
@@ -14,6 +14,22 @@ export default function AnswerTab({ data }: Props) {
   const total = questionDetails?.length ?? 0;
   const current = questionDetails?.[currentIndex];
   const currentRef = referenceAnswers?.[currentIndex];
+
+  const touchStartX = useRef(0);
+
+  const handleTouchStart = (e: any) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: any) => {
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    if (deltaX < -50) {
+      goToNext();   // 左滑 → 下一题
+    }
+    if (deltaX > 50) {
+      goToPrev();   // 右滑 → 上一题
+    }
+  };
 
   const goToPrev = () => {
     if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
@@ -32,7 +48,7 @@ export default function AnswerTab({ data }: Props) {
   }
 
   return (
-    <View className="answer-tab">
+    <View className="answer-tab" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       {/* 题目索引列表 */}
       <ScrollView className="answer-tab__indexes" scrollX enableFlex>
         {questionDetails.map((q, index) => (
