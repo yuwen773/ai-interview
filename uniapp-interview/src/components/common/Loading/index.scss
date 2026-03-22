@@ -5,75 +5,105 @@
   flex-direction: column;
   gap: $space-4;
   width: 100%;
-  padding: $space-5;
+  padding: $space-6;
+  transition: all 0.3s ease;
+
+  &--full {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
+    background: rgba($color-bg-page, 0.85);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: $space-6;
+  }
 }
 
-.loading-container__header {
+.loading-container__content {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: $space-4;
+  text-align: center;
+  gap: $space-6;
+  width: 100%;
+  max-width: 560rpx;
 }
 
 .loading-spinner {
-  width: 56px;
-  height: 56px;
-  border: 6px solid rgba(46, 197, 255, 0.18);
-  border-top-color: $color-accent;
+  width: 80rpx;
+  height: 80rpx;
+  border: 4rpx solid rgba($color-accent, 0.1);
+  border-top: 4rpx solid $color-accent;
+  border-right: 4rpx solid $color-cta;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin 1s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  box-shadow: 0 0 20rpx rgba($color-accent, 0.15);
 }
 
 .loading-container__status {
   display: flex;
   flex-direction: column;
-  gap: $space-1;
+  gap: $space-2;
+  animation: fadeIn 0.6s ease-out;
 }
 
 .loading-container__title {
   font-size: $font-size-subtitle;
   font-weight: 700;
   color: $color-primary;
+  letter-spacing: 1px;
 }
 
 .loading-container__text {
   font-size: $font-size-body;
   line-height: 1.6;
   color: $color-text-secondary;
+  opacity: 0.8;
+  animation: pulseOpacity 2s ease-in-out infinite;
 }
 
 .loading-container__progress {
-  height: 12px;
+  width: 100%;
+  height: 8rpx;
   overflow: hidden;
   border-radius: $radius-pill;
-  background: rgba(16, 42, 67, 0.08);
+  background: rgba($color-primary, 0.06);
+  position: relative;
 }
 
 .loading-container__progress-bar {
-  width: 42%;
+  position: absolute;
+  top: 0;
+  left: 0;
   height: 100%;
+  width: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, $color-accent 0%, $color-cta 100%);
-  animation: pulse 1.4s ease-in-out infinite alternate;
+  background: linear-gradient(90deg, transparent 0%, $color-accent 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite linear;
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-@keyframes pulse {
-  0% {
-    transform: translateX(-8%);
-    opacity: 0.72;
-  }
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
 
-  100% {
-    transform: translateX(70%);
-    opacity: 1;
-  }
+@keyframes pulseOpacity {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10rpx); }
+  to { opacity: 1; transform: translateY(0); }
 }

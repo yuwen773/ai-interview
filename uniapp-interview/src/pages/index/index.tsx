@@ -203,7 +203,7 @@ export default function Index() {
   if (loading) {
     return (
       <View className="index-page page-shell">
-        <Loading text="正在整理你的练习进度..." />
+        <Loading text="正在整理你的面试进展..." fullPage />
       </View>
     );
   }

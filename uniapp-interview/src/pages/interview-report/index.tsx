@@ -116,7 +116,7 @@ export default function InterviewReportPage() {
   if (loading) {
     return (
       <View className="report-page page-shell">
-        <Loading text="正在整理本场面试反馈..." />
+        <Loading text="正在整理本场面试反馈..." fullPage />
       </View>
     );
   }
