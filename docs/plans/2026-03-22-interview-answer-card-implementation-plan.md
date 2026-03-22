@@ -10,6 +10,55 @@
 
 ---
 
+## 数据格式说明（基于真实 API 响应）
+
+```ts
+interface InterviewSession {
+  sessionId: string;
+  currentQuestionIndex: number;  // 0-based，当前题目的索引
+  questions: Question[];          // 所有题目数组
+}
+
+interface Question {
+  questionIndex: number;         // 0-based
+  question: string;               // 题目内容
+  userAnswer: string | null;      // 用户回答，未回答时为 null
+  isFollowUp: boolean;            // 是否为追问
+  parentQuestionIndex: number | null;  // 追问的父问题索引
+}
+```
+
+**状态判断逻辑：**
+```ts
+// answerCards 派生逻辑
+questions.map((q, index) => {
+  // index < currentQuestionIndex: 该题已过，已答
+  // index === currentQuestionIndex: 当前题
+  //   - q.userAnswer 有值且非空 → 已答（之前暂存后提交，或恢复时已有）
+  //   - q.userAnswer 为 null → 未答
+  // index > currentQuestionIndex: 未到该题，未答
+
+  let status: AnswerCardStatus;
+  if (index < currentQuestionIndex) {
+    status = 'answered';
+  } else if (index === currentQuestionIndex) {
+    status = q.userAnswer ? 'answered' : 'unanswered';
+  } else {
+    status = 'unanswered';
+  }
+
+  return {
+    questionIndex: index,           // 0-based，与 API 一致
+    displayIndex: index + 1,         // 1-based，显示用
+    status,
+    question: q.question,
+    savedAnswer: q.userAnswer,
+  };
+});
+```
+
+---
+
 ## Task 1: 添加答题卡类型定义
 
 **Files:**
@@ -25,10 +74,11 @@ export type AnswerCardStatus = 'answered' | 'saved' | 'unanswered';
 
 // 答题卡条目
 export interface AnswerCardItem {
-  questionIndex: number;    // 题号（1-based）
+  questionIndex: number;    // 题号（0-based，与 API 一致）
+  displayIndex: number;     // 显示用题号（1-based，Q1, Q2...）
   status: AnswerCardStatus;
-  question: string;          // 题目内容
-  savedAnswer?: string;     // 暂存的答案（saved 状态时可修改）
+  question: string;         // 题目内容
+  savedAnswer?: string;     // 用户回答（answered/saved 状态时有值）
 }
 ```
 
@@ -58,7 +108,7 @@ git commit -m "feat(interview): add AnswerCardStatus and AnswerCardItem types"
 
 ```tsx
 import { View, Text } from '@tarojs/components';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { AnswerCardItem as AnswerCardItemType } from '../../../types/interview';
 import './index.scss';
 
@@ -79,13 +129,20 @@ export default function AnswerCardItem({ item, isCurrent, onSaveAnswer }: Props)
   const [editAnswer, setEditAnswer] = useState(item.savedAnswer || '');
   const config = STATUS_CONFIG[item.status];
 
+  // 当展开时，同步最新的 savedAnswer
+  useEffect(() => {
+    if (expanded) {
+      setEditAnswer(item.savedAnswer || '');
+    }
+  }, [expanded, item.savedAnswer]);
+
   const handleToggle = () => {
     setExpanded(!expanded);
   };
 
   const handleSave = () => {
     if (onSaveAnswer && item.status === 'saved') {
-      onSaveAnswer(item.questionIndex, editAnswer);
+      onSaveAnswer(item.questionIndex, editAnswer);  // questionIndex 是 0-based
       setExpanded(false);
     }
   };
@@ -96,7 +153,7 @@ export default function AnswerCardItem({ item, isCurrent, onSaveAnswer }: Props)
       onClick={handleToggle}
     >
       <View className="answer-card-item__header">
-        <Text className="answer-card-item__index">Q{item.questionIndex}</Text>
+        <Text className="answer-card-item__index">Q{item.displayIndex}</Text>
         <View className="answer-card-item__status" style={{ backgroundColor: config.color }}>
           <Text className="answer-card-item__status-text">{config.label}</Text>
         </View>
@@ -344,7 +401,7 @@ export default function AnswerCardDrawer({ visible, items, currentIndex, onClose
             <AnswerCardItem
               key={item.questionIndex}
               item={item}
-              isCurrent={item.questionIndex - 1 === currentIndex}
+              isCurrent={item.questionIndex === currentIndex}
               onSaveAnswer={onSaveAnswer}
             />
           ))}
@@ -464,30 +521,40 @@ const [drawerVisible, setDrawerVisible] = useState(false);
 
 2. 添加 answerCards 派生数据:
 ```ts
-const answerCards: AnswerCardItem[] = questions.map((q, index) => ({
-  questionIndex: index + 1,
-  status: index < currentQuestionIndex
-    ? 'answered'
-    : index === currentQuestionIndex && q.userAnswer
-      ? q.userAnswer.trim() ? 'answered' : 'saved'
-      : 'unanswered',
-  question: q.question,
-  savedAnswer: q.userAnswer,
-}));
+// 注意：currentQuestionIndex 是 0-based
+const answerCards: AnswerCardItem[] = questions.map((q, index) => {
+  let status: AnswerCardStatus;
+  if (index < currentQuestionIndex) {
+    status = 'answered';
+  } else if (index === currentQuestionIndex) {
+    status = q.userAnswer ? 'answered' : 'unanswered';
+  } else {
+    status = 'unanswered';
+  }
+
+  return {
+    questionIndex: index,           // 0-based，API 用
+    displayIndex: index + 1,       // 1-based，显示用
+    status,
+    question: q.question,
+    savedAnswer: q.userAnswer || undefined,
+  };
+});
 ```
 
 3. 添加 handleSaveAnswer 函数:
 ```ts
 const handleSaveAnswer = async (questionIndex: number, answer: string) => {
+  // questionIndex 是 0-based
   try {
     await interviewApi.saveAnswer({
       sessionId,
       answer,
-      questionIndex: questionIndex - 1,
+      questionIndex,
     });
     // 更新本地 questions 状态
     setQuestions(prev => prev.map((q, i) =>
-      i === questionIndex - 1 ? { ...q, userAnswer: answer } : q
+      i === questionIndex ? { ...q, userAnswer: answer } : q
     ));
     Taro.showToast({ title: '已保存', icon: 'success' });
   } catch (error) {
