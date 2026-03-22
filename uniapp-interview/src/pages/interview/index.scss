@@ -1,7 +1,6 @@
 .interview-page {
   &__hero,
   &__question-card,
-  &__history,
   &__answer-area {
     margin-bottom: 24px;
   }
@@ -24,8 +23,6 @@
   &__section-title,
   &__question-badge,
   &__question-content,
-  &__message-role,
-  &__message-content,
   &__answer-count {
     display: block;
   }
@@ -93,37 +90,6 @@
     color: #0f172a;
   }
 
-  &__history-list {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  &__message {
-    padding: 18px 20px;
-    border-radius: 24px;
-  }
-
-  &__message--assistant {
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  }
-
-  &__message--user {
-    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
-  }
-
-  &__message-role {
-    font-size: 22px;
-    color: #64748b;
-    margin-bottom: 8px;
-  }
-
-  &__message-content {
-    font-size: 24px;
-    line-height: 1.7;
-    color: #0f172a;
-  }
-
   &__answer-input {
     width: 100%;
     min-height: 280px;
@@ -137,6 +103,30 @@
     text-align: right;
     font-size: 22px;
     color: #94a3b8;
+  }
+
+  &__drawer-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background: #eff6ff;
+    border-radius: 16px;
+    border: 1px dashed #2563eb;
+
+    Text {
+      font-size: 26px;
+      color: #2563eb;
+      font-weight: 500;
+    }
+
+    &-hint {
+      font-size: 22px !important;
+      color: #64748b !important;
+      font-weight: 400 !important;
+    }
   }
 
   &__actions {

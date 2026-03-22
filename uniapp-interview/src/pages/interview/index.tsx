@@ -5,13 +5,9 @@ import { interviewApi } from '../../api/interview';
 import { resumeApi } from '../../api/resume';
 import Loading from '../../components/common/Loading';
 import Empty from '../../components/common/Empty';
-import type { InterviewSession, JobRole, Question } from '../../types/interview';
+import AnswerCardDrawer from '../../components/interview/AnswerCardDrawer';
+import type { InterviewSession, JobRole, Question, AnswerCardItem, AnswerCardStatus } from '../../types/interview';
 import './index.scss';
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
 
 export default function Interview() {
   const router = useRouter();
@@ -22,10 +18,50 @@ export default function Interview() {
   const [jobLabel, setJobLabel] = useState('');
   const [question, setQuestion] = useState<Question | null>(null);
   const [answer, setAnswer] = useState('');
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [drawerVisible, setDrawerVisible] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 5 });
   const canSaveDraft = Boolean(sessionId && question && answer.trim());
   const canCompleteEarly = Boolean(sessionId && !loading);
+
+  // 注意：currentQuestionIndex 是 0-based
+  const answerCards: AnswerCardItem[] = questions.map((q, index) => {
+    let status: AnswerCardStatus;
+    if (index < currentQuestionIndex) {
+      status = 'answered';
+    } else if (index === currentQuestionIndex) {
+      status = q.userAnswer ? 'answered' : 'unanswered';
+    } else {
+      status = 'unanswered';
+    }
+
+    return {
+      questionIndex: index,           // 0-based，API 用
+      displayIndex: index + 1,       // 1-based，显示用
+      status,
+      question: q.question,
+      savedAnswer: q.userAnswer || undefined,
+    };
+  });
+
+  const handleSaveAnswer = async (questionIndex: number, answer: string) => {
+    // questionIndex 是 0-based
+    try {
+      await interviewApi.saveAnswer({
+        sessionId,
+        answer,
+        questionIndex,
+      });
+      // 更新本地 questions 状态
+      setQuestions(prev => prev.map((q, i) =>
+        i === questionIndex ? { ...q, userAnswer: answer } : q
+      ));
+      Taro.showToast({ title: '已保存', icon: 'success' });
+    } catch (error) {
+      Taro.showToast({ title: '保存失败', icon: 'none' });
+    }
+  };
 
   useEffect(() => {
     const params = router.params || {};
@@ -59,25 +95,14 @@ export default function Interview() {
     const currentQuestion = session.questions?.[session.currentQuestionIndex] ?? null;
     setSessionId(session.sessionId);
     setJobLabel(session.jobLabel);
+    setQuestions(session.questions || []);
+    setCurrentQuestionIndex(session.currentQuestionIndex ?? 0);
     setQuestion(currentQuestion);
     setAnswer(currentQuestion?.userAnswer || '');
     setProgress({
       current: Math.min(session.currentQuestionIndex + 1, session.totalQuestions),
       total: session.totalQuestions || 5,
     });
-
-    const restoredMessages: Message[] = [];
-    session.questions.forEach((item, index) => {
-      if (index > session.currentQuestionIndex) {
-        return;
-      }
-      restoredMessages.push({ role: 'assistant', content: item.question });
-      if (item.userAnswer) {
-        restoredMessages.push({ role: 'user', content: item.userAnswer });
-      }
-    });
-
-    setMessages(restoredMessages);
   };
 
   const restoreSession = async (currentSessionId: string) => {
@@ -196,7 +221,6 @@ export default function Interview() {
     setLoading(true);
     try {
       const currentAnswer = answer;
-      setMessages((prev) => [...prev, { role: 'user', content: currentAnswer }]);
 
       const res = await interviewApi.submitAnswer({
         sessionId,
@@ -209,9 +233,13 @@ export default function Interview() {
         return;
       }
 
+      // Update local questions state
+      setQuestions(prev => prev.map((q, i) =>
+        i === currentQuestionIndex ? { ...q, userAnswer: currentAnswer } : q
+      ));
       setQuestion(res.nextQuestion);
+      setCurrentQuestionIndex(res.currentIndex);
       setProgress({ current: res.currentIndex + 1, total: res.totalQuestions || 5 });
-      setMessages((prev) => [...prev, { role: 'assistant', content: res.nextQuestion?.question || '' }]);
       setAnswer('');
     } catch (error) {
       console.error('提交答案失败:', error);
@@ -278,31 +306,10 @@ export default function Interview() {
         <Text className="interview-page__question-content">{question?.question || ''}</Text>
       </View>
 
-      {messages.length > 0 && (
-        <View className="section-shell interview-page__history">
-          <View className="interview-page__section-head">
-            <Text className="interview-page__section-title">对话记录</Text>
-            <Text className="surface-note">帮助你快速回到当前上下文。</Text>
-          </View>
-          <View className="interview-page__history-list">
-            {messages.map((item, index) => (
-              <View
-                key={`${item.role}-${index}`}
-                className={
-                  item.role === 'assistant'
-                    ? 'interview-page__message interview-page__message--assistant'
-                    : 'interview-page__message interview-page__message--user'
-                }
-              >
-                <Text className="interview-page__message-role">
-                  {item.role === 'assistant' ? '面试官' : '我的回答'}
-                </Text>
-                <Text className="interview-page__message-content">{item.content}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
+      <View className="interview-page__drawer-trigger" onClick={() => setDrawerVisible(true)}>
+        <Text>答题卡</Text>
+        <Text className="interview-page__drawer-hint">点击查看全部题目</Text>
+      </View>
 
       <View className="section-shell interview-page__answer-area">
         <View className="interview-page__section-head">
@@ -342,6 +349,14 @@ export default function Interview() {
           {loading ? '提交中...' : '提交答案'}
         </Button>
       </View>
+
+      <AnswerCardDrawer
+        visible={drawerVisible}
+        items={answerCards}
+        currentIndex={currentQuestionIndex}
+        onClose={() => setDrawerVisible(false)}
+        onSaveAnswer={handleSaveAnswer}
+      />
     </View>
   );
 }
