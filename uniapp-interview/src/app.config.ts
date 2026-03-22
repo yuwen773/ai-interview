@@ -26,18 +26,26 @@ export default defineAppConfig({
       {
         pagePath: 'pages/index/index',
         text: '首页',
+        iconPath: 'assets/tabbar/home.png',
+        selectedIconPath: 'assets/tabbar/home-active.png',
       },
       {
         pagePath: 'pages/resume-list/index',
         text: '简历库',
+        iconPath: 'assets/tabbar/resume.png',
+        selectedIconPath: 'assets/tabbar/resume-active.png',
       },
       {
         pagePath: 'pages/interview-history/index',
         text: '面试记录',
+        iconPath: 'assets/tabbar/history.png',
+        selectedIconPath: 'assets/tabbar/history-active.png',
       },
       {
         pagePath: 'pages/profile/index',
         text: '我的',
+        iconPath: 'assets/tabbar/profile.png',
+        selectedIconPath: 'assets/tabbar/profile-active.png',
       },
     ],
   },
