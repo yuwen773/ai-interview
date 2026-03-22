@@ -9,14 +9,18 @@ import interview.guide.infrastructure.export.PdfExportService;
 import interview.guide.infrastructure.mapper.InterviewMapper;
 import interview.guide.modules.interview.model.InterviewAnswerEntity;
 import interview.guide.modules.interview.model.InterviewDetailDTO;
+import interview.guide.modules.interview.model.InterviewHistorySummaryDTO;
 import interview.guide.modules.interview.model.InterviewQuestionDTO;
 import interview.guide.modules.interview.model.InterviewSessionEntity;
+import interview.guide.modules.interview.repository.InterviewSessionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
 
 /**
  * 面试历史服务
@@ -31,6 +35,30 @@ public class InterviewHistoryService {
     private final PdfExportService pdfExportService;
     private final ObjectMapper objectMapper;
     private final InterviewMapper interviewMapper;
+    private final InterviewSessionRepository interviewSessionRepository;
+
+    public InterviewHistorySummaryDTO getHistorySummary() {
+        List<InterviewSessionEntity> sessions = interviewSessionRepository.findAllWithResumeOrderByCreatedAtDesc();
+        List<InterviewHistorySummaryDTO.Item> items = sessions.stream()
+            .map(this::toHistorySummaryItem)
+            .toList();
+
+        int completedCount = (int) sessions.stream()
+            .filter(this::isCompletedSession)
+            .count();
+        OptionalDouble average = sessions.stream()
+            .filter(this::isCompletedSession)
+            .map(InterviewSessionEntity::getOverallScore)
+            .filter(Objects::nonNull)
+            .mapToInt(Integer::intValue)
+            .average();
+        int averageScore = (int) Math.round(average.orElse(0));
+
+        return new InterviewHistorySummaryDTO(
+            new InterviewHistorySummaryDTO.Stats(items.size(), completedCount, averageScore),
+            items
+        );
+    }
 
     /**
      * 获取面试会话详情
@@ -157,6 +185,29 @@ public class InterviewHistoryService {
             log.error("导出PDF失败: sessionId={}", sessionId, e);
             throw new BusinessException(ErrorCode.EXPORT_PDF_FAILED, "导出PDF失败: " + e.getMessage());
         }
+    }
+
+    private InterviewHistorySummaryDTO.Item toHistorySummaryItem(InterviewSessionEntity session) {
+        return new InterviewHistorySummaryDTO.Item(
+            session.getSessionId(),
+            session.getResume() != null ? session.getResume().getId() : null,
+            session.getResume() != null ? session.getResume().getOriginalFilename() : null,
+            session.getJobRole(),
+            session.getJobLabelSnapshot() != null
+                ? session.getJobLabelSnapshot()
+                : session.getJobRole() != null ? session.getJobRole().getLabel() : null,
+            session.getTotalQuestions(),
+            session.getStatus() != null ? session.getStatus().name() : null,
+            session.getEvaluateStatus() != null ? session.getEvaluateStatus().name() : null,
+            session.getOverallScore(),
+            session.getCreatedAt(),
+            session.getCompletedAt()
+        );
+    }
+
+    private boolean isCompletedSession(InterviewSessionEntity session) {
+        return session.getStatus() == InterviewSessionEntity.SessionStatus.COMPLETED
+            || session.getStatus() == InterviewSessionEntity.SessionStatus.EVALUATED;
     }
 }
 

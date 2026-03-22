@@ -1,0 +1,123 @@
+@use '../../styles/theme.scss' as *;
+
+.profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+
+  &__hero {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+  }
+
+  &__eyebrow {
+    font-size: $font-size-caption;
+    color: rgba(255, 255, 255, 0.76);
+  }
+
+  &__title {
+    display: block;
+    font-size: $font-size-title;
+    line-height: 1.3;
+    font-weight: 700;
+    color: $color-text-inverse;
+  }
+
+  &__desc {
+    display: block;
+    font-size: $font-size-body;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  &__hero-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: $space-3;
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: $space-4;
+  }
+
+  &__section-head {
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+  }
+
+  &__section-title {
+    display: block;
+    font-size: $font-size-title;
+    font-weight: 700;
+    color: $color-text-primary;
+  }
+
+  &__intro-list,
+  &__actions,
+  &__meta-list {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+  }
+
+  &__intro-item {
+    padding: $space-4;
+    border-radius: $radius-md;
+    background: rgba(246, 251, 255, 0.9);
+    border: 1px solid $color-border-soft;
+  }
+
+  &__intro-title {
+    display: block;
+    margin-bottom: $space-2;
+    font-size: $font-size-body;
+    font-weight: 700;
+    color: $color-text-primary;
+  }
+
+  &__intro-text {
+    display: block;
+    font-size: $font-size-body;
+    line-height: 1.7;
+    color: $color-text-secondary;
+  }
+
+  &__action-card {
+    gap: $space-4;
+  }
+
+  &__action-btn {
+    width: fit-content;
+    min-width: 220px;
+  }
+
+  &__meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-4;
+    padding-bottom: $space-3;
+    border-bottom: 1px solid $color-border-soft;
+  }
+
+  &__meta-row:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  &__meta-label {
+    font-size: $font-size-body;
+    color: $color-text-secondary;
+  }
+
+  &__meta-value {
+    font-size: $font-size-body;
+    font-weight: 600;
+    color: $color-text-primary;
+    text-align: right;
+  }
+}

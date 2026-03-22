@@ -1,154 +1,207 @@
-@import '../../styles/theme.scss';
+@use '../../styles/theme.scss' as *;
 
 .resume-detail-page {
-  min-height: 100vh;
-  background: $bg-base;
-  padding: $space-5;
-}
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
 
-.header {
-  @include card;
-  padding: $space-5;
-  margin-bottom: $space-4;
-
-  .header-title-row {
+  &__hero {
     display: flex;
-    align-items: center;
-
-    .title-icon {
-      font-size: 20px;
-      margin-right: $space-2;
-    }
+    flex-direction: column;
+    gap: $space-4;
   }
 
-  .title {
-    flex: 1;
-    font-size: $text-xl;
-    font-weight: $font-semibold;
-    color: $text-primary;
-    @include text-ellipsis;
+  &__hero-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $space-3;
   }
 
-  .status {
-    display: inline-block;
-    margin-top: $space-3;
-    padding: $space-1 $space-3;
-    border-radius: $radius-full;
-    font-size: $text-sm;
-    font-weight: $font-medium;
-
-    &.pending {
-      background: $warning-bg;
-      color: $warning;
-    }
-
-    &.processing {
-      background: $primary-bg;
-      color: $primary;
-    }
-
-    &.completed {
-      background: $success-bg;
-      color: $success;
-    }
-
-    &.failed {
-      background: $error-bg;
-      color: $error;
-    }
-  }
-}
-
-.analyzing-tip {
-  @include card;
-  text-align: center;
-  padding: $space-6;
-  margin-bottom: $space-4;
-}
-
-.score-display {
-  @include card;
-  text-align: center;
-  padding: $space-6;
-  margin-bottom: $space-4;
-
-  .score-value {
-    font-size: 72px;
-    font-weight: $font-bold;
-    color: $primary;
-    line-height: 1;
-  }
-
-  .score-max {
-    font-size: $text-3xl;
-    color: $text-muted;
-    font-weight: $font-normal;
-  }
-}
-
-.section {
-  @include card;
-  padding: $space-5;
-  margin-bottom: $space-4;
-
-  .section-title {
+  &__eyebrow {
     display: block;
-    font-size: $text-lg;
-    font-weight: $font-semibold;
-    color: $text-primary;
-    margin-bottom: $space-4;
-    padding-bottom: $space-3;
-    border-bottom: 1px solid $border-light;
+    font-size: $font-size-caption;
+    color: rgba(255, 255, 255, 0.76);
   }
 
-  .content {
-    font-size: $text-base;
-    color: $text-secondary;
-    line-height: $leading-relaxed;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+  &__title {
+    display: block;
+    margin-top: $space-2;
+    font-size: 44px;
+    line-height: 1.3;
+    font-weight: 700;
+    color: $color-text-inverse;
+    word-break: break-all;
   }
 
-  .scores {
-    .score-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: $space-3 0;
-      border-bottom: 1px solid $border-light;
-
-      &:last-child {
-        border-bottom: none;
-      }
-
-      .score-name {
-        color: $text-secondary;
-        font-size: $text-base;
-      }
-
-      .score-value {
-        color: $primary;
-        font-size: $text-md;
-        font-weight: $font-semibold;
-      }
-    }
+  &__desc {
+    font-size: $font-size-body;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.82);
   }
-}
 
-.actions {
-  padding: $space-4 0;
+  &__hero-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: $space-3;
+  }
 
-  .action-btn {
-    width: 100%;
-    height: 96px;
-    @include primary-btn;
-    font-size: $text-lg;
+  &__hero-stats .stat-block {
+    min-height: 196px;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.94);
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: $space-4;
+  }
+
+  &__section-head {
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+  }
+
+  &__section-title {
+    font-size: $font-size-subtitle;
+    font-weight: 700;
+    color: $color-text-primary;
+  }
+
+  &__summary {
+    font-size: $font-size-body;
+    line-height: 1.8;
+    color: $color-text-secondary;
+    word-break: break-word;
+  }
+
+  &__scores {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+  }
+
+  &__score-row {
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+  }
+
+  &__score-head {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    gap: $space-3;
+  }
 
-    .btn-text {
-      color: #fff;
-    }
+  &__score-label {
+    font-size: $font-size-body;
+    color: $color-text-primary;
+  }
+
+  &__score-value {
+    font-size: $font-size-body;
+    font-weight: 700;
+    color: $color-primary;
+  }
+
+  &__score-track {
+    height: 18px;
+    border-radius: 999px;
+    background: rgba(16, 42, 67, 0.08);
+    overflow: hidden;
+  }
+
+  &__score-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, $color-accent 0%, $color-primary-soft 100%);
+  }
+
+  &__two-column {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: $space-4;
+  }
+
+  &__section--half {
+    min-height: 100%;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+  }
+
+  &__list-item {
+    display: flex;
+    align-items: flex-start;
+    gap: $space-2;
+    padding: $space-3;
+    border-radius: $radius-md;
+    background: $color-bg-muted;
+  }
+
+  &__list-marker {
+    min-width: 28px;
+    font-size: $font-size-body;
+    font-weight: 700;
+    color: $color-cta;
+  }
+
+  &__list-text {
+    flex: 1;
+    font-size: $font-size-caption;
+    line-height: 1.7;
+    color: $color-text-secondary;
+  }
+
+  &__placeholder {
+    font-size: $font-size-caption;
+    line-height: 1.7;
+    color: $color-text-muted;
+  }
+
+  &__interview-list {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+  }
+
+  &__interview-card {
+    gap: $space-3;
+  }
+
+  &__interview-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: $space-3;
+  }
+
+  &__interview-title {
+    display: block;
+    margin-top: $space-1;
+    font-size: $font-size-body;
+    font-weight: 700;
+    color: $color-text-primary;
+  }
+
+  &__interview-action {
+    align-self: flex-start;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-3;
+    padding-bottom: $space-5;
+  }
+
+  &__action {
+    min-width: 220px;
   }
 }

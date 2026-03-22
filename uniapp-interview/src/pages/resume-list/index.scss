@@ -1,0 +1,131 @@
+@use '../../styles/theme.scss' as *;
+
+.resume-list-page {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+
+  &__hero {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+  }
+
+  &__eyebrow {
+    font-size: $font-size-caption;
+    color: rgba(255, 255, 255, 0.78);
+  }
+
+  &__title {
+    font-size: 46px;
+    line-height: 1.3;
+    font-weight: 700;
+    color: $color-text-inverse;
+  }
+
+  &__desc {
+    font-size: $font-size-body;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  &__hero-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: $space-3;
+  }
+
+  &__hero-stats .stat-block {
+    min-height: 180px;
+    justify-content: space-between;
+  }
+
+  &__upload-card {
+    gap: $space-2;
+  }
+
+  &__upload-cta {
+    font-size: $font-size-body;
+    font-weight: 600;
+    color: $color-primary-soft;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $space-4;
+  }
+
+  &__card {
+    gap: $space-4;
+  }
+
+  &__card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: $space-3;
+  }
+
+  &__filename {
+    display: block;
+    margin-top: $space-1;
+    font-size: $font-size-subtitle;
+    line-height: 1.4;
+    font-weight: 700;
+    color: $color-text-primary;
+    word-break: break-all;
+  }
+
+  &__meta {
+    font-size: $font-size-caption;
+    color: $color-text-muted;
+  }
+
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: $space-3;
+  }
+
+  &__stat {
+    padding: $space-4;
+    border-radius: $radius-md;
+    background: $color-bg-muted;
+    border: 1px solid $color-border-soft;
+  }
+
+  &__stat-value {
+    display: block;
+    font-size: $font-size-stat;
+    line-height: 1;
+    font-weight: 700;
+    color: $color-primary;
+  }
+
+  &__stat-label {
+    display: block;
+    margin-top: $space-2;
+    font-size: $font-size-caption;
+    color: $color-text-secondary;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-3;
+    align-items: center;
+  }
+
+  &__action {
+    min-width: 200px;
+  }
+
+  &__delete {
+    min-height: 64px;
+    padding: 0 $space-2;
+    font-size: $font-size-caption;
+    color: $color-danger;
+    background: transparent;
+  }
+}

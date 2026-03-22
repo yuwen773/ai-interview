@@ -42,6 +42,14 @@ public interface InterviewSessionRepository extends JpaRepository<InterviewSessi
      * 根据简历ID查找最近的面试记录（用于历史题去重）
      */
     List<InterviewSessionEntity> findTop10ByResumeIdOrderByCreatedAtDesc(Long resumeId);
+
+    Optional<InterviewSessionEntity> findFirstByOrderByCreatedAtDesc();
+
+    long countByStatusIn(List<SessionStatus> statuses);
+
+    Optional<InterviewSessionEntity> findFirstByStatusInAndOverallScoreIsNotNullOrderByCompletedAtDescCreatedAtDesc(
+        List<SessionStatus> statuses
+    );
     
     /**
      * 查找简历的未完成面试（CREATED或IN_PROGRESS状态）
@@ -58,6 +66,14 @@ public interface InterviewSessionRepository extends JpaRepository<InterviewSessi
         Long resumeId,
         List<SessionStatus> statuses
     );
+
+    @Query("""
+        SELECT s
+        FROM InterviewSessionEntity s
+        JOIN FETCH s.resume
+        ORDER BY s.createdAt DESC
+        """)
+    List<InterviewSessionEntity> findAllWithResumeOrderByCreatedAtDesc();
 
     /**
      * 查询成长曲线所需的已完成面试，并预加载答案，避免后续按会话逐条查询。

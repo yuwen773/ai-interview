@@ -1,22 +1,26 @@
 export default defineAppConfig({
   pages: [
     'pages/index/index',
+    'pages/resume-list/index',
+    'pages/interview-history/index',
+    'pages/profile/index',
     'pages/upload/index',
     'pages/resume-detail/index',
     'pages/interview-config/index',
     'pages/interview/index',
     'pages/interview-report/index',
+    'pages/growth-curve/index',
   ],
   window: {
     backgroundTextStyle: 'light',
-    navigationBarBackgroundColor: '#ffffff',
-    navigationBarTitleText: 'AI面试助手',
+    navigationBarBackgroundColor: '#fff',
+    navigationBarTitleText: '面试练习',
     navigationBarTextStyle: 'black',
   },
   tabBar: {
-    color: '#94A3B8',
+    color: '#7A7E83',
     selectedColor: '#3B82F6',
-    borderStyle: 'white',
+    borderStyle: 'black',
     backgroundColor: '#ffffff',
     list: [
       {
@@ -24,8 +28,16 @@ export default defineAppConfig({
         text: '首页',
       },
       {
-        pagePath: 'pages/interview/index',
-        text: '面试',
+        pagePath: 'pages/resume-list/index',
+        text: '简历库',
+      },
+      {
+        pagePath: 'pages/interview-history/index',
+        text: '面试记录',
+      },
+      {
+        pagePath: 'pages/profile/index',
+        text: '我的',
       },
     ],
   },

@@ -5,8 +5,8 @@ export const resumeApi = {
   /**
    * 上传简历并获取分析结果
    */
-  async uploadAndAnalyze(filePath: string, fileName: string): Promise<UploadResponse> {
-    return request.upload<UploadResponse>('/resumes/upload', filePath, fileName);
+  async uploadAndAnalyze(filePath: string): Promise<UploadResponse> {
+    return request.upload<UploadResponse>('/resumes/upload', filePath);
   },
 
   /**

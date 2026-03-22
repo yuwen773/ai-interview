@@ -1,43 +1,30 @@
-@import '../../../styles/theme.scss';
+@use '../../../styles/theme.scss' as *;
 
 .empty-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: $space-16 $space-6;
-  min-height: 300px;
+  align-items: flex-start;
+  gap: $space-3;
+  width: 100%;
+  padding: $space-6 $space-5;
 }
 
-.empty-icon {
-  width: 80px;
-  height: 80px;
-  border-radius: $radius-full;
-  background: $bg-base;
-  @include flex-center;
-  margin-bottom: $space-5;
-
-  .empty-icon-text {
-    font-size: 40px;
-  }
+.empty-container__badge {
+  margin-bottom: $space-1;
 }
 
-.empty-text {
-  color: $text-muted;
-  font-size: $text-md;
-  text-align: center;
+.empty-container__title {
+  font-size: $font-size-title;
+  font-weight: 700;
+  color: $color-primary;
 }
 
-.empty-action {
-  margin-top: $space-5;
-  padding: $space-3 $space-6;
-  background: $primary;
-  color: #fff;
-  font-size: $text-md;
-  border-radius: $radius-md;
-  border: none;
+.empty-container__text {
+  font-size: $font-size-body;
+  line-height: 1.6;
+  color: $color-text-secondary;
+}
 
-  &[disabled] {
-    background: $text-disabled;
-  }
+.empty-container__action {
+  margin-top: $space-2;
 }

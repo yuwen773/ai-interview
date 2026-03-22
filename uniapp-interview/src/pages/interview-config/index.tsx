@@ -23,6 +23,13 @@ export default function InterviewConfig() {
     () => roles.find((item) => item.code === selectedRole)?.label ?? '',
     [roles, selectedRole]
   );
+  const answeredCount = useMemo(() => {
+    if (!unfinishedSession?.questions?.length) {
+      return unfinishedSession?.currentQuestionIndex ?? 0;
+    }
+
+    return unfinishedSession.questions.filter((item) => Boolean(item.userAnswer?.trim())).length;
+  }, [unfinishedSession]);
 
   useEffect(() => {
     if (!resumeId) {
@@ -113,41 +120,79 @@ export default function InterviewConfig() {
   }
 
   return (
-    <ScrollView className="interview-config-page" scrollY>
-      <View className="hero">
-        <Text className="title">选择目标岗位</Text>
-        <Text className="subtitle">
-          根据岗位生成更贴近真实场景的题目。开始面试前，先确认这次要模拟的方向。
+    <ScrollView className="interview-config-page page-shell" scrollY>
+      <View className="interview-config-page__hero section-shell section-shell--primary">
+        <Text className="interview-config-page__eyebrow">岗位配置</Text>
+        <Text className="interview-config-page__title">先确定这轮训练的岗位方向，再决定是恢复旧会话还是重新开始</Text>
+        <Text className="interview-config-page__subtitle">
+          岗位决定题目侧重点。若这份简历已有未完成面试，建议优先续上一次，避免训练记录被切散。
         </Text>
       </View>
 
       {unfinishedSession && (
-        <View className="status-card">
-          <Text className="status-title">检测到未完成面试</Text>
-          <Text className="status-text">
-            当前简历已有未完成面试，岗位为“{unfinishedSession.jobLabel}”，已完成
-            {unfinishedSession.currentQuestionIndex} / {unfinishedSession.totalQuestions} 题。
+        <View className="section-shell interview-config-page__resume-path interview-config-page__resume-path--warning">
+          <View className="interview-config-page__section-head">
+            <Text className="interview-config-page__section-title">检测到未完成面试</Text>
+            <View className="status-pill status-pill--warning">可继续</View>
+          </View>
+          <Text className="interview-config-page__resume-path-text">
+            当前简历已有一场 {unfinishedSession.jobLabel} 面试尚未结束，已完成 {answeredCount} /{' '}
+            {unfinishedSession.totalQuestions} 题。
           </Text>
-          <View className="status-actions">
-            <Button className="status-btn secondary" onClick={handleContinueUnfinished}>
+          <View className="interview-config-page__path-stats">
+            <View className="stat-block">
+              <Text className="stat-block__value">{answeredCount}</Text>
+              <Text className="stat-block__label">已答题数</Text>
+              <Text className="stat-block__hint">继续会回到当前进度</Text>
+            </View>
+            <View className="stat-block">
+              <Text className="stat-block__value">{unfinishedSession.totalQuestions - answeredCount}</Text>
+              <Text className="stat-block__label">剩余题数</Text>
+              <Text className="stat-block__hint">完成后会直接进入报告页</Text>
+            </View>
+          </View>
+          <View className="interview-config-page__path-actions">
+            <Button className="action-chip action-chip--secondary interview-config-page__path-action" onClick={handleContinueUnfinished}>
               继续该面试
             </Button>
-            <Button className="status-btn primary" onClick={handleStartInterview}>
+            <Button className="action-chip interview-config-page__path-action" onClick={handleStartInterview}>
               开始新的
             </Button>
           </View>
         </View>
       )}
 
-      <View className="resume-card">
-        <Text className="resume-title">当前简历</Text>
-        <Text className="resume-name">{resumeName || `简历 #${resumeId}`}</Text>
-        <Text className="resume-preview">
+      <View className="section-shell interview-config-page__resume-card">
+        <View className="interview-config-page__section-head">
+          <Text className="interview-config-page__section-title">当前简历摘要</Text>
+          <Text className="surface-note">系统会基于这份简历和所选岗位生成更贴近真实场景的问题。</Text>
+        </View>
+        <Text className="interview-config-page__resume-name">{resumeName || `简历 #${resumeId}`}</Text>
+        <Text className="interview-config-page__resume-preview">
           {resumePreview ? `${resumePreview}${resumePreview.length >= 120 ? '...' : ''}` : '暂无简历摘要'}
         </Text>
+        <View className="interview-config-page__resume-meta">
+          <View className="stat-block">
+            <Text className="stat-block__value">{roles.length}</Text>
+            <Text className="stat-block__label">可选岗位</Text>
+            <Text className="stat-block__hint">岗位越明确，题目越聚焦</Text>
+          </View>
+          <View className="stat-block">
+            <Text className="stat-block__value">{unfinishedSession ? '有' : '无'}</Text>
+            <Text className="stat-block__label">历史续练</Text>
+            <Text className="stat-block__hint">同一简历可恢复未完成会话</Text>
+          </View>
+        </View>
       </View>
 
-      <View className="role-list">
+      <View className="interview-config-page__role-section">
+        <View className="interview-config-page__section-head interview-config-page__section-head--tight">
+          <Text className="interview-config-page__section-title">选择目标岗位</Text>
+          <Text className="surface-note">优先选择你近期最想投递的方向，后续报告会围绕该岗位给反馈。</Text>
+        </View>
+      </View>
+
+      <View className="interview-config-page__role-list">
         {roles.map((role) => (
           <JobRoleCard
             key={role.code}
@@ -158,13 +203,24 @@ export default function InterviewConfig() {
         ))}
       </View>
 
-      <View className="footer">
-        <Text className="hint">
+      <View className="interview-config-page__footer">
+        <View className="section-shell interview-config-page__footer-card">
+          <Text className="interview-config-page__footer-label">当前选择</Text>
+          <Text className="interview-config-page__footer-value">
+            {selectedRoleLabel || '请选择岗位后开始面试'}
+          </Text>
+          <Text className="interview-config-page__footer-hint">
+            {unfinishedSession
+              ? '如果你想保留当前未完成进度，优先点“继续该面试”；开始新的会创建一场新会话。'
+              : '确认岗位后立即开始，题目会按该岗位方向生成。'}
+          </Text>
+        </View>
+        <Button className="interview-config-page__start-btn" onClick={handleStartInterview} disabled={!selectedRole}>
+          {unfinishedSession ? '开始新的岗位面试' : '立即开始面试'}
+        </Button>
+        <Text className="interview-config-page__hint">
           {selectedRoleLabel ? `已选择：${selectedRoleLabel}` : '请选择岗位后开始面试'}
         </Text>
-        <Button className="start-btn" onClick={handleStartInterview} disabled={!selectedRole}>
-          {unfinishedSession ? '开始新的岗位面试' : '开始面试'}
-        </Button>
       </View>
     </ScrollView>
   );

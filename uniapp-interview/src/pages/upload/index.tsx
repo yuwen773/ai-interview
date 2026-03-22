@@ -19,7 +19,7 @@ export default function Upload() {
       });
       if (res.tempFiles.length > 0) {
         setFile(res.tempFiles[0].path);
-        setFileName(res.tempFiles[0].name);
+        setFileName(res.tempFiles[0].name); // 保存原始文件名
       }
     } catch (err) {
       Taro.showToast({ title: '选择文件失败', icon: 'none' });
@@ -34,9 +34,12 @@ export default function Upload() {
 
     setLoading(true);
     try {
-      const res = await resumeApi.uploadAndAnalyze(file, fileName);
+      // 上传并分析简历
+      const res = await resumeApi.uploadAndAnalyze(file);
       Taro.showToast({ title: '上传成功', icon: 'success' });
+      // 跳转到简历详情 - 兼容不同返回格式，确保转为字符串
       const resumeId = String(res.resume?.id ?? res.storage?.resumeId);
+      console.log('Upload - resumeId:', resumeId);
       if (!resumeId || resumeId === 'undefined') {
         Taro.showToast({ title: '获取简历ID失败', icon: 'none' });
         return;
@@ -53,34 +56,17 @@ export default function Upload() {
 
   return (
     <View className="upload-page">
-      <View
-        className={`upload-card ${file ? 'active' : ''}`}
-        onClick={handleChooseFile}
-      >
+      <View className="upload-card" onClick={handleChooseFile}>
         <View className="upload-icon">
-          <Text className="upload-icon-text">{file ? '✓' : '+'}</Text>
+          <Text className="icon">{file ? '✓' : '+'}</Text>
         </View>
-        <Text className="upload-title">
-          {file ? '已选择文件' : '点击上传简历'}
-        </Text>
         <Text className="upload-hint">
-          {file ? fileName : '将简历文件拖拽到此处或点击选择'}
+          {file ? fileName : '点击上传简历 (PDF/Word)'}
         </Text>
-        {!file && (
-          <View className="upload-formats">
-            <Text className="format-tag">PDF</Text>
-            <Text className="format-tag">Word</Text>
-            <Text className="format-tag">DOC</Text>
-          </View>
-        )}
       </View>
 
-      <Button
-        className="upload-btn"
-        onClick={handleUpload}
-        disabled={!file || loading}
-      >
-        <Text className="btn-text">{loading ? '上传中...' : '开始分析'}</Text>
+      <Button className="upload-btn" onClick={handleUpload} disabled={!file || loading}>
+        {loading ? '上传中...' : '开始分析'}
       </Button>
 
       {loading && <Loading text="正在分析简历..." />}

@@ -3,6 +3,7 @@ import request from './request';
 import type {
   CreateInterviewRequest,
   CurrentQuestionResponse,
+  GrowthCurve,
   InterviewReport,
   InterviewSession,
   JobRoleDTO,
@@ -107,6 +108,10 @@ export const interviewApi = {
       return Taro.saveFile({ tempFilePath: res.tempFilePath }).then(saveRes => saveRes.savedFilePath);
     });
     return filePath;
+  },
+
+  async getGrowthCurve(resumeId: number): Promise<GrowthCurve> {
+    return request.get<GrowthCurve>(`/interview/growth?resumeId=${resumeId}`);
   },
 };
 

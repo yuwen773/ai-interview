@@ -236,6 +236,11 @@ public class InterviewController {
         return Result.success(detail);
     }
 
+    @GetMapping("/api/interview/history/summary")
+    public Result<InterviewHistorySummaryDTO> getHistorySummary() {
+        return Result.success(historyService.getHistorySummary());
+    }
+
     /**
      * 查询同一简历下的成长曲线
      */

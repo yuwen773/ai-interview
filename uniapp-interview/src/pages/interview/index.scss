@@ -1,142 +1,169 @@
-@import '../../styles/theme.scss';
-
 .interview-page {
-  min-height: 100vh;
-  background: $bg-base;
-  padding: $space-5;
-}
+  &__hero,
+  &__question-card,
+  &__history,
+  &__answer-area {
+    margin-bottom: 24px;
+  }
 
-.progress {
-  @include card;
-  padding: $space-4;
-  margin-bottom: $space-4;
-
-  .progress-info {
+  &__hero-top,
+  &__section-head {
     display: flex;
+    align-items: flex-start;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: $space-3;
+    gap: 16px;
   }
 
-  .job-label {
-    @include pill-badge;
-    background: $primary-bg;
-    color: $primary-dark;
-    font-size: $text-xs;
+  &__hero-top {
+    margin-bottom: 14px;
   }
 
-  .progress-text {
-    font-size: $text-sm;
-    color: $text-muted;
-  }
-
-  .progress-bar {
-    height: 8px;
-    background: $border-default;
-    border-radius: $radius-full;
-    overflow: hidden;
-
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, $primary-light 0%, $primary 100%);
-      border-radius: $radius-full;
-      transition: width 0.4s ease-out;
-    }
-  }
-}
-
-.question-card {
-  @include card;
-  padding: $space-5;
-  margin-bottom: $space-4;
-  border-left: 4px solid $primary;
-
-  .question-label {
+  &__eyebrow,
+  &__title,
+  &__subtitle,
+  &__section-title,
+  &__question-badge,
+  &__question-content,
+  &__message-role,
+  &__message-content,
+  &__answer-count {
     display: block;
-    font-size: $text-xs;
-    color: $primary;
-    font-weight: $font-medium;
+  }
+
+  &__eyebrow {
+    font-size: 24px;
+    letter-spacing: 4px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: $space-3;
+    color: rgba(255, 255, 255, 0.72);
+    margin-bottom: 8px;
   }
 
-  .question-content {
-    display: block;
-    font-size: $text-lg;
-    color: $text-primary;
-    line-height: $leading-relaxed;
+  &__title {
+    font-size: 42px;
+    font-weight: 700;
+    color: #ffffff;
   }
-}
 
-.answer-area {
-  @include card;
-  padding: $space-5;
-  margin-bottom: $space-4;
+  &__subtitle {
+    font-size: 24px;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.82);
+    margin-bottom: 20px;
+  }
 
-  .answer-input {
+  &__progress-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  &__progress-bar {
     width: 100%;
-    min-height: 160px;
-    font-size: $text-lg;
-    line-height: $leading-relaxed;
-    color: $text-primary;
-    background: transparent;
-    border: none;
-    outline: none;
-    resize: none;
-
-    &::placeholder {
-      color: $text-muted;
-    }
+    height: 14px;
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    overflow: hidden;
   }
-}
 
-.actions {
-  .submit-btn {
+  &__progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #fb923c 0%, #fdba74 100%);
+    transition: width 0.3s ease;
+  }
+
+  &__section-title {
+    font-size: 30px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  &__question-badge {
+    padding: 8px 18px;
+    border-radius: 999px;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 22px;
+  }
+
+  &__question-content {
+    font-size: 30px;
+    line-height: 1.7;
+    color: #0f172a;
+  }
+
+  &__history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  &__message {
+    padding: 18px 20px;
+    border-radius: 24px;
+  }
+
+  &__message--assistant {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  }
+
+  &__message--user {
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  }
+
+  &__message-role {
+    font-size: 22px;
+    color: #64748b;
+    margin-bottom: 8px;
+  }
+
+  &__message-content {
+    font-size: 24px;
+    line-height: 1.7;
+    color: #0f172a;
+  }
+
+  &__answer-input {
     width: 100%;
-    height: 96px;
-    @include primary-btn;
-    font-size: $text-lg;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: $space-2;
+    min-height: 280px;
+    font-size: 28px;
+    line-height: 1.7;
+    color: #0f172a;
   }
-}
 
-.message-list {
-  margin-bottom: $space-4;
+  &__answer-count {
+    margin-top: 12px;
+    text-align: right;
+    font-size: 22px;
+    color: #94a3b8;
+  }
 
-  .message-item {
-    display: flex;
-    margin-bottom: $space-4;
+  &__actions {
+    padding: 4px 0 32px;
+  }
 
-    &.user {
-      justify-content: flex-end;
+  &__secondary-action,
+  &__submit-btn {
+    width: 100%;
+    border-radius: 999px;
+  }
 
-      .message-bubble {
-        background: $primary;
-        color: #fff;
-        border-radius: $radius-xl $radius-xl $radius-sm $radius-xl;
-      }
-    }
+  &__secondary-action {
+    margin-bottom: 12px;
+  }
 
-    &.assistant {
-      justify-content: flex-start;
+  &__submit-btn {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
+    font-size: 30px;
+    font-weight: 700;
+    box-shadow: 0 16px 28px rgba(37, 99, 235, 0.2);
 
-      .message-bubble {
-        background: $bg-card;
-        color: $text-primary;
-        border-radius: $radius-xl $radius-xl $radius-xl $radius-sm;
-        box-shadow: $shadow-card;
-      }
-    }
-
-    .message-bubble {
-      max-width: 80%;
-      padding: $space-4;
-      font-size: $text-base;
-      line-height: $leading-relaxed;
+    &[disabled] {
+      background: #cbd5e1;
+      color: #ffffff;
+      box-shadow: none;
     }
   }
 }

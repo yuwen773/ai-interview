@@ -111,3 +111,25 @@ export interface ReferenceAnswer {
   referenceAnswer: string;
   keyPoints: string[];
 }
+
+export interface GrowthCurve {
+  resumeId: number;
+  byJobRole: GrowthCurveJobRole[];
+}
+
+export interface GrowthCurveJobRole {
+  jobRole: JobRole;
+  jobLabel: string;
+  scorePoints: GrowthCurveScorePoint[];
+}
+
+export interface GrowthCurveScorePoint {
+  date: string;
+  overallScore: number;
+  categoryScores: GrowthCurveCategoryScore[];
+}
+
+export interface GrowthCurveCategoryScore {
+  category: string;
+  score: number;
+}

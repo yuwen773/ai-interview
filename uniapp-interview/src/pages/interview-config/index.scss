@@ -1,152 +1,164 @@
-@import '../../styles/theme.scss';
-
 .interview-config-page {
-  min-height: 100vh;
-  background: linear-gradient(180deg, $primary-bg 0%, $bg-base 28%);
-  padding: $space-5;
-}
+  &__hero,
+  &__resume-path,
+  &__resume-card,
+  &__footer-card {
+    margin-bottom: 24px;
+  }
 
-.hero {
-  padding: $space-5 0 $space-6;
-
-  .title {
+  &__eyebrow,
+  &__title,
+  &__subtitle,
+  &__section-title,
+  &__resume-name,
+  &__resume-preview,
+  &__resume-path-text,
+  &__footer-label,
+  &__footer-value,
+  &__footer-hint,
+  &__hint {
     display: block;
-    font-size: $text-4xl;
-    font-weight: $font-bold;
-    color: $text-primary;
-    margin-bottom: $space-2;
   }
 
-  .subtitle {
-    display: block;
-    font-size: $text-base;
-    line-height: $leading-relaxed;
-    color: $text-secondary;
-  }
-}
-
-.status-card,
-.resume-card {
-  @include card;
-  padding: $space-5;
-  margin-bottom: $space-4;
-}
-
-.status-card {
-  border: 1px solid $warning-border;
-  background: linear-gradient(135deg, rgba(#FEF3C7, 0.95), rgba(#FFFBEB, 0.95));
-
-  .status-title {
-    display: block;
-    font-size: $text-lg;
-    font-weight: $font-semibold;
-    color: #92400E;
-    margin-bottom: $space-2;
-  }
-
-  .status-text {
-    display: block;
-    font-size: $text-base;
-    line-height: $leading-relaxed;
-    color: #B45309;
-    margin-bottom: $space-4;
-  }
-
-  .status-actions {
-    display: flex;
-    gap: $space-3;
-  }
-
-  .status-btn {
-    flex: 1;
-    height: 80px;
-    border-radius: $radius-lg;
-    font-size: $text-base;
-    font-weight: $font-medium;
-    @include flex-center;
-
-    &.primary {
-      background: $accent;
-      color: #fff;
-      border: none;
-    }
-
-    &.secondary {
-      background: #fff;
-      color: $accent-dark;
-      border: 1.5px solid #FDBA74;
-    }
-  }
-}
-
-.resume-card {
-  .resume-title {
-    display: block;
-    font-size: $text-sm;
-    color: $text-muted;
-    margin-bottom: $space-2;
+  &__eyebrow {
+    font-size: 24px;
+    letter-spacing: 4px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.72);
+    margin-bottom: 10px;
   }
 
-  .resume-name {
-    display: block;
-    font-size: $text-xl;
-    font-weight: $font-semibold;
-    color: $text-primary;
-    margin-bottom: $space-2;
-    @include text-ellipsis;
-  }
-
-  .resume-preview {
-    display: block;
-    font-size: $text-base;
-    line-height: $leading-relaxed;
-    color: $text-secondary;
-    @include line-clamp(3);
-  }
-}
-
-.role-list {
-  display: flex;
-  flex-direction: column;
-  gap: $space-4;
-  margin-top: $space-4;
-}
-
-.footer {
-  margin-top: $space-6;
-  padding-bottom: $space-6;
-
-  .hint {
-    display: block;
-    text-align: center;
-    font-size: $text-base;
-    color: $text-secondary;
-    margin-bottom: $space-4;
-  }
-
-  .start-btn {
-    width: 100%;
-    height: 96px;
-    border-radius: $radius-xl;
-    background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
+  &__title {
+    font-size: 42px;
+    line-height: 1.35;
+    font-weight: 700;
     color: #ffffff;
-    font-size: $text-lg;
-    font-weight: $font-semibold;
-    @include flex-center;
-    box-shadow: $shadow-primary;
-    transition: all $transition-base;
+    margin-bottom: 12px;
+  }
 
-    &:active {
-      transform: scale(0.98);
-      box-shadow: none;
-    }
+  &__subtitle {
+    font-size: 25px;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  &__section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  &__section-head--tight {
+    margin-bottom: 12px;
+  }
+
+  &__section-title {
+    font-size: 30px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  &__resume-path--warning {
+    background: linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%);
+    border: 1px solid #fed7aa;
+  }
+
+  &__resume-path-text {
+    font-size: 24px;
+    line-height: 1.7;
+    color: #9a3412;
+    margin-bottom: 20px;
+  }
+
+  &__path-stats,
+  &__resume-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  &__path-stats {
+    margin-bottom: 20px;
+  }
+
+  &__path-actions {
+    display: flex;
+    gap: 12px;
+  }
+
+  &__path-action {
+    flex: 1;
+  }
+
+  &__resume-name {
+    font-size: 30px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 10px;
+  }
+
+  &__resume-preview {
+    font-size: 24px;
+    line-height: 1.7;
+    color: #64748b;
+    margin-bottom: 20px;
+  }
+
+  &__role-section {
+    margin-bottom: 8px;
+  }
+
+  &__role-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  &__footer {
+    padding: 28px 0 32px;
+  }
+
+  &__footer-label {
+    font-size: 24px;
+    color: #64748b;
+    margin-bottom: 8px;
+  }
+
+  &__footer-value {
+    font-size: 30px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 10px;
+  }
+
+  &__footer-hint {
+    font-size: 24px;
+    line-height: 1.7;
+    color: #475569;
+  }
+
+  &__start-btn {
+    width: 100%;
+    margin: 24px 0 14px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
+    color: #ffffff;
+    font-size: 30px;
+    font-weight: 700;
+    box-shadow: 0 18px 30px rgba(234, 88, 12, 0.22);
 
     &[disabled] {
-      background: $text-disabled;
-      color: #fff;
+      background: #cbd5e1;
+      color: #ffffff;
       box-shadow: none;
     }
+  }
+
+  &__hint {
+    text-align: center;
+    font-size: 24px;
+    color: #64748b;
   }
 }
