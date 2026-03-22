@@ -16,6 +16,8 @@ public interface ResumeRepository extends JpaRepository<ResumeEntity, Long> {
      * 根据文件哈希查找简历（用于去重）
      */
     Optional<ResumeEntity> findByFileHash(String fileHash);
+
+    Optional<ResumeEntity> findFirstByOrderByUploadedAtDesc();
     
     /**
      * 检查文件哈希是否存在
