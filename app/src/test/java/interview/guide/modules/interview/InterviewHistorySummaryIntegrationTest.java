@@ -61,7 +61,7 @@ class InterviewHistorySummaryIntegrationTest {
 
         mockMvc.perform(get("/api/interview/history/summary"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.stats.totalCount").exists())
+            .andExpect(jsonPath("$.data.stats.totalCount").value(3))
             .andExpect(jsonPath("$.data.items").isArray());
     }
 }
