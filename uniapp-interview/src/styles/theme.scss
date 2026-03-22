@@ -38,3 +38,73 @@ $font-size-body: 28px;
 $font-size-subtitle: 32px;
 $font-size-title: 34px;
 $font-size-stat: 44px;
+
+// Legacy token aliases kept for components that still use the previous theme API.
+$primary: $color-primary;
+$primary-dark: $color-primary-soft;
+$primary-bg: $color-accent-soft;
+
+$bg-base: $color-bg-page;
+$bg-card: $color-bg-surface;
+
+$border-default: $color-border-soft;
+
+$text-primary: $color-text-primary;
+$text-secondary: $color-text-secondary;
+$text-muted: $color-text-muted;
+
+$shadow-lg: $shadow-card;
+
+$radius-xl: $radius-md;
+$radius-2xl: $radius-lg;
+$radius-full: $radius-pill;
+
+$space-10: 40px;
+
+$text-xs: $font-size-caption;
+$text-sm: $font-size-caption;
+$text-md: $font-size-body;
+$text-base: $font-size-body;
+$text-lg: $font-size-subtitle;
+$text-xl: $font-size-title;
+$text-2xl: $font-size-title;
+
+$font-semibold: 600;
+
+$leading-relaxed: 1.7;
+
+$transition-fast: 0.2s ease;
+$transition-base: 0.3s ease;
+
+@mixin card-hover {
+  &:hover,
+  &.hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-card;
+  }
+}
+
+@mixin pill-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 $space-3;
+  border-radius: $radius-pill;
+  font-weight: 600;
+}
+
+@mixin card {
+  background: $bg-card;
+  border: 1px solid $border-default;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+}
+
+@mixin primary-btn {
+  border: none;
+  border-radius: $radius-pill;
+  color: $color-text-inverse;
+  background: linear-gradient(135deg, $color-cta 0%, #ff7f50 100%);
+  box-shadow: $shadow-soft;
+}
