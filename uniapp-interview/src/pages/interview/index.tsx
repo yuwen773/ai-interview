@@ -1,5 +1,5 @@
 import { View, Text, Button, Textarea, ScrollView } from '@tarojs/components';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { interviewApi } from '../../api/interview';
 import { resumeApi } from '../../api/resume';
@@ -20,48 +20,11 @@ export default function Interview() {
   const [answer, setAnswer] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [drawerVisible, setDrawerVisible] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 5 });
-  const canSaveDraft = Boolean(sessionId && question && answer.trim());
-  const canCompleteEarly = Boolean(sessionId && !loading);
+  const [drawerVisible, setDrawerVisible] = useState(false);
 
-  // 注意：currentQuestionIndex 是 0-based
-  const answerCards: AnswerCardItem[] = questions.map((q, index) => {
-    let status: AnswerCardStatus;
-    if (index < currentQuestionIndex) {
-      status = 'answered';
-    } else if (index === currentQuestionIndex) {
-      status = q.userAnswer ? 'answered' : 'unanswered';
-    } else {
-      status = 'unanswered';
-    }
-
-    return {
-      questionIndex: index,           // 0-based，API 用
-      displayIndex: index + 1,       // 1-based，显示用
-      status,
-      question: q.question,
-      savedAnswer: q.userAnswer || undefined,
-    };
-  });
-
-  const handleSaveAnswer = async (questionIndex: number, answer: string) => {
-    // questionIndex 是 0-based
-    try {
-      await interviewApi.saveAnswer({
-        sessionId,
-        answer,
-        questionIndex,
-      });
-      // 更新本地 questions 状态
-      setQuestions(prev => prev.map((q, i) =>
-        i === questionIndex ? { ...q, userAnswer: answer } : q
-      ));
-      Taro.showToast({ title: '已保存', icon: 'success' });
-    } catch (error) {
-      Taro.showToast({ title: '保存失败', icon: 'none' });
-    }
-  };
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
 
   useEffect(() => {
     const params = router.params || {};
@@ -92,13 +55,13 @@ export default function Interview() {
   }, [router.params]);
 
   const applySession = (session: InterviewSession) => {
-    const currentQuestion = session.questions?.[session.currentQuestionIndex] ?? null;
+    const currentQ = session.questions?.[session.currentQuestionIndex] ?? null;
     setSessionId(session.sessionId);
     setJobLabel(session.jobLabel);
     setQuestions(session.questions || []);
-    setCurrentQuestionIndex(session.currentQuestionIndex ?? 0);
-    setQuestion(currentQuestion);
-    setAnswer(currentQuestion?.userAnswer || '');
+    setCurrentQuestionIndex(session.currentQuestionIndex);
+    setQuestion(currentQ);
+    setAnswer(currentQ?.userAnswer || '');
     setProgress({
       current: Math.min(session.currentQuestionIndex + 1, session.totalQuestions),
       total: session.totalQuestions || 5,
@@ -155,7 +118,7 @@ export default function Interview() {
   };
 
   const handleSaveDraft = async () => {
-    if (!question || !canSaveDraft) {
+    if (!question || !answer.trim()) {
       Taro.showToast({ title: '先输入当前答案再暂存', icon: 'none' });
       return;
     }
@@ -167,6 +130,10 @@ export default function Interview() {
         answer,
         questionIndex: question.questionIndex,
       });
+      // 更新本地 questions 状态
+      setQuestions(prev => prev.map((q, i) =>
+        i === currentQuestionIndex ? { ...q, userAnswer: answer } : q
+      ));
       Taro.showToast({ title: '已暂存当前答案', icon: 'success' });
     } catch (error) {
       console.error('暂存答案失败:', error);
@@ -177,10 +144,6 @@ export default function Interview() {
   };
 
   const handleCompleteEarly = async () => {
-    if (!canCompleteEarly) {
-      return;
-    }
-
     const result = await Taro.showModal({
       title: '提前结束面试',
       content: '当前会话会立即进入评估流程，未回答的问题将不再继续。确认现在结束吗？',
@@ -194,7 +157,7 @@ export default function Interview() {
 
     setLoading(true);
     try {
-      if (canSaveDraft) {
+      if (answer.trim()) {
         await interviewApi.saveAnswer({
           sessionId,
           answer,
@@ -220,23 +183,22 @@ export default function Interview() {
 
     setLoading(true);
     try {
-      const currentAnswer = answer;
-
       const res = await interviewApi.submitAnswer({
         sessionId,
-        answer: currentAnswer,
+        answer,
         questionIndex: question.questionIndex,
       });
+
+      // 更新 questions 中该题的 userAnswer
+      setQuestions(prev => prev.map((q, i) =>
+        i === currentQuestionIndex ? { ...q, userAnswer: answer } : q
+      ));
 
       if (!res.hasNextQuestion || !res.nextQuestion) {
         Taro.navigateTo({ url: `/pages/interview-report/index?sessionId=${sessionId}` });
         return;
       }
 
-      // Update local questions state
-      setQuestions(prev => prev.map((q, i) =>
-        i === currentQuestionIndex ? { ...q, userAnswer: currentAnswer } : q
-      ));
       setQuestion(res.nextQuestion);
       setCurrentQuestionIndex(res.currentIndex);
       setProgress({ current: res.currentIndex + 1, total: res.totalQuestions || 5 });
@@ -246,6 +208,61 @@ export default function Interview() {
       Taro.showToast({ title: '提交失败', icon: 'none' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 答题卡数据派生
+  const answerCards: AnswerCardItem[] = questions.map((q, index) => {
+    let status: AnswerCardStatus;
+    if (index < currentQuestionIndex) {
+      status = 'answered';
+    } else if (index === currentQuestionIndex) {
+      status = q.userAnswer ? 'answered' : 'unanswered';
+    } else {
+      status = 'unanswered';
+    }
+
+    return {
+      questionIndex: index,
+      displayIndex: index + 1,
+      status,
+      question: q.question,
+      savedAnswer: q.userAnswer || undefined,
+    };
+  });
+
+  // 保存答题卡中修改的答案
+  const handleSaveAnswer = async (questionIndex: number, ans: string) => {
+    try {
+      await interviewApi.saveAnswer({
+        sessionId,
+        answer: ans,
+        questionIndex,
+      });
+      // 更新本地 questions 状态
+      setQuestions(prev => prev.map((q, i) =>
+        i === questionIndex ? { ...q, userAnswer: ans } : q
+      ));
+      Taro.showToast({ title: '已保存', icon: 'success' });
+    } catch (error) {
+      Taro.showToast({ title: '保存失败', icon: 'none' });
+    }
+  };
+
+  // 手势处理：从右向左滑打开抽屉
+  const handleTouchStart = (e: any) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: any) => {
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+
+    if (Math.abs(deltaX) > 50 && Math.abs(deltaY) < Math.abs(deltaX)) {
+      if (deltaX < 0) {
+        setDrawerVisible(true);
+      }
     }
   };
 
@@ -264,91 +281,74 @@ export default function Interview() {
   }
 
   return (
-    <View className="interview-page page-shell">
-      <View className="interview-page__hero section-shell section-shell--primary">
-        <View className="interview-page__hero-top">
-          <View>
-            <Text className="interview-page__eyebrow">正在面试</Text>
-            <Text className="interview-page__title">{jobLabel || '模拟面试'}</Text>
+    <View
+      className="interview-page"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      <ScrollView scrollY className="interview-page__scroll">
+        <View className="progress">
+          <View className="progress__top">
+            <Text className="job-label">{jobLabel || '模拟面试'}</Text>
+            <View className="status-pill">第 {progress.current} 题</View>
           </View>
-          <View className="status-pill status-pill--info">第 {progress.current} 题</View>
+          <Text className="progress__subtitle">
+            {resumeName || (resumeId ? `简历 #${resumeId}` : '当前简历')} · 共 {progress.total} 题
+          </Text>
+          <View className="progress__meta">
+            <View className="stat-block">
+              <Text className="stat-block__value">{progress.current}</Text>
+              <Text className="stat-block__label">当前进度</Text>
+            </View>
+            <View className="stat-block">
+              <Text className="stat-block__value">{Math.max(progress.total - progress.current, 0)}</Text>
+              <Text className="stat-block__label">剩余题数</Text>
+            </View>
+          </View>
+          <View className="progress-bar">
+            <View className="progress-fill" style={{ width: `${(progress.current / progress.total) * 100}%` }} />
+          </View>
         </View>
-        <Text className="interview-page__subtitle">
-          {resumeName || (resumeId ? `简历 #${resumeId}` : '当前简历')}
-          {' · '}
-          共 {progress.total} 题，本页支持暂存答案后稍后继续，也可以直接提前结束进入报告。
-        </Text>
-        <View className="interview-page__progress-meta">
-          <View className="stat-block">
-            <Text className="stat-block__value">{progress.current}</Text>
-            <Text className="stat-block__label">当前进度</Text>
-            <Text className="stat-block__hint">按题号推进</Text>
+
+        <View className="question-card">
+          <View className="question-card__header">
+            <Text className="question-card__label">当前问题</Text>
+            <Text className="question-badge">{question?.category || '待回答'}</Text>
           </View>
-          <View className="stat-block">
-            <Text className="stat-block__value">{Math.max(progress.total - progress.current, 0)}</Text>
-            <Text className="stat-block__label">剩余题数</Text>
-            <Text className="stat-block__hint">可提前结束进入评估</Text>
-          </View>
+          <Text className="question-card__content">{question?.question || ''}</Text>
         </View>
-        <View className="interview-page__progress-bar">
-          <View
-            className="interview-page__progress-fill"
-            style={{ width: `${(progress.current / progress.total) * 100}%` }}
+
+        <View className="drawer-trigger" onClick={() => setDrawerVisible(true)}>
+          <Text>答题卡</Text>
+          <Text className="drawer-trigger__hint">点击查看全部题目</Text>
+        </View>
+
+        <View className="answer-area">
+          <Text className="answer-area__label">当前作答</Text>
+          <Textarea
+            className="answer-input"
+            value={answer}
+            onInput={(e) => setAnswer(e.detail.value)}
+            placeholder="请输入你的答案..."
+            maxLength={2000}
           />
+          <Text className="answer-count">{answer.trim().length} / 2000</Text>
         </View>
-      </View>
 
-      <View className="section-shell interview-page__question-card">
-        <View className="interview-page__section-head">
-          <Text className="interview-page__section-title">当前问题</Text>
-          <Text className="interview-page__question-badge">{question?.category || '待回答'}</Text>
+        <View className="actions">
+          <View className="actions__secondary">
+            <Button className="action-chip action-chip--secondary" onClick={handleSaveDraft} disabled={!answer.trim() || loading}>
+              暂存答案
+            </Button>
+            <Button className="action-chip action-chip--secondary" onClick={handleCompleteEarly} disabled={loading}>
+              提前结束
+            </Button>
+          </View>
+          <Button className="submit-btn" onClick={handleSubmitAnswer} disabled={loading || !answer.trim()}>
+            {loading ? '提交中...' : '提交答案'}
+          </Button>
         </View>
-        <Text className="interview-page__question-content">{question?.question || ''}</Text>
-      </View>
-
-      <View className="interview-page__drawer-trigger" onClick={() => setDrawerVisible(true)}>
-        <Text>答题卡</Text>
-        <Text className="interview-page__drawer-hint">点击查看全部题目</Text>
-      </View>
-
-      <View className="section-shell interview-page__answer-area">
-        <View className="interview-page__section-head">
-          <Text className="interview-page__section-title">当前作答</Text>
-          <Text className="surface-note">先组织当前答案，再决定暂存还是直接提交进入下一题。</Text>
-        </View>
-        <Textarea
-          className="interview-page__answer-input"
-          value={answer}
-          onInput={(e) => setAnswer(e.detail.value)}
-          placeholder="请输入你的答案..."
-          maxLength={2000}
-        />
-        <Text className="interview-page__answer-count">{answer.trim().length} / 2000</Text>
-      </View>
-
-      <View className="interview-page__actions">
-        <Button
-          className="action-chip action-chip--secondary interview-page__secondary-action"
-          onClick={handleSaveDraft}
-          disabled={!canSaveDraft || loading}
-        >
-          <Text>暂存答案</Text>
-        </Button>
-        <Button
-          className="action-chip action-chip--secondary interview-page__secondary-action"
-          onClick={handleCompleteEarly}
-          disabled={!canCompleteEarly}
-        >
-          <Text>提前结束</Text>
-        </Button>
-        <Button
-          className="interview-page__submit-btn"
-          onClick={handleSubmitAnswer}
-          disabled={loading || !answer.trim()}
-        >
-          {loading ? '提交中...' : '提交答案'}
-        </Button>
-      </View>
+      </ScrollView>
 
       <AnswerCardDrawer
         visible={drawerVisible}
