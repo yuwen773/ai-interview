@@ -47,6 +47,7 @@ public class InterviewHistoryService {
             .filter(this::isCompletedSession)
             .count();
         OptionalDouble average = sessions.stream()
+            .filter(this::isCompletedSession)
             .map(InterviewSessionEntity::getOverallScore)
             .filter(Objects::nonNull)
             .mapToInt(Integer::intValue)
