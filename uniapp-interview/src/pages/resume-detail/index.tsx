@@ -1,4 +1,4 @@
-import { Button, ScrollView, Text, View } from '@tarojs/components';
+import { Button, Text, View } from '@tarojs/components';
 import { useEffect, useMemo, useState } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { historyApi, type InterviewItem, type ResumeDetail } from '../../api/history';
@@ -6,7 +6,12 @@ import Loading from '../../components/common/Loading';
 import Empty from '../../components/common/Empty';
 import './index.scss';
 
-type SuggestionText = string;
+interface Suggestion {
+  category?: string;
+  priority?: string;
+  issue: string;
+  recommendation: string;
+}
 
 function formatDateTime(value?: string | null) {
   if (!value) {
@@ -60,24 +65,44 @@ function getAnalyzeStatusMeta(status?: ResumeDetail['analyzeStatus'], error?: st
   }
 }
 
-function normalizeSuggestions(items: unknown[] = []): SuggestionText[] {
+function normalizeSuggestions(items: unknown[] = []): Suggestion[] {
   return items
     .map((item) => {
-      if (typeof item === 'string') {
-        return item;
+      if (!item || typeof item !== 'object') {
+        return null;
       }
 
-      if (item && typeof item === 'object') {
-        const record = item as Record<string, unknown>;
-        const text = [record.title, record.dimension, record.suggestion, record.description]
-          .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
-          .join('：');
-        return text || JSON.stringify(record);
+      const record = item as Record<string, unknown>;
+
+      // 如果已经是正确的结构
+      if (typeof record.issue === 'string' && typeof record.recommendation === 'string') {
+        return {
+          category: typeof record.category === 'string' ? record.category : undefined,
+          priority: typeof record.priority === 'string' ? record.priority : undefined,
+          issue: record.issue,
+          recommendation: record.recommendation,
+        } satisfies Suggestion;
       }
 
-      return '';
+      // 兼容旧的结构或尝试拼凑
+      const issue =
+        (record.title as string) ||
+        (record.dimension as string) ||
+        (record.issue as string) ||
+        '发现一个问题';
+      const recommendation =
+        (record.suggestion as string) || (record.description as string) || (record.recommendation as string) || '';
+
+      if (issue && recommendation) {
+        return {
+          issue,
+          recommendation,
+        } satisfies Suggestion;
+      }
+
+      return null;
     })
-    .filter(Boolean);
+    .filter((item): item is Suggestion => item !== null);
 }
 
 function normalizeInterviews(items: unknown[] = []): InterviewItem[] {
@@ -251,21 +276,29 @@ export default function ResumeDetailPage() {
         </View>
         <Text className="resume-detail-page__desc">{statusMeta.description}</Text>
         <View className="resume-detail-page__hero-stats">
-          <View className="stat-block">
-            <Text className="stat-block__value">{latestAnalysis?.overallScore ?? '--'}</Text>
-            <Text className="stat-block__label">综合得分</Text>
+          <View className="stat-block stat-block--highlight">
+            <View className="stat-block__main">
+              <Text className="stat-block__value">{latestAnalysis?.overallScore ?? '--'}</Text>
+              <Text className="stat-block__label">综合得分</Text>
+            </View>
             <Text className="stat-block__hint">
-              {latestAnalysis ? `最近分析于 ${formatDateTime(latestAnalysis.analyzedAt)}` : '等待首次分析完成'}
+              {latestAnalysis
+                ? `最近分析于 ${formatDateTime(latestAnalysis.analyzedAt)}`
+                : '等待首次分析完成'}
             </Text>
           </View>
           <View className="stat-block">
-            <Text className="stat-block__value">{interviews.length}</Text>
-            <Text className="stat-block__label">关联面试</Text>
+            <View className="stat-block__main">
+              <Text className="stat-block__value">{interviews.length}</Text>
+              <Text className="stat-block__label">关联面试</Text>
+            </View>
             <Text className="stat-block__hint">从同一份简历继续进入练习</Text>
           </View>
           <View className="stat-block">
-            <Text className="stat-block__value">{resume.accessCount ?? 0}</Text>
-            <Text className="stat-block__label">详情浏览</Text>
+            <View className="stat-block__main">
+              <Text className="stat-block__value">{resume.accessCount ?? 0}</Text>
+              <Text className="stat-block__label">详情浏览</Text>
+            </View>
             <Text className="stat-block__hint">上传时间 {formatDateTime(resume.uploadedAt)}</Text>
           </View>
         </View>
@@ -317,17 +350,20 @@ export default function ResumeDetailPage() {
         )}
       </View>
 
-      <View className="resume-detail-page__two-column">
-        <View className="section-shell resume-detail-page__section resume-detail-page__section--half">
+      <View className="resume-detail-page__analysis-sections">
+        <View className="section-shell resume-detail-page__section">
           <View className="resume-detail-page__section-head">
             <Text className="resume-detail-page__section-title">亮点总结</Text>
           </View>
           {latestAnalysis?.strengths?.length ? (
             <View className="resume-detail-page__list">
               {latestAnalysis.strengths.map((item, index) => (
-                <View key={`${item}-${index}`} className="resume-detail-page__list-item">
-                  <Text className="resume-detail-page__list-marker">+</Text>
-                  <Text className="resume-detail-page__list-text">{item}</Text>
+                <View
+                  key={`${item}-${index}`}
+                  className="resume-detail-page__list-item resume-detail-page__strength-item"
+                >
+                  <Text className="resume-detail-page__strength-marker">✓</Text>
+                  <Text className="resume-detail-page__strength-text">{item}</Text>
                 </View>
               ))}
             </View>
@@ -336,21 +372,46 @@ export default function ResumeDetailPage() {
           )}
         </View>
 
-        <View className="section-shell resume-detail-page__section resume-detail-page__section--half">
+        <View className="section-shell resume-detail-page__section">
           <View className="resume-detail-page__section-head">
             <Text className="resume-detail-page__section-title">改进建议</Text>
           </View>
           {suggestions.length ? (
             <View className="resume-detail-page__list">
               {suggestions.map((item, index) => (
-                <View key={`${item}-${index}`} className="resume-detail-page__list-item">
-                  <Text className="resume-detail-page__list-marker">•</Text>
-                  <Text className="resume-detail-page__list-text">{item}</Text>
+                <View
+                  key={`${item.issue}-${index}`}
+                  className="resume-detail-page__list-item resume-detail-page__suggestion-item"
+                >
+                  <View className="resume-detail-page__suggestion-meta">
+                    {item.category && <Text className="status-pill status-pill--info">{item.category}</Text>}
+                    {item.priority && (
+                      <Text
+                        className={`status-pill ${
+                          item.priority === '高'
+                            ? 'status-pill--danger'
+                            : item.priority === '中'
+                            ? 'status-pill--warning'
+                            : 'status-pill--info'
+                        }`}
+                      >
+                        {item.priority}
+                      </Text>
+                    )}
+                  </View>
+                  <View className="resume-detail-page__suggestion-content">
+                    <Text className="resume-detail-page__suggestion-issue">{item.issue}</Text>
+                    <Text className="resume-detail-page__suggestion-recommendation">
+                      {item.recommendation}
+                    </Text>
+                  </View>
                 </View>
               ))}
             </View>
           ) : (
-            <Text className="resume-detail-page__placeholder">暂无额外建议，可继续通过面试结果反向优化。</Text>
+            <Text className="resume-detail-page__placeholder">
+              暂无额外建议，可继续通过面试结果反向优化。
+            </Text>
           )}
         </View>
       </View>
