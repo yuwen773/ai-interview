@@ -1,6 +1,8 @@
 package interview.guide.modules.interview.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import interview.guide.common.exception.BusinessException;
+import interview.guide.common.model.AsyncTaskStatus;
 import interview.guide.infrastructure.redis.InterviewSessionCache;
 import interview.guide.modules.interview.listener.EvaluateStreamProducer;
 import interview.guide.modules.interview.model.CreateInterviewRequest;
@@ -15,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
@@ -122,5 +125,98 @@ class InterviewSessionServiceTest {
         assertEquals("Python 算法", report.jobLabel());
         assertEquals(85, report.overallScore());
         verify(persistenceService).saveReport("session-1", report);
+    }
+
+    @Test
+    @DisplayName("已评估的会话应直接返回持久化报告且不重复评估")
+    void shouldReusePersistedReportWhenSessionAlreadyEvaluated() {
+        InterviewQuestionService questionService = mock(InterviewQuestionService.class);
+        AnswerEvaluationService evaluationService = mock(AnswerEvaluationService.class);
+        InterviewPersistenceService persistenceService = mock(InterviewPersistenceService.class);
+        InterviewSessionCache sessionCache = mock(InterviewSessionCache.class);
+        EvaluateStreamProducer evaluateStreamProducer = mock(EvaluateStreamProducer.class);
+        ObjectMapper objectMapper = new ObjectMapper();
+        InterviewSessionService service = new InterviewSessionService(
+            questionService,
+            evaluationService,
+            persistenceService,
+            sessionCache,
+            objectMapper,
+            evaluateStreamProducer
+        );
+
+        InterviewSessionCache.CachedSession cachedSession = new InterviewSessionCache.CachedSession(
+            "session-2",
+            "resume-text",
+            1L,
+            JobRole.JAVA_BACKEND,
+            "Java 后端",
+            List.of(InterviewQuestionDTO.create(0, "介绍项目", InterviewQuestionDTO.QuestionType.PROJECT, "项目经历")),
+            1,
+            InterviewSessionDTO.SessionStatus.EVALUATED,
+            objectMapper
+        );
+        InterviewReportDTO persistedReport = new InterviewReportDTO(
+            "session-2",
+            JobRole.JAVA_BACKEND,
+            "Java 后端",
+            1,
+            88,
+            List.of(),
+            List.of(),
+            "总体评价",
+            List.of("亮点"),
+            List.of("建议"),
+            List.of()
+        );
+
+        when(sessionCache.getSession("session-2")).thenReturn(Optional.of(cachedSession));
+        when(persistenceService.getPersistedReport("session-2")).thenReturn(Optional.of(persistedReport));
+
+        InterviewReportDTO report = service.generateReport("session-2");
+
+        assertEquals(88, report.overallScore());
+        verify(persistenceService).getPersistedReport("session-2");
+        verify(evaluationService, never()).evaluateInterview(any(), any(), any());
+        verify(persistenceService, never()).saveReport(any(), any());
+    }
+
+    @Test
+    @DisplayName("异步评估进行中时不应重复触发同步评估")
+    void shouldNotRegenerateReportWhileAsyncEvaluationIsProcessing() {
+        InterviewQuestionService questionService = mock(InterviewQuestionService.class);
+        AnswerEvaluationService evaluationService = mock(AnswerEvaluationService.class);
+        InterviewPersistenceService persistenceService = mock(InterviewPersistenceService.class);
+        InterviewSessionCache sessionCache = mock(InterviewSessionCache.class);
+        EvaluateStreamProducer evaluateStreamProducer = mock(EvaluateStreamProducer.class);
+        ObjectMapper objectMapper = new ObjectMapper();
+        InterviewSessionService service = new InterviewSessionService(
+            questionService,
+            evaluationService,
+            persistenceService,
+            sessionCache,
+            objectMapper,
+            evaluateStreamProducer
+        );
+
+        InterviewSessionCache.CachedSession cachedSession = new InterviewSessionCache.CachedSession(
+            "session-3",
+            "resume-text",
+            1L,
+            JobRole.JAVA_BACKEND,
+            "Java 后端",
+            List.of(InterviewQuestionDTO.create(0, "介绍项目", InterviewQuestionDTO.QuestionType.PROJECT, "项目经历")),
+            1,
+            InterviewSessionDTO.SessionStatus.COMPLETED,
+            objectMapper
+        );
+
+        when(sessionCache.getSession("session-3")).thenReturn(Optional.of(cachedSession));
+        when(persistenceService.getEvaluateStatus("session-3")).thenReturn(Optional.of(AsyncTaskStatus.PROCESSING));
+
+        assertThrows(BusinessException.class, () -> service.generateReport("session-3"));
+
+        verify(persistenceService).getEvaluateStatus("session-3");
+        verify(evaluationService, never()).evaluateInterview(any(), any(), any());
     }
 }

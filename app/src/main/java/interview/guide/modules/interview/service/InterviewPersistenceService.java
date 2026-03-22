@@ -21,6 +21,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -244,6 +246,89 @@ public class InterviewPersistenceService {
     public Optional<InterviewSessionEntity> findBySessionId(String sessionId) {
         return sessionRepository.findBySessionId(sessionId);
     }
+
+    /**
+     * 获取异步评估状态。
+     */
+    public Optional<AsyncTaskStatus> getEvaluateStatus(String sessionId) {
+        return sessionRepository.findBySessionId(sessionId)
+            .map(InterviewSessionEntity::getEvaluateStatus);
+    }
+
+    /**
+     * 从已持久化的数据重建面试报告，避免重复触发 AI 评估。
+     */
+    public Optional<InterviewReportDTO> getPersistedReport(String sessionId) {
+        Optional<InterviewSessionEntity> sessionOpt = sessionRepository.findBySessionId(sessionId);
+        if (sessionOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        InterviewSessionEntity session = sessionOpt.get();
+        if (session.getOverallScore() == null) {
+            return Optional.empty();
+        }
+
+        List<InterviewAnswerEntity> answers = findAnswersBySessionId(sessionId);
+        List<InterviewReportDTO.QuestionEvaluation> questionDetails = answers.stream()
+            .sorted(Comparator.comparing(InterviewAnswerEntity::getQuestionIndex))
+            .map(answer -> new InterviewReportDTO.QuestionEvaluation(
+                answer.getQuestionIndex(),
+                answer.getQuestion(),
+                answer.getCategory(),
+                answer.getUserAnswer(),
+                answer.getScore() == null ? 0 : answer.getScore(),
+                answer.getFeedback()
+            ))
+            .toList();
+
+        LinkedHashMap<String, List<InterviewAnswerEntity>> answersByCategory = answers.stream()
+            .filter(answer -> answer.getCategory() != null && !answer.getCategory().isBlank())
+            .sorted(Comparator.comparing(InterviewAnswerEntity::getQuestionIndex))
+            .collect(java.util.stream.Collectors.groupingBy(
+                InterviewAnswerEntity::getCategory,
+                LinkedHashMap::new,
+                java.util.stream.Collectors.toList()
+            ));
+
+        List<InterviewReportDTO.CategoryScore> categoryScores = answersByCategory.entrySet().stream()
+            .map(entry -> new InterviewReportDTO.CategoryScore(
+                entry.getKey(),
+                (int) Math.round(entry.getValue().stream()
+                    .map(InterviewAnswerEntity::getScore)
+                    .filter(java.util.Objects::nonNull)
+                    .mapToInt(Integer::intValue)
+                    .average()
+                    .orElse(0)),
+                entry.getValue().size()
+            ))
+            .toList();
+
+        List<String> strengths = parseJson(session.getStrengthsJson(), new TypeReference<>() {});
+        List<String> improvements = parseJson(session.getImprovementsJson(), new TypeReference<>() {});
+        List<InterviewReportDTO.ReferenceAnswer> referenceAnswers = parseJson(
+            session.getReferenceAnswersJson(),
+            new TypeReference<>() {}
+        );
+
+        String jobLabel = session.getJobLabelSnapshot() != null
+            ? session.getJobLabelSnapshot()
+            : session.getJobRole() != null ? session.getJobRole().getLabel() : null;
+
+        return Optional.of(new InterviewReportDTO(
+            sessionId,
+            session.getJobRole(),
+            jobLabel,
+            session.getTotalQuestions() != null ? session.getTotalQuestions() : questionDetails.size(),
+            session.getOverallScore(),
+            categoryScores,
+            questionDetails,
+            session.getOverallFeedback(),
+            strengths != null ? strengths : List.of(),
+            improvements != null ? improvements : List.of(),
+            referenceAnswers != null ? referenceAnswers : List.of()
+        ));
+    }
     
     /**
      * 获取简历的所有面试记录
@@ -337,5 +422,17 @@ public class InterviewPersistenceService {
             .distinct()
             .limit(30) // 核心改动：只保留最近的 30 道题
             .toList();
+    }
+
+    private <T> T parseJson(String json, TypeReference<T> typeReference) {
+        if (json == null || json.isBlank()) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(json, typeReference);
+        } catch (Exception e) {
+            log.error("解析 JSON 失败: {}", e.getMessage(), e);
+            return null;
+        }
     }
 }
