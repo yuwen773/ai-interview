@@ -2,6 +2,7 @@ import { View, Text, Button } from '@tarojs/components';
 import { useState, useEffect } from 'react';
 import Taro from '@tarojs/taro';
 import { historyApi } from '../../api/history';
+import Loading from '../../components/common/Loading';
 import './index.scss';
 
 export default function Index() {
@@ -17,9 +18,7 @@ export default function Index() {
   const loadStats = async () => {
     setLoading(true);
     try {
-      console.log('开始加载统计数据...');
       const resumes = await historyApi.getResumes();
-      console.log('简历列表:', resumes);
       if (resumes && Array.isArray(resumes)) {
         const totalInterview = resumes.reduce((sum: number, r: any) => sum + (r.interviewCount || 0), 0);
         setResumeCount(resumes.length);
@@ -56,9 +55,7 @@ export default function Index() {
       </View>
 
       {loading ? (
-        <View className="loading">
-          <Text>加载中...</Text>
-        </View>
+        <Loading text="加载中..." />
       ) : (
         <View className="stats-card">
           <View className="stat-item">
@@ -74,26 +71,32 @@ export default function Index() {
 
       <View className="actions">
         <Button className="action-btn primary" onClick={handleUploadResume}>
-          上传简历
+          <Text className="btn-text">上传简历</Text>
         </Button>
         <Button className="action-btn secondary" onClick={handleStartInterview}>
-          开始面试
+          <Text className="btn-text secondary">开始面试</Text>
         </Button>
       </View>
 
       <View className="features">
         <View className="feature-item">
-          <Text className="feature-icon">📄</Text>
+          <View className="feature-icon-wrapper">
+            <Text className="feature-icon-text">📄</Text>
+          </View>
           <Text className="feature-title">智能简历分析</Text>
           <Text className="feature-desc">AI分析简历，提供优化建议</Text>
         </View>
         <View className="feature-item">
-          <Text className="feature-icon">💬</Text>
+          <View className="feature-icon-wrapper">
+            <Text className="feature-icon-text">💬</Text>
+          </View>
           <Text className="feature-title">模拟面试</Text>
           <Text className="feature-desc">与AI面试官进行实战演练</Text>
         </View>
         <View className="feature-item">
-          <Text className="feature-icon">📊</Text>
+          <View className="feature-icon-wrapper">
+            <Text className="feature-icon-text">📊</Text>
+          </View>
           <Text className="feature-title">能力评估</Text>
           <Text className="feature-desc">多维度评估，提升面试技巧</Text>
         </View>

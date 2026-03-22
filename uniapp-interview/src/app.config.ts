@@ -9,14 +9,14 @@ export default defineAppConfig({
   ],
   window: {
     backgroundTextStyle: 'light',
-    navigationBarBackgroundColor: '#fff',
+    navigationBarBackgroundColor: '#ffffff',
     navigationBarTitleText: 'AI面试助手',
     navigationBarTextStyle: 'black',
   },
   tabBar: {
-    color: '#7A7E83',
+    color: '#94A3B8',
     selectedColor: '#3B82F6',
-    borderStyle: 'black',
+    borderStyle: 'white',
     backgroundColor: '#ffffff',
     list: [
       {
@@ -29,4 +29,4 @@ export default defineAppConfig({
       },
     ],
   },
-})
+});

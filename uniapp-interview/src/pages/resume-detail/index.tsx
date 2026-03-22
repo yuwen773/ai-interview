@@ -1,7 +1,6 @@
 import { View, Text, Button, ScrollView } from '@tarojs/components';
 import { useState, useEffect } from 'react';
-import Taro from '@tarojs/taro';
-import { useRouter } from '@tarojs/taro';
+import Taro, { useRouter } from '@tarojs/taro';
 import { resumeApi } from '../../api/resume';
 import Loading from '../../components/common/Loading';
 import Empty from '../../components/common/Empty';
@@ -15,8 +14,6 @@ export default function ResumeDetail() {
   const id = router.params.id;
 
   useEffect(() => {
-    console.log('ResumeDetail - router params:', router?.params);
-    console.log('ResumeDetail - id:', id);
     if (id) {
       loadResume();
     } else {
@@ -24,17 +21,14 @@ export default function ResumeDetail() {
     }
   }, [id]);
 
-  // 获取最新的分析结果
   const latestAnalysis = resume?.analyses?.[0];
 
-  // 轮询检查分析状态
   useEffect(() => {
     if (resume?.analyzeStatus === 'PENDING' || resume?.analyzeStatus === 'PROCESSING') {
       setIsAnalyzing(true);
       const timer = setInterval(() => {
         loadResume(true);
-      }, 3000); // 每3秒检查一次
-
+      }, 3000);
       return () => clearInterval(timer);
     } else {
       setIsAnalyzing(false);
@@ -94,7 +88,10 @@ export default function ResumeDetail() {
   return (
     <ScrollView className="resume-detail-page" scrollY>
       <View className="header">
-        <Text className="title">{resume.filename}</Text>
+        <View className="header-title-row">
+          <Text className="title-icon">📄</Text>
+          <Text className="title">{resume.filename}</Text>
+        </View>
         <Text className={`status ${resume.analyzeStatus?.toLowerCase()}`}>
           {getStatusText(resume.analyzeStatus)}
         </Text>
@@ -156,11 +153,13 @@ export default function ResumeDetail() {
 
       <View className="actions">
         <Button
-          className="action-btn primary"
+          className="action-btn"
           onClick={handleStartInterview}
           disabled={resume.analyzeStatus !== 'COMPLETED'}
         >
-          {resume.analyzeStatus === 'COMPLETED' ? '开始面试' : '等待分析完成'}
+          <Text className="btn-text">
+            {resume.analyzeStatus === 'COMPLETED' ? '开始面试' : '等待分析完成'}
+          </Text>
         </Button>
       </View>
     </ScrollView>

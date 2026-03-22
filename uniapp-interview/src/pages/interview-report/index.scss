@@ -1,74 +1,73 @@
+@import '../../styles/theme.scss';
+
 .report-page {
   min-height: 100vh;
-  background: #f5f5f5;
-  padding: 20px;
+  background: $bg-base;
+  padding: $space-5;
 }
 
 .header {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 12px;
+  @include card;
+  padding: $space-6;
+  margin-bottom: $space-4;
   text-align: center;
 
   .title {
     display: block;
-    font-size: 20px;
-    font-weight: bold;
-    color: #333;
-  }
-
-  .date {
-    display: block;
-    margin-top: 8px;
-    font-size: 14px;
-    color: #999;
+    font-size: $text-2xl;
+    font-weight: $font-bold;
+    color: $text-primary;
   }
 
   .job-tag {
     display: inline-block;
-    margin-top: 10px;
-    padding: 6px 14px;
-    border-radius: 999px;
-    background: #dbeafe;
-    color: #1d4ed8;
-    font-size: 13px;
+    margin-top: $space-3;
+    padding: $space-2 $space-4;
+    border-radius: $radius-full;
+    background: $primary-bg;
+    color: $primary-dark;
+    font-size: $text-sm;
+    font-weight: $font-medium;
   }
 }
 
 .section {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 12px;
+  @include card;
+  padding: $space-5;
+  margin-bottom: $space-4;
 
   .section-title {
     display: block;
-    font-size: 16px;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 16px;
+    font-size: $text-lg;
+    font-weight: $font-semibold;
+    color: $text-primary;
+    margin-bottom: $space-4;
+    padding-bottom: $space-3;
+    border-bottom: 1px solid $border-light;
   }
 }
 
 .score-display {
   text-align: center;
+  padding: $space-4 0;
 
   .score-value {
-    font-size: 48px;
-    font-weight: bold;
-    color: #3B82F6;
+    font-size: 72px;
+    font-weight: $font-bold;
+    color: $primary;
+    line-height: 1;
   }
 
   .score-max {
-    font-size: 24px;
-    color: #999;
+    font-size: $text-3xl;
+    color: $text-muted;
+    font-weight: $font-normal;
   }
 }
 
 .dimensions {
   .dimension-item {
-    margin-bottom: 16px;
+    margin-bottom: $space-5;
 
     &:last-child {
       margin-bottom: 0;
@@ -77,29 +76,32 @@
     .dimension-header {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 8px;
+      align-items: center;
+      margin-bottom: $space-2;
 
       .dimension-name {
-        font-size: 14px;
-        color: #666;
+        font-size: $text-base;
+        color: $text-secondary;
       }
 
       .dimension-score {
-        font-size: 14px;
-        color: #3B82F6;
-        font-weight: bold;
+        font-size: $text-md;
+        color: $primary;
+        font-weight: $font-semibold;
       }
     }
 
     .dimension-bar {
-      height: 8px;
-      background: #e0e0e0;
-      border-radius: 4px;
+      height: 10px;
+      background: $border-default;
+      border-radius: $radius-full;
+      overflow: hidden;
 
       .dimension-fill {
         height: 100%;
-        background: #3B82F6;
-        border-radius: 4px;
+        background: linear-gradient(90deg, $primary-light 0%, $primary 100%);
+        border-radius: $radius-full;
+        transition: width 0.5s ease-out;
       }
     }
   }
@@ -107,43 +109,79 @@
 
 .summary-card {
   .summary-text {
-    font-size: 14px;
-    color: #666;
-    line-height: 1.7;
+    font-size: $text-base;
+    color: $text-secondary;
+    line-height: $leading-relaxed;
   }
 }
 
 .suggestions {
   .suggestion-item {
     display: flex;
-    margin-bottom: 12px;
+    align-items: flex-start;
+    margin-bottom: $space-4;
+    padding: $space-4;
+    background: $bg-base;
+    border-radius: $radius-lg;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
 
     .suggestion-icon {
-      color: #3B82F6;
-      margin-right: 8px;
+      width: 32px;
+      height: 32px;
+      border-radius: $radius-full;
+      @include flex-center;
+      margin-right: $space-3;
+      flex-shrink: 0;
     }
 
     .suggestion-text {
       flex: 1;
-      font-size: 14px;
-      color: #666;
-      line-height: 1.6;
+      font-size: $text-base;
+      color: $text-secondary;
+      line-height: $leading-relaxed;
+    }
+
+    &.strength {
+      background: rgba($success, 0.06);
+
+      .suggestion-icon {
+        background: $success-bg;
+        color: $success;
+      }
+    }
+
+    &.improvement {
+      background: rgba($warning, 0.06);
+
+      .suggestion-icon {
+        background: $warning-bg;
+        color: $warning;
+      }
     }
   }
 }
 
 .empty-text {
-  font-size: 14px;
-  color: #94a3b8;
+  font-size: $text-base;
+  color: $text-muted;
+  text-align: center;
+  padding: $space-4;
 }
 
 .actions {
-  padding: 20px 0;
+  padding: $space-4 0;
 
   .action-btn {
     width: 100%;
-    background: #3B82F6;
-    color: #fff;
-    border-radius: 8px;
+    height: 96px;
+    @include primary-btn;
+    font-size: $text-lg;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $space-2;
   }
 }

@@ -7,9 +7,16 @@ interface EmptyProps {
   onAction?: () => void;
 }
 
-export default function Empty({ text = '暂无数据', actionText, onAction }: EmptyProps) {
+export default function Empty({
+  text = '暂无数据',
+  actionText,
+  onAction,
+}: EmptyProps) {
   return (
     <View className="empty-container">
+      <View className="empty-icon">
+        <Text className="empty-icon-text">📭</Text>
+      </View>
       <Text className="empty-text">{text}</Text>
       {actionText && onAction && (
         <Button className="empty-action" onClick={onAction}>

@@ -1,3 +1,5 @@
+@import './styles/theme.scss';
+
 .app {
   height: 100vh;
   display: flex;
@@ -5,5 +7,43 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: $font-family;
+}
+
+// Global reset and base styles
+page {
+  background-color: $bg-base;
+  font-size: $text-base;
+  color: $text-primary;
+  line-height: $leading-normal;
+  font-family: $font-family;
+}
+
+// Button reset
+button {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  outline: none;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+// Textarea reset
+textarea {
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+// Image reset
+image {
+  display: block;
+  width: 100%;
+  height: 100%;
 }

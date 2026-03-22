@@ -1,85 +1,142 @@
+@import '../../styles/theme.scss';
+
 .interview-page {
   min-height: 100vh;
-  background: #f5f5f5;
-  padding: 20px;
+  background: $bg-base;
+  padding: $space-5;
 }
 
 .progress {
-  margin-bottom: 20px;
+  @include card;
+  padding: $space-4;
+  margin-bottom: $space-4;
 
-  Text {
-    font-size: 14px;
-    color: #666;
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: $space-3;
   }
 
   .job-label {
-    display: inline-block;
-    margin-bottom: 8px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: #dbeafe;
-    color: #1d4ed8;
+    @include pill-badge;
+    background: $primary-bg;
+    color: $primary-dark;
+    font-size: $text-xs;
+  }
+
+  .progress-text {
+    font-size: $text-sm;
+    color: $text-muted;
   }
 
   .progress-bar {
-    height: 4px;
-    background: #e0e0e0;
-    border-radius: 2px;
-    margin-top: 8px;
+    height: 8px;
+    background: $border-default;
+    border-radius: $radius-full;
+    overflow: hidden;
 
     .progress-fill {
       height: 100%;
-      background: #3B82F6;
-      border-radius: 2px;
-      transition: width 0.3s ease;
+      background: linear-gradient(90deg, $primary-light 0%, $primary 100%);
+      border-radius: $radius-full;
+      transition: width 0.4s ease-out;
     }
   }
 }
 
 .question-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
+  @include card;
+  padding: $space-5;
+  margin-bottom: $space-4;
+  border-left: 4px solid $primary;
 
   .question-label {
     display: block;
-    font-size: 12px;
-    color: #3B82F6;
-    margin-bottom: 8px;
+    font-size: $text-xs;
+    color: $primary;
+    font-weight: $font-medium;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: $space-3;
   }
 
   .question-content {
     display: block;
-    font-size: 16px;
-    color: #333;
-    line-height: 1.6;
+    font-size: $text-lg;
+    color: $text-primary;
+    line-height: $leading-relaxed;
   }
 }
 
 .answer-area {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
+  @include card;
+  padding: $space-5;
+  margin-bottom: $space-4;
 
   .answer-input {
     width: 100%;
-    min-height: 150px;
-    font-size: 16px;
-    line-height: 1.6;
+    min-height: 160px;
+    font-size: $text-lg;
+    line-height: $leading-relaxed;
+    color: $text-primary;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+
+    &::placeholder {
+      color: $text-muted;
+    }
   }
 }
 
 .actions {
   .submit-btn {
     width: 100%;
-    background: #3B82F6;
-    color: #fff;
-    border-radius: 8px;
+    height: 96px;
+    @include primary-btn;
+    font-size: $text-lg;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $space-2;
+  }
+}
 
-    &[disabled] {
-      background: #ccc;
+.message-list {
+  margin-bottom: $space-4;
+
+  .message-item {
+    display: flex;
+    margin-bottom: $space-4;
+
+    &.user {
+      justify-content: flex-end;
+
+      .message-bubble {
+        background: $primary;
+        color: #fff;
+        border-radius: $radius-xl $radius-xl $radius-sm $radius-xl;
+      }
+    }
+
+    &.assistant {
+      justify-content: flex-start;
+
+      .message-bubble {
+        background: $bg-card;
+        color: $text-primary;
+        border-radius: $radius-xl $radius-xl $radius-xl $radius-sm;
+        box-shadow: $shadow-card;
+      }
+    }
+
+    .message-bubble {
+      max-width: 80%;
+      padding: $space-4;
+      font-size: $text-base;
+      line-height: $leading-relaxed;
     }
   }
 }

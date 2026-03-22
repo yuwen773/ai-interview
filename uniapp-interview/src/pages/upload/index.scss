@@ -1,7 +1,9 @@
+@import '../../styles/theme.scss';
+
 .upload-page {
   min-height: 100vh;
-  background: #f5f5f5;
-  padding: 20px;
+  background: $bg-base;
+  padding: $space-6;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -9,43 +11,116 @@
 
 .upload-card {
   width: 100%;
-  background: #fff;
-  border-radius: 12px;
-  padding: 60px 20px;
+  @include card;
+  padding: $space-10 $space-6;
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 30px;
+  margin-bottom: $space-6;
+  transition: all $transition-base;
+
+  &.active {
+    border-color: $primary;
+    box-shadow: $shadow-lg, 0 0 0 1px $primary;
+
+    .upload-icon {
+      border-color: $primary;
+      background: $primary-bg;
+
+      .upload-icon-text {
+        color: $primary;
+      }
+    }
+  }
 
   .upload-icon {
     width: 120px;
     height: 120px;
-    border: 2px dashed #ddd;
-    border-radius: 12px;
+    border: 2px dashed $border-default;
+    border-radius: $radius-xl;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all $transition-base;
+    background: $bg-base;
 
-    .icon {
-      font-size: 40px;
-      color: #3B82F6;
+    .upload-icon-text {
+      font-size: 48px;
+      color: $text-muted;
+      transition: color $transition-fast;
     }
   }
 
+  .upload-title {
+    margin-top: $space-5;
+    font-size: $text-xl;
+    font-weight: $font-semibold;
+    color: $text-primary;
+  }
+
   .upload-hint {
-    margin-top: 20px;
-    color: #666;
-    font-size: 14px;
+    margin-top: $space-2;
+    color: $text-secondary;
+    font-size: $text-md;
+    text-align: center;
+  }
+
+  .upload-formats {
+    margin-top: $space-3;
+    display: flex;
+    gap: $space-2;
+
+    .format-tag {
+      padding: $space-1 $space-3;
+      background: $bg-base;
+      border-radius: $radius-full;
+      font-size: $text-xs;
+      color: $text-muted;
+    }
   }
 }
 
 .upload-btn {
   width: 100%;
-  background: #3B82F6;
-  color: #fff;
-  border-radius: 8px;
+  height: 96px;
+  @include primary-btn;
+  font-size: $text-lg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .btn-text {
+    color: #fff;
+  }
 
   &[disabled] {
-    background: #ccc;
+    opacity: 0.6;
   }
+}
+
+.uploading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $space-6;
+
+  .uploading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid $border-default;
+    border-top-color: $primary;
+    border-radius: 50%;
+    animation: spin 0.8s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+  }
+
+  .uploading-text {
+    margin-top: $space-4;
+    font-size: $text-md;
+    color: $text-secondary;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

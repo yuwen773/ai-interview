@@ -95,8 +95,8 @@ export default function InterviewReport() {
         <Text className="section-title">优势亮点</Text>
         <View className="suggestions">
           {report.strengths?.map((item: string, index: number) => (
-            <View className="suggestion-item" key={`strength-${index}`}>
-              <Text className="suggestion-icon">+</Text>
+            <View className="suggestion-item strength" key={`strength-${index}`}>
+              <Text className="suggestion-icon-text">✓</Text>
               <Text className="suggestion-text">{item}</Text>
             </View>
           ))}
@@ -108,8 +108,8 @@ export default function InterviewReport() {
         <Text className="section-title">改进建议</Text>
         <View className="suggestions">
           {report.improvements?.map((item: string, index: number) => (
-            <View className="suggestion-item" key={index}>
-              <Text className="suggestion-icon">*</Text>
+            <View className="suggestion-item improvement" key={index}>
+              <Text className="suggestion-icon-text">!</Text>
               <Text className="suggestion-text">{item}</Text>
             </View>
           ))}
@@ -119,7 +119,7 @@ export default function InterviewReport() {
 
       <View className="actions">
         <Button className="action-btn" onClick={handleExportPdf}>
-          导出PDF报告
+          <Text className="btn-text">导出PDF报告</Text>
         </Button>
       </View>
     </ScrollView>

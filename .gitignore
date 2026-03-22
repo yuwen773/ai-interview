@@ -45,3 +45,4 @@ docs/
 /_bmad/
 /_bmad-output/
 /.worktrees/
+.claude/

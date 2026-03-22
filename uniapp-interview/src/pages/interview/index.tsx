@@ -167,12 +167,26 @@ export default function Interview() {
   return (
     <ScrollView className="interview-page" scrollY>
       <View className="progress">
-        <Text className="job-label">{jobLabel || '模拟面试'}</Text>
-        <Text>第 {progress.current} 题 / 共 {progress.total} 题</Text>
+        <View className="progress-info">
+          <Text className="job-label">{jobLabel || '模拟面试'}</Text>
+          <Text className="progress-text">第 {progress.current} 题 / 共 {progress.total} 题</Text>
+        </View>
         <View className="progress-bar">
           <View className="progress-fill" style={{ width: `${(progress.current / progress.total) * 100}%` }}></View>
         </View>
       </View>
+
+      {messages.length > 0 && (
+        <View className="message-list">
+          {messages.map((msg, index) => (
+            <View className={`message-item ${msg.role}`} key={index}>
+              <View className="message-bubble">
+                <Text>{msg.content}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
 
       <View className="question-card">
         <Text className="question-label">面试问题</Text>
@@ -190,8 +204,12 @@ export default function Interview() {
       </View>
 
       <View className="actions">
-        <Button className="submit-btn" onClick={handleSubmitAnswer} disabled={loading || !answer.trim()}>
-          {loading ? '提交中...' : '提交答案'}
+        <Button
+          className="submit-btn"
+          onClick={handleSubmitAnswer}
+          disabled={loading || !answer.trim()}
+        >
+          <Text className="btn-text">{loading ? '提交中...' : '提交答案'}</Text>
         </Button>
       </View>
     </ScrollView>

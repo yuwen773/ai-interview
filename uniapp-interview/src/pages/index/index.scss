@@ -1,108 +1,164 @@
+@import '../../styles/theme.scss';
+
 .index-page {
   min-height: 100vh;
-  background: #f5f5f5;
-  padding: 20px;
+  background: $bg-base;
+  padding: $space-5;
 }
 
 .loading {
   text-align: center;
-  padding: 40px;
-  color: #666;
+  padding: $space-10;
+  color: $text-secondary;
 }
 
 .header {
   text-align: center;
-  padding: 40px 0;
+  padding: $space-8 0 $space-6;
 
   .title {
     display: block;
-    font-size: 28px;
-    font-weight: bold;
-    color: #333;
+    font-size: $text-5xl;
+    font-weight: $font-bold;
+    color: $text-primary;
+    margin-bottom: $space-2;
   }
 
   .subtitle {
     display: block;
-    margin-top: 8px;
-    font-size: 14px;
-    color: #666;
+    font-size: $text-md;
+    color: $text-secondary;
   }
 }
 
 .stats-card {
   display: flex;
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
+  background: $bg-card;
+  border-radius: $radius-xl;
+  padding: $space-5;
+  margin-bottom: $space-5;
+  box-shadow: $shadow-card;
 
   .stat-item {
     flex: 1;
     text-align: center;
+    position: relative;
+
+    &:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1px;
+      height: 80px;
+      background: $border-default;
+    }
 
     .stat-value {
       display: block;
-      font-size: 24px;
-      font-weight: bold;
-      color: #3B82F6;
+      font-size: $text-5xl;
+      font-weight: $font-bold;
+      color: $primary;
+      line-height: 1.2;
     }
 
     .stat-label {
       display: block;
-      font-size: 12px;
-      color: #666;
-      margin-top: 4px;
+      font-size: $text-sm;
+      color: $text-muted;
+      margin-top: $space-1;
     }
   }
 }
 
 .actions {
   display: flex;
-  gap: 12px;
-  margin-bottom: 30px;
+  gap: $space-3;
+  margin-bottom: $space-6;
 
   .action-btn {
     flex: 1;
-    border-radius: 8px;
-    font-size: 16px;
+    height: 96px;
+    border-radius: $radius-xl;
+    font-size: $text-lg;
+    font-weight: $font-medium;
+    @include flex-center;
+    transition: all $transition-base;
 
     &.primary {
-      background: #3B82F6;
+      background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
       color: #fff;
+      box-shadow: $shadow-primary;
+
+      &:active {
+        transform: scale(0.98);
+        box-shadow: none;
+      }
+
+      .btn-text {
+        color: #fff;
+      }
     }
 
     &.secondary {
-      background: #fff;
-      color: #3B82F6;
-      border: 1px solid #3B82F6;
+      background: $bg-card;
+      color: $primary;
+      border: 1.5px solid $primary-border;
+
+      &:active {
+        background: $primary-bg;
+        transform: scale(0.98);
+      }
+
+      .btn-text.secondary {
+        color: $primary;
+      }
     }
   }
 }
 
 .features {
   .feature-item {
-    background: #fff;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: $bg-card;
+    border-radius: $radius-xl;
+    padding: $space-5;
+    margin-bottom: $space-3;
+    box-shadow: $shadow-card;
+    transition: all $transition-base;
 
-    .feature-icon {
-      font-size: 24px;
+    &:active {
+      transform: scale(0.98);
+    }
+
+    .feature-icon-wrapper {
+      width: 56px;
+      height: 56px;
+      border-radius: $radius-lg;
+      background: $primary-bg;
+      @include flex-center;
+      margin-bottom: $space-3;
+
+      .feature-icon-text {
+        font-size: 28px;
+      }
     }
 
     .feature-title {
-      display: block;
-      font-size: 16px;
-      font-weight: bold;
-      color: #333;
-      margin-top: 8px;
+      font-size: $text-lg;
+      font-weight: $font-semibold;
+      color: $text-primary;
+      margin-bottom: $space-1;
     }
 
     .feature-desc {
-      display: block;
-      font-size: 14px;
-      color: #666;
-      margin-top: 4px;
+      font-size: $text-sm;
+      color: $text-secondary;
+      text-align: center;
+      line-height: $leading-relaxed;
     }
   }
 }
