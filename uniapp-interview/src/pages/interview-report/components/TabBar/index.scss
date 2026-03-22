@@ -1,0 +1,22 @@
+.tab-bar {
+  display: flex;
+  background: #fff;
+  padding: 0 $space-4;
+  border-bottom: 1px solid #f0f0f0;
+
+  &__item {
+    flex: 1;
+    text-align: center;
+    padding: $space-3 0;
+    font-size: 28px;
+    color: #999;
+    border-bottom: 4px solid transparent;
+    transition: all 0.3s;
+
+    &--active {
+      color: $primary;
+      border-bottom-color: $primary;
+      font-weight: 600;
+    }
+  }
+}
