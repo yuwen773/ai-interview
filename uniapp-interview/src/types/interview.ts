@@ -111,3 +111,15 @@ export interface ReferenceAnswer {
   referenceAnswer: string;
   keyPoints: string[];
 }
+
+// 答题卡状态
+export type AnswerCardStatus = 'answered' | 'saved' | 'unanswered';
+
+// 答题卡条目
+export interface AnswerCardItem {
+  questionIndex: number;    // 题号（0-based，与 API 一致）
+  displayIndex: number;     // 显示用题号（1-based，Q1, Q2...）
+  status: AnswerCardStatus;
+  question: string;         // 题目内容
+  savedAnswer?: string;     // 用户回答（answered/saved 状态时有值）
+}
