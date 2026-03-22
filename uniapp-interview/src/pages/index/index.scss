@@ -124,31 +124,27 @@
   }
 
   &__status-grid {
-    display: flex;
-    overflow-x: auto;
-    padding-bottom: $space-2;
-    gap: $space-3;
-    -webkit-overflow-scrolling: touch;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: $space-2;
   }
 
   &__status-card {
-    flex-shrink: 0;
-    width: 280px;
     display: flex;
     flex-direction: column;
     gap: $space-2;
-    padding: $space-3;
+    padding: $space-2;
     border-radius: $radius-md;
     background: $color-bg-surface;
     border: 1px solid $color-border-soft;
     box-shadow: $shadow-soft;
+    min-width: 0;
 
     .status-pill {
       align-self: flex-start;
+      transform: scale(0.9);
+      transform-origin: left center;
+      margin-right: -10%;
     }
   }
 
