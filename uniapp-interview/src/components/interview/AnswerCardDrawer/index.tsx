@@ -75,12 +75,13 @@ export default function AnswerCardDrawer({ visible, items, currentIndex, onClose
 
         <View className="answer-card-drawer__list">
           {items.map((item) => (
-            <AnswerCardItem
-              key={item.questionIndex}
-              item={item}
-              isCurrent={item.questionIndex === currentIndex}
-              onSaveAnswer={onSaveAnswer}
-            />
+            <View key={`card-${item.questionIndex}`}>
+              <AnswerCardItem
+                item={item}
+                isCurrent={item.questionIndex === currentIndex}
+                onSaveAnswer={onSaveAnswer}
+              />
+            </View>
           ))}
         </View>
       </View>
