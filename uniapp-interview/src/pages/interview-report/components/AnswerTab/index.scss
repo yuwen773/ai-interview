@@ -1,3 +1,5 @@
+@use '../../../../styles/theme.scss' as *;
+
 .answer-tab {
   display: flex;
   flex-direction: column;
