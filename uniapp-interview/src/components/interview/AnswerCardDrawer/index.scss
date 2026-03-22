@@ -1,0 +1,71 @@
+.answer-card-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+
+  &__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 40%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  &__content {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 60%;
+    height: 100%;
+    background: #f8fafc;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__header {
+    padding: 24px 20px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  &__title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #0f172a;
+    display: block;
+    margin-bottom: 16px;
+  }
+
+  &__legend {
+    display: flex;
+    gap: 16px;
+
+    &-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      Text {
+        font-size: 22px;
+        color: #64748b;
+      }
+    }
+
+    &-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+  }
+
+  &__list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+  }
+}
