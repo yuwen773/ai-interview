@@ -1,127 +1,138 @@
-import { View, Text, Button, ScrollView } from '@tarojs/components';
-import { useState, useEffect } from 'react';
+import { Button, ScrollView, Text, View } from '@tarojs/components';
+import { useEffect, useMemo, useState } from 'react';
 import Taro from '@tarojs/taro';
 import interviewApi from '../../api/interview';
-import Loading from '../../components/common/Loading';
 import Empty from '../../components/common/Empty';
-import type { InterviewReport } from '../../types/interview';
+import Loading from '../../components/common/Loading';
+import type { InterviewReport, QuestionEvaluation, ReferenceAnswer, ReportDimension } from '../../types/interview';
+import TabBar from './components/TabBar';
+import OverviewTab from './components/OverviewTab';
+import DetailTab from './components/DetailTab';
+import AnswerTab from './components/AnswerTab';
 import './index.scss';
 
-export default function InterviewReport() {
+function getScoreSummary(score: number) {
+  if (score >= 85) {
+    return { label: '表现稳定', description: '这一轮输出比较完整，可以开始针对短板做更细的打磨。' };
+  }
+  if (score >= 70) {
+    return { label: '基础扎实', description: '整体回答已经成型，下一步重点补足关键细节和表达层次。' };
+  }
+  if (score >= 60) {
+    return { label: '继续强化', description: '说明你已经抓住部分重点，但还需要更结构化地组织回答。' };
+  }
+  return { label: '需要补强', description: '建议先围绕岗位核心问题补知识点，再回到模拟面试复练。' };
+}
+
+function buildReferenceMap(items: ReferenceAnswer[] = []) {
+  return items.reduce<Record<number, ReferenceAnswer>>((acc, item) => {
+    acc[item.questionIndex] = item;
+    return acc;
+  }, {});
+}
+
+export default function InterviewReportPage() {
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState<InterviewReport | null>(null);
+  const [errorText, setErrorText] = useState('');
+  const [currentTab, setCurrentTab] = useState(0);
   const sessionId = Taro.getCurrentInstance().router?.params.sessionId;
 
-  useEffect(() => {
-    if (sessionId) {
-      loadReport();
-    }
-  }, [sessionId]);
+  const tabs = ['概览', '详情', '答题'];
 
   const loadReport = async () => {
+    if (!sessionId) {
+      setLoading(false);
+      setErrorText('缺少会话编号，暂时无法加载报告。');
+      return;
+    }
+
     try {
       setLoading(true);
-      const res = await interviewApi.getReport(sessionId);
-      setReport(res);
-    } catch (err) {
-      Taro.showToast({ title: '加载失败', icon: 'none' });
+      setErrorText('');
+      const nextReport = await interviewApi.getReport(sessionId);
+      setReport(nextReport);
+    } catch (error) {
+      console.error('加载面试报告失败', error);
+      setReport(null);
+      setErrorText('报告暂时还不可用，可能还在生成中，也可能本地服务尚未启动。');
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    void loadReport();
+  }, [sessionId]);
+
   const handleExportPdf = async () => {
+    if (!sessionId) {
+      return;
+    }
+
     try {
       const filePath = await interviewApi.exportReport(sessionId);
-      Taro.openDocument({
-        filePath,
-        fileType: 'pdf',
-      });
-    } catch (err) {
+      await Taro.openDocument({ filePath, fileType: 'pdf' });
+    } catch (error) {
+      console.error('导出面试报告失败', error);
       Taro.showToast({ title: '导出失败', icon: 'none' });
     }
   };
 
   if (loading) {
-    return <Loading text="生成报告中..." />;
+    return (
+      <View className="report-page page-shell">
+        <Loading text="正在整理本场面试反馈..." fullPage />
+      </View>
+    );
+  }
+
+  if (!sessionId || errorText) {
+    return (
+      <View className="report-page page-shell">
+        <Empty text={errorText || '报告不存在'} actionText="重新加载" onAction={() => void loadReport()} />
+      </View>
+    );
   }
 
   if (!report) {
-    return <Empty text="报告不存在" />;
+    return (
+      <View className="report-page page-shell">
+        <Empty text="报告尚未生成完成，请稍后再试。" actionText="重新加载" onAction={() => void loadReport()} />
+      </View>
+    );
   }
 
+  const renderTabContent = () => {
+    switch (currentTab) {
+      case 0:
+        return <OverviewTab data={report} />;
+      case 1:
+        return <DetailTab data={report} />;
+      case 2:
+        return <AnswerTab data={report} />;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <ScrollView className="report-page" scrollY>
-      <View className="header">
-        <Text className="title">面试评估报告</Text>
-        <Text className="job-tag">{report.jobLabel}</Text>
-      </View>
-
-      <View className="section">
-        <Text className="section-title">综合得分</Text>
-        <View className="score-display">
-          <Text className="score-value">{report.overallScore}</Text>
-          <Text className="score-max">/100</Text>
-        </View>
-      </View>
-
-      <View className="section">
-        <Text className="section-title">分类得分</Text>
-        <View className="dimensions">
-          {report.categoryScores?.map((item) => (
-            <View className="dimension-item" key={item.category}>
-              <View className="dimension-header">
-                <Text className="dimension-name">
-                  {item.category} · {item.questionCount} 题
-                </Text>
-                <Text className="dimension-score">{item.score}</Text>
-              </View>
-              <View className="dimension-bar">
-                <View className="dimension-fill" style={{ width: `${item.score}%` }}></View>
-              </View>
-            </View>
-          ))}
-        </View>
-      </View>
-
-      <View className="section">
-        <Text className="section-title">总体评价</Text>
-        <View className="summary-card">
-          <Text className="summary-text">{report.overallFeedback || '暂无总体评价'}</Text>
-        </View>
-      </View>
-
-      <View className="section">
-        <Text className="section-title">优势亮点</Text>
-        <View className="suggestions">
-          {report.strengths?.map((item: string, index: number) => (
-            <View className="suggestion-item" key={`strength-${index}`}>
-              <Text className="suggestion-icon">+</Text>
-              <Text className="suggestion-text">{item}</Text>
-            </View>
-          ))}
-          {!report.strengths?.length && <Text className="empty-text">暂无优势总结</Text>}
-        </View>
-      </View>
-
-      <View className="section">
-        <Text className="section-title">改进建议</Text>
-        <View className="suggestions">
-          {report.improvements?.map((item: string, index: number) => (
-            <View className="suggestion-item" key={index}>
-              <Text className="suggestion-icon">*</Text>
-              <Text className="suggestion-text">{item}</Text>
-            </View>
-          ))}
-          {!report.improvements?.length && <Text className="empty-text">暂无改进建议</Text>}
-        </View>
-      </View>
-
-      <View className="actions">
-        <Button className="action-btn" onClick={handleExportPdf}>
-          导出PDF报告
+    <View className="report-page page-shell">
+      <TabBar tabs={tabs} currentIndex={currentTab} onChange={setCurrentTab} />
+      <ScrollView className="report-page__content" scrollY>
+        {renderTabContent()}
+      </ScrollView>
+      <View className="report-page__actions">
+        <Button className="action-chip report-page__action" onClick={handleExportPdf}>
+          导出 PDF 报告
+        </Button>
+        <Button
+          className="action-chip action-chip--secondary report-page__action"
+          onClick={() => Taro.navigateBack({ delta: 1 })}
+        >
+          返回上一页
         </Button>
       </View>
-    </ScrollView>
+    </View>
   );
 }

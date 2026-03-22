@@ -1,149 +1,18 @@
 .report-page {
-  min-height: 100vh;
-  background: #f5f5f5;
-  padding: 20px;
-}
-
-.header {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 12px;
-  text-align: center;
-
-  .title {
-    display: block;
-    font-size: 20px;
-    font-weight: bold;
-    color: #333;
+  &__content {
+    flex: 1;
+    height: calc(100vh - 200px);
   }
 
-  .date {
-    display: block;
-    margin-top: 8px;
-    font-size: 14px;
-    color: #999;
-  }
-
-  .job-tag {
-    display: inline-block;
-    margin-top: 10px;
-    padding: 6px 14px;
-    border-radius: 999px;
-    background: #dbeafe;
-    color: #1d4ed8;
-    font-size: 13px;
-  }
-}
-
-.section {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 12px;
-
-  .section-title {
-    display: block;
-    font-size: 16px;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 16px;
-  }
-}
-
-.score-display {
-  text-align: center;
-
-  .score-value {
-    font-size: 48px;
-    font-weight: bold;
-    color: #3B82F6;
-  }
-
-  .score-max {
-    font-size: 24px;
-    color: #999;
-  }
-}
-
-.dimensions {
-  .dimension-item {
-    margin-bottom: 16px;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-
-    .dimension-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-
-      .dimension-name {
-        font-size: 14px;
-        color: #666;
-      }
-
-      .dimension-score {
-        font-size: 14px;
-        color: #3B82F6;
-        font-weight: bold;
-      }
-    }
-
-    .dimension-bar {
-      height: 8px;
-      background: #e0e0e0;
-      border-radius: 4px;
-
-      .dimension-fill {
-        height: 100%;
-        background: #3B82F6;
-        border-radius: 4px;
-      }
-    }
-  }
-}
-
-.summary-card {
-  .summary-text {
-    font-size: 14px;
-    color: #666;
-    line-height: 1.7;
-  }
-}
-
-.suggestions {
-  .suggestion-item {
+  &__actions {
     display: flex;
-    margin-bottom: 12px;
-
-    .suggestion-icon {
-      color: #3B82F6;
-      margin-right: 8px;
-    }
-
-    .suggestion-text {
-      flex: 1;
-      font-size: 14px;
-      color: #666;
-      line-height: 1.6;
-    }
+    gap: $space-3;
+    padding: $space-4;
+    background: #fff;
+    border-top: 1px solid #f0f0f0;
   }
-}
 
-.empty-text {
-  font-size: 14px;
-  color: #94a3b8;
-}
-
-.actions {
-  padding: 20px 0;
-
-  .action-btn {
-    width: 100%;
-    background: #3B82F6;
-    color: #fff;
-    border-radius: 8px;
+  &__action {
+    flex: 1;
   }
 }
