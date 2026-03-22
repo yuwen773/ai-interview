@@ -60,7 +60,7 @@ public class DashboardSummaryService {
     private DashboardSummaryDTO.LatestInterviewSummary toLatestInterviewSummary(InterviewSessionEntity session) {
         return new DashboardSummaryDTO.LatestInterviewSummary(
             session.getSessionId(),
-            session.getStatus(),
+            session.getStatus() == null ? null : session.getStatus().name(),
             session.getCreatedAt(),
             session.getCompletedAt(),
             session.getOverallScore()

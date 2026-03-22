@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,7 +34,6 @@ class DashboardSummaryServiceTest {
 
     @Test
     void shouldReturnLatestResumeAndInterviewSummary() {
-        ResumeEntity olderResume = resume(1L, "older-resume.pdf", LocalDateTime.of(2026, 3, 20, 10, 0));
         ResumeEntity latestResume = resume(2L, "latest-resume.pdf", LocalDateTime.of(2026, 3, 21, 11, 0));
         InterviewSessionEntity evaluatedInterview = interview(
             "session-evaluated",
@@ -71,7 +71,65 @@ class DashboardSummaryServiceTest {
         assertThat(summary.totalInterviewCount()).isEqualTo(3);
         assertThat(summary.unfinishedInterviewCount()).isEqualTo(1);
         assertThat(summary.latestResume()).isNotNull();
+        assertThat(summary.latestResume().id()).isEqualTo(2L);
+        assertThat(summary.latestResume().filename()).isEqualTo("latest-resume.pdf");
         assertThat(summary.latestInterview()).isNotNull();
+        assertThat(summary.latestInterview().sessionId()).isEqualTo("session-latest");
+        assertThat(summary.latestInterview().status()).isEqualTo("IN_PROGRESS");
+        assertThat(summary.latestReportScore()).isEqualTo(92);
+    }
+
+    @Test
+    void shouldReturnEmptySummaryWhenNoResumeOrInterviewExists() {
+        when(resumeRepository.count()).thenReturn(0L);
+        when(resumeRepository.findFirstByOrderByUploadedAtDesc()).thenReturn(Optional.empty());
+        when(interviewSessionRepository.count()).thenReturn(0L);
+        when(interviewSessionRepository.countByStatusIn(List.of(
+            InterviewSessionEntity.SessionStatus.CREATED,
+            InterviewSessionEntity.SessionStatus.IN_PROGRESS
+        ))).thenReturn(0L);
+        when(interviewSessionRepository.findFirstByOrderByCreatedAtDesc()).thenReturn(Optional.empty());
+        when(interviewSessionRepository.findFirstByStatusInAndOverallScoreIsNotNullOrderByCompletedAtDescCreatedAtDesc(
+            List.of(
+                InterviewSessionEntity.SessionStatus.COMPLETED,
+                InterviewSessionEntity.SessionStatus.EVALUATED
+            )
+        )).thenReturn(Optional.empty());
+
+        DashboardSummaryDTO summary = service.getSummary();
+
+        assertThat(summary.resumeCount()).isZero();
+        assertThat(summary.totalInterviewCount()).isZero();
+        assertThat(summary.unfinishedInterviewCount()).isZero();
+        assertThat(summary.latestResume()).isNull();
+        assertThat(summary.latestInterview()).isNull();
+        assertThat(summary.latestReportScore()).isNull();
+    }
+
+    @Test
+    void shouldCountCreatedAndInProgressStatusesAsUnfinished() {
+        when(resumeRepository.count()).thenReturn(0L);
+        when(resumeRepository.findFirstByOrderByUploadedAtDesc()).thenReturn(Optional.empty());
+        when(interviewSessionRepository.count()).thenReturn(4L);
+        when(interviewSessionRepository.countByStatusIn(List.of(
+            InterviewSessionEntity.SessionStatus.CREATED,
+            InterviewSessionEntity.SessionStatus.IN_PROGRESS
+        ))).thenReturn(2L);
+        when(interviewSessionRepository.findFirstByOrderByCreatedAtDesc()).thenReturn(Optional.empty());
+        when(interviewSessionRepository.findFirstByStatusInAndOverallScoreIsNotNullOrderByCompletedAtDescCreatedAtDesc(
+            List.of(
+                InterviewSessionEntity.SessionStatus.COMPLETED,
+                InterviewSessionEntity.SessionStatus.EVALUATED
+            )
+        )).thenReturn(Optional.empty());
+
+        DashboardSummaryDTO summary = service.getSummary();
+
+        assertThat(summary.unfinishedInterviewCount()).isEqualTo(2);
+        verify(interviewSessionRepository).countByStatusIn(List.of(
+            InterviewSessionEntity.SessionStatus.CREATED,
+            InterviewSessionEntity.SessionStatus.IN_PROGRESS
+        ));
     }
 
     private ResumeEntity resume(Long id, String filename, LocalDateTime uploadedAt) {

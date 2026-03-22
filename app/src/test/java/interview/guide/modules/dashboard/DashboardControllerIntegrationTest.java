@@ -33,7 +33,7 @@ class DashboardControllerIntegrationTest {
             new DashboardSummaryDTO.LatestResumeSummary(2L, "latest-resume.pdf", LocalDateTime.of(2026, 3, 21, 11, 0)),
             new DashboardSummaryDTO.LatestInterviewSummary(
                 "session-latest",
-                interview.guide.modules.interview.model.InterviewSessionEntity.SessionStatus.IN_PROGRESS,
+                "IN_PROGRESS",
                 LocalDateTime.of(2026, 3, 21, 12, 0),
                 null,
                 null
@@ -43,7 +43,13 @@ class DashboardControllerIntegrationTest {
 
         mockMvc.perform(get("/api/dashboard/summary"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.resumeCount").exists())
-            .andExpect(jsonPath("$.data.totalInterviewCount").exists());
+            .andExpect(jsonPath("$.data.resumeCount").value(2))
+            .andExpect(jsonPath("$.data.totalInterviewCount").value(3))
+            .andExpect(jsonPath("$.data.unfinishedInterviewCount").value(1))
+            .andExpect(jsonPath("$.data.latestResume.id").value(2))
+            .andExpect(jsonPath("$.data.latestResume.filename").value("latest-resume.pdf"))
+            .andExpect(jsonPath("$.data.latestInterview.sessionId").value("session-latest"))
+            .andExpect(jsonPath("$.data.latestInterview.status").value("IN_PROGRESS"))
+            .andExpect(jsonPath("$.data.latestReportScore").value(92));
     }
 }

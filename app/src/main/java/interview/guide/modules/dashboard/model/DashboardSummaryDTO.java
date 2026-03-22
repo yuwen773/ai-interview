@@ -1,7 +1,5 @@
 package interview.guide.modules.dashboard.model;
 
-import interview.guide.modules.interview.model.InterviewSessionEntity;
-
 import java.time.LocalDateTime;
 
 public record DashboardSummaryDTO(
@@ -22,7 +20,7 @@ public record DashboardSummaryDTO(
 
     public record LatestInterviewSummary(
         String sessionId,
-        InterviewSessionEntity.SessionStatus status,
+        String status,
         LocalDateTime createdAt,
         LocalDateTime completedAt,
         Integer overallScore
