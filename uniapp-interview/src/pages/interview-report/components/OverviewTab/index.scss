@@ -1,0 +1,135 @@
+.overview-tab {
+  padding: $space-5;
+
+  &__hero {
+    background: linear-gradient(135deg, #102a43 0%, #1a4a6e 100%);
+    border-radius: $radius-lg;
+    padding: $space-5;
+    margin-bottom: $space-4;
+    position: relative;
+  }
+
+  &__eyebrow {
+    font-size: 24px;
+    color: rgba(255, 255, 255, 0.7);
+    display: block;
+    margin-bottom: $space-1;
+  }
+
+  &__title {
+    font-size: 32px;
+    font-weight: 600;
+    color: #fff;
+    display: block;
+    margin-bottom: $space-3;
+  }
+
+  &__badge {
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: $radius-pill;
+    font-size: 24px;
+    color: #fff;
+    margin-bottom: $space-3;
+  }
+
+  &__score {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  &__score-num {
+    font-size: 72px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  &__score-total {
+    font-size: 32px;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: $space-4;
+    margin-bottom: $space-4;
+  }
+
+  &__stat {
+    background: #fff;
+    border-radius: $radius-md;
+    padding: $space-4;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  &__stat-num {
+    font-size: 36px;
+    font-weight: 700;
+    color: $primary;
+    display: block;
+  }
+
+  &__stat-label {
+    font-size: 24px;
+    color: #666;
+    display: block;
+    margin-top: $space-1;
+  }
+
+  &__categories {
+    background: #fff;
+    border-radius: $radius-md;
+    padding: $space-4;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  &__section-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #333;
+    display: block;
+    margin-bottom: $space-3;
+  }
+
+  &__category-item {
+    margin-bottom: $space-3;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &__category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: $space-1;
+  }
+
+  &__category-name {
+    font-size: 26px;
+    color: #333;
+  }
+
+  &__category-score {
+    font-size: 26px;
+    font-weight: 600;
+    color: $primary;
+  }
+
+  &__progress {
+    height: 12px;
+    background: #f0f0f0;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  &__progress-bar {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.3s ease;
+  }
+}
