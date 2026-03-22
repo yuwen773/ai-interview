@@ -178,3 +178,9 @@ button::after {
   line-height: 1.6;
   color: $color-text-secondary;
 }
+
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

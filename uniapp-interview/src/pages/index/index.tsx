@@ -66,7 +66,7 @@ function getInterviewStatusMeta(summary: DashboardSummary) {
     return {
       label: '待看报告',
       className: 'status-pill status-pill--info',
-      text: `已完成作答，结束时间 ${formatDateTime(latestInterview.completedAt)}`,
+      text: `已完成作答，建议回顾报告详情`,
     };
   }
 
@@ -75,8 +75,8 @@ function getInterviewStatusMeta(summary: DashboardSummary) {
     className: 'status-pill status-pill--success',
     text:
       latestInterview.overallScore == null
-        ? `最近一次练习完成于 ${formatDateTime(latestInterview.completedAt)}`
-        : `最近一次总分 ${latestInterview.overallScore} 分`,
+        ? `练习完成于 ${formatDateTime(latestInterview.completedAt)}`
+        : `最近得分 ${latestInterview.overallScore} 分`,
   };
 }
 
@@ -266,7 +266,9 @@ export default function Index() {
         <View className="index-page__task-header">
           <View className={primaryTask.badgeClassName}>{primaryTask.badgeText}</View>
           {currentSummary.latestResume && (
-            <Text className="task-card__eyebrow">当前简历：{currentSummary.latestResume.filename}</Text>
+            <Text className="task-card__eyebrow text-truncate" style={{ maxWidth: '340rpx' }}>
+              当前简历：{currentSummary.latestResume.filename}
+            </Text>
           )}
         </View>
         <Text className="task-card__title">{primaryTask.title}</Text>
@@ -293,7 +295,7 @@ export default function Index() {
             <Text className="index-page__status-label">简历进度</Text>
             {currentSummary.latestResume ? (
               <>
-                <Text className="index-page__status-title">{currentSummary.latestResume.filename}</Text>
+                <Text className="index-page__status-title text-truncate">{currentSummary.latestResume.filename}</Text>
                 <Text className="index-page__status-text">
                   最近上传于 {formatDateTime(currentSummary.latestResume.uploadedAt)}
                 </Text>
