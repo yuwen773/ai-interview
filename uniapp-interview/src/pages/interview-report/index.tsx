@@ -138,7 +138,7 @@ export default function InterviewReportPage() {
   }
 
   return (
-    <ScrollView className="report-page page-shell" scrollY>
+    <View className="report-page page-shell">
       <View className="report-page__hero section-shell section-shell--primary">
         <View className="report-page__hero-top">
           <View>
@@ -351,6 +351,6 @@ export default function InterviewReportPage() {
           返回上一页
         </Button>
       </View>
-    </ScrollView>
+    </View>
   );
 }

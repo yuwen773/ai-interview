@@ -240,7 +240,7 @@ export default function ResumeDetailPage() {
   }
 
   return (
-    <ScrollView className="resume-detail-page page-shell" scrollY>
+    <View className="resume-detail-page page-shell">
       <View className="resume-detail-page__hero section-shell section-shell--primary">
         <View className="resume-detail-page__hero-top">
           <View>
@@ -420,6 +420,6 @@ export default function ResumeDetailPage() {
           查看成长曲线
         </Button>
       </View>
-    </ScrollView>
+    </View>
   );
 }

@@ -55,7 +55,7 @@ export default function Upload() {
   };
 
   return (
-    <View className="upload-page">
+    <View className="upload-page page-shell">
       <View className="upload-card" onClick={handleChooseFile}>
         <View className="upload-icon">
           <Text className="icon">{file ? '✓' : '+'}</Text>

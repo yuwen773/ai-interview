@@ -97,7 +97,7 @@ export default function GrowthCurvePage() {
   }
 
   return (
-    <ScrollView className="growth-curve-page page-shell" scrollY>
+    <View className="growth-curve-page page-shell">
       <View className="growth-curve-page__hero section-shell section-shell--primary">
         <Text className="growth-curve-page__eyebrow">成长曲线</Text>
         <Text className="growth-curve-page__title">用每次练习的分数变化判断自己是否真的在进步</Text>
@@ -209,6 +209,6 @@ export default function GrowthCurvePage() {
           </View>
         </View>
       </View>
-    </ScrollView>
+    </View>
   );
 }

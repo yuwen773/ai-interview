@@ -139,7 +139,7 @@ export default function InterviewHistoryPage() {
   }
 
   return (
-    <ScrollView className="interview-history-page page-shell" scrollY>
+    <View className="interview-history-page page-shell">
       <View className="interview-history-page__hero section-shell">
         <View className="interview-history-page__hero-head">
           <View>
@@ -227,6 +227,6 @@ export default function InterviewHistoryPage() {
           })}
         </View>
       )}
-    </ScrollView>
+    </View>
   );
 }

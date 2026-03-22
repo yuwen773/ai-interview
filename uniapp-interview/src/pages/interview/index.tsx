@@ -236,7 +236,7 @@ export default function Interview() {
   }
 
   return (
-    <ScrollView className="interview-page page-shell" scrollY>
+    <View className="interview-page page-shell">
       <View className="interview-page__hero section-shell section-shell--primary">
         <View className="interview-page__hero-top">
           <View>
@@ -342,6 +342,6 @@ export default function Interview() {
           {loading ? '提交中...' : '提交答案'}
         </Button>
       </View>
-    </ScrollView>
+    </View>
   );
 }

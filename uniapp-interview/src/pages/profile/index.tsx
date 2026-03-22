@@ -40,7 +40,7 @@ export default function ProfilePage() {
   ];
 
   return (
-    <ScrollView className="profile-page page-shell" scrollY>
+    <View className="profile-page page-shell">
       <View className="profile-page__hero section-shell section-shell--primary">
         <Text className="profile-page__eyebrow">我的</Text>
         <Text className="profile-page__title">把训练工具、反馈入口和版本信息放在一个轻量页里</Text>
@@ -125,6 +125,6 @@ export default function ProfilePage() {
           </View>
         </View>
       </View>
-    </ScrollView>
+    </View>
   );
 }

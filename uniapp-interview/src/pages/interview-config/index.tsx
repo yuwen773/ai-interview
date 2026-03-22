@@ -120,7 +120,7 @@ export default function InterviewConfig() {
   }
 
   return (
-    <ScrollView className="interview-config-page page-shell" scrollY>
+    <View className="interview-config-page page-shell">
       <View className="interview-config-page__hero section-shell section-shell--primary">
         <Text className="interview-config-page__eyebrow">岗位配置</Text>
         <Text className="interview-config-page__title">先确定这轮训练的岗位方向，再决定是恢复旧会话还是重新开始</Text>
@@ -222,6 +222,6 @@ export default function InterviewConfig() {
           {selectedRoleLabel ? `已选择：${selectedRoleLabel}` : '请选择岗位后开始面试'}
         </Text>
       </View>
-    </ScrollView>
+    </View>
   );
 }

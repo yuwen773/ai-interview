@@ -123,7 +123,7 @@ export default function ResumeListPage() {
   }
 
   return (
-    <ScrollView className="resume-list-page page-shell" scrollY>
+    <View className="resume-list-page page-shell">
       <View className="resume-list-page__hero section-shell section-shell--primary">
         <Text className="resume-list-page__eyebrow">简历档案</Text>
         <Text className="resume-list-page__title">把每份简历都沉淀成可继续训练的起点</Text>
@@ -216,6 +216,6 @@ export default function ResumeListPage() {
           })}
         </View>
       )}
-    </ScrollView>
+    </View>
   );
 }
