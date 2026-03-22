@@ -2,8 +2,8 @@ import { Button, ScrollView, Text, View } from '@tarojs/components';
 import { useEffect, useState } from 'react';
 import Taro from '@tarojs/taro';
 import interviewApi from '../../api/interview';
-import Empty from '../../components/common/Empty';
 import Loading from '../../components/common/Loading';
+import Empty from '../../components/common/Empty';
 import type { InterviewReport } from '../../types/interview';
 import TabBar from './components/TabBar';
 import OverviewTab from './components/OverviewTab';
@@ -70,7 +70,14 @@ export default function InterviewReportPage() {
   if (!sessionId || errorText) {
     return (
       <View className="report-page page-shell">
-        <Empty text={errorText || '报告不存在'} actionText="重新加载" onAction={() => void loadReport()} />
+        <Empty
+          text={errorText || '报告不存在'}
+          title="加载失败"
+          badge="异常提示"
+          type="error"
+          actionText="重新加载"
+          onAction={() => void loadReport()}
+        />
       </View>
     );
   }
@@ -78,7 +85,13 @@ export default function InterviewReportPage() {
   if (!report) {
     return (
       <View className="report-page page-shell">
-        <Empty text="报告尚未生成完成，请稍后再试。" actionText="重新加载" onAction={() => void loadReport()} />
+        <Empty
+          text="报告尚未生成完成，请稍后再试。"
+          title="生成中"
+          badge="正在处理"
+          actionText="重新加载"
+          onAction={() => void loadReport()}
+        />
       </View>
     );
   }
