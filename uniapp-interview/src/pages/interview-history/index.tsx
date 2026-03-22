@@ -184,8 +184,8 @@ export default function InterviewHistoryPage() {
               <View key={item.sessionId} className="task-card interview-history-page__card">
                 <View className="interview-history-page__card-head">
                   <View>
-                    <Text className="task-card__eyebrow">{item.resumeFilename}</Text>
-                    <Text className="interview-history-page__card-title">{item.jobLabel}</Text>
+                    <Text className="task-card__eyebrow text-truncate">{item.resumeFilename}</Text>
+                    <Text className="interview-history-page__card-title text-truncate">{item.jobLabel}</Text>
                   </View>
                   <View className={statusMeta.className}>{statusMeta.label}</View>
                 </View>
@@ -218,7 +218,10 @@ export default function InterviewHistoryPage() {
                   >
                     导出 PDF
                   </Button>
-                  <Button className="interview-history-page__delete" onClick={() => handleDelete(item)}>
+                  <Button
+                    className="action-chip action-chip--danger interview-history-page__delete"
+                    onClick={() => handleDelete(item)}
+                  >
                     删除
                   </Button>
                 </View>

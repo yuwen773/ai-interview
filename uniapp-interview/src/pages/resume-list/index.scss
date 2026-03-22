@@ -74,7 +74,6 @@
     line-height: 1.4;
     font-weight: 700;
     color: $color-text-primary;
-    word-break: break-all;
   }
 
   &__meta {
@@ -119,13 +118,5 @@
 
   &__action {
     min-width: 200px;
-  }
-
-  &__delete {
-    min-height: 64px;
-    padding: 0 $space-2;
-    font-size: $font-size-caption;
-    color: $color-danger;
-    background: transparent;
   }
 }

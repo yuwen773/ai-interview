@@ -173,6 +173,13 @@ button::after {
   box-shadow: none;
 }
 
+.action-chip--danger {
+  color: $color-danger;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.16);
+  box-shadow: none;
+}
+
 .surface-note {
   font-size: $font-size-caption;
   line-height: 1.6;

@@ -170,7 +170,7 @@ export default function ResumeListPage() {
                 <View className="resume-list-page__card-head">
                   <View>
                     <Text className="task-card__eyebrow">上传于 {formatDateTime(item.uploadedAt)}</Text>
-                    <Text className="resume-list-page__filename">{item.filename}</Text>
+                    <Text className="resume-list-page__filename text-truncate">{item.filename}</Text>
                   </View>
                   <View className={statusMeta.className}>{statusMeta.label}</View>
                 </View>
@@ -205,7 +205,7 @@ export default function ResumeListPage() {
                     开始面试
                   </Button>
                   <Button
-                    className="resume-list-page__delete"
+                    className="action-chip action-chip--danger resume-list-page__delete"
                     onClick={() => handleDelete(item.id, item.filename)}
                   >
                     删除
