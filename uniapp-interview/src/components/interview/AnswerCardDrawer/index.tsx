@@ -75,7 +75,7 @@ export default function AnswerCardDrawer({ visible, items, currentIndex, onClose
 
         <View className="answer-card-drawer__list">
           {items.map((item) => (
-            <View key={\`card-\${item.questionIndex}\`}>
+            <View key={`card-${item.questionIndex}`}>
               <AnswerCardItem
                 item={item}
                 isCurrent={item.questionIndex === currentIndex}
