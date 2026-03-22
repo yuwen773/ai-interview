@@ -1,27 +1,79 @@
+@use '../../../styles/theme.scss' as *;
+
 .loading-container {
   display: flex;
   flex-direction: column;
+  gap: $space-4;
+  width: 100%;
+  padding: $space-5;
+}
+
+.loading-container__header {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 40px;
+  gap: $space-4;
 }
 
 .loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #3B82F6;
+  width: 56px;
+  height: 56px;
+  border: 6px solid rgba(46, 197, 255, 0.18);
+  border-top-color: $color-accent;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.loading-container__status {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
 }
 
-.loading-text {
-  margin-top: 16px;
-  color: #666;
-  font-size: 14px;
+.loading-container__title {
+  font-size: $font-size-subtitle;
+  font-weight: 700;
+  color: $color-primary;
+}
+
+.loading-container__text {
+  font-size: $font-size-body;
+  line-height: 1.6;
+  color: $color-text-secondary;
+}
+
+.loading-container__progress {
+  height: 12px;
+  overflow: hidden;
+  border-radius: $radius-pill;
+  background: rgba(16, 42, 67, 0.08);
+}
+
+.loading-container__progress-bar {
+  width: 42%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, $color-accent 0%, $color-cta 100%);
+  animation: pulse 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: translateX(-8%);
+    opacity: 0.72;
+  }
+
+  100% {
+    transform: translateX(70%);
+    opacity: 1;
+  }
 }

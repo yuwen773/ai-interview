@@ -1,19 +1,30 @@
+@use '../../../styles/theme.scss' as *;
+
 .empty-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
+  align-items: flex-start;
+  gap: $space-3;
+  width: 100%;
+  padding: $space-6 $space-5;
 }
 
-.empty-text {
-  color: #999;
-  font-size: 14px;
+.empty-container__badge {
+  margin-bottom: $space-1;
 }
 
-.empty-action {
-  margin-top: 20px;
-  background: #3B82F6;
-  color: #fff;
-  font-size: 14px;
+.empty-container__title {
+  font-size: $font-size-title;
+  font-weight: 700;
+  color: $color-primary;
+}
+
+.empty-container__text {
+  font-size: $font-size-body;
+  line-height: 1.6;
+  color: $color-text-secondary;
+}
+
+.empty-container__action {
+  margin-top: $space-2;
 }

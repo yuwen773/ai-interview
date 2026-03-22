@@ -76,7 +76,9 @@ class DashboardSummaryServiceTest {
         assertThat(summary.latestInterview()).isNotNull();
         assertThat(summary.latestInterview().sessionId()).isEqualTo("session-latest");
         assertThat(summary.latestInterview().status()).isEqualTo("IN_PROGRESS");
-        assertThat(summary.latestReportScore()).isEqualTo(92);
+        assertThat(summary.latestReport()).isNotNull();
+        assertThat(summary.latestReport().sessionId()).isEqualTo("session-evaluated");
+        assertThat(summary.latestReport().overallScore()).isEqualTo(92);
     }
 
     @Test
@@ -103,7 +105,7 @@ class DashboardSummaryServiceTest {
         assertThat(summary.unfinishedInterviewCount()).isZero();
         assertThat(summary.latestResume()).isNull();
         assertThat(summary.latestInterview()).isNull();
-        assertThat(summary.latestReportScore()).isNull();
+        assertThat(summary.latestReport()).isNull();
     }
 
     @Test

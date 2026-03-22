@@ -1,3 +1,3 @@
 export default definePageConfig({
-  navigationBarTitleText: 'Interview History',
+  navigationBarTitleText: '面试记录',
 });

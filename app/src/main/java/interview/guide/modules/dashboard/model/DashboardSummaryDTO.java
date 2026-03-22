@@ -8,7 +8,7 @@ public record DashboardSummaryDTO(
     int unfinishedInterviewCount,
     LatestResumeSummary latestResume,
     LatestInterviewSummary latestInterview,
-    Integer latestReportScore
+    LatestReportSummary latestReport
 ) {
 
     public record LatestResumeSummary(
@@ -24,6 +24,13 @@ public record DashboardSummaryDTO(
         LocalDateTime createdAt,
         LocalDateTime completedAt,
         Integer overallScore
+    ) {
+    }
+
+    public record LatestReportSummary(
+        String sessionId,
+        Integer overallScore,
+        LocalDateTime completedAt
     ) {
     }
 }

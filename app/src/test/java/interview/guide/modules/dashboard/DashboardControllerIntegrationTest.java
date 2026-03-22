@@ -38,7 +38,11 @@ class DashboardControllerIntegrationTest {
                 null,
                 null
             ),
-            92
+            new DashboardSummaryDTO.LatestReportSummary(
+                "session-evaluated",
+                92,
+                LocalDateTime.of(2026, 3, 20, 9, 30)
+            )
         ));
 
         mockMvc.perform(get("/api/dashboard/summary"))
@@ -50,6 +54,7 @@ class DashboardControllerIntegrationTest {
             .andExpect(jsonPath("$.data.latestResume.filename").value("latest-resume.pdf"))
             .andExpect(jsonPath("$.data.latestInterview.sessionId").value("session-latest"))
             .andExpect(jsonPath("$.data.latestInterview.status").value("IN_PROGRESS"))
-            .andExpect(jsonPath("$.data.latestReportScore").value(92));
+            .andExpect(jsonPath("$.data.latestReport.sessionId").value("session-evaluated"))
+            .andExpect(jsonPath("$.data.latestReport.overallScore").value(92));
     }
 }

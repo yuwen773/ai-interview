@@ -1,3 +1,3 @@
 export default definePageConfig({
-  navigationBarTitleText: 'Growth Curve',
+  navigationBarTitleText: '成长曲线',
 });

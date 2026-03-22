@@ -1,85 +1,169 @@
 .interview-page {
-  min-height: 100vh;
-  background: #f5f5f5;
-  padding: 20px;
-}
-
-.progress {
-  margin-bottom: 20px;
-
-  Text {
-    font-size: 14px;
-    color: #666;
+  &__hero,
+  &__question-card,
+  &__history,
+  &__answer-area {
+    margin-bottom: 24px;
   }
 
-  .job-label {
-    display: inline-block;
+  &__hero-top,
+  &__section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  &__hero-top {
+    margin-bottom: 14px;
+  }
+
+  &__eyebrow,
+  &__title,
+  &__subtitle,
+  &__section-title,
+  &__question-badge,
+  &__question-content,
+  &__message-role,
+  &__message-content,
+  &__answer-count {
+    display: block;
+  }
+
+  &__eyebrow {
+    font-size: 24px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.72);
     margin-bottom: 8px;
-    padding: 4px 10px;
+  }
+
+  &__title {
+    font-size: 42px;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  &__subtitle {
+    font-size: 24px;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.82);
+    margin-bottom: 20px;
+  }
+
+  &__progress-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  &__progress-bar {
+    width: 100%;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.18);
     border-radius: 999px;
-    background: #dbeafe;
-    color: #1d4ed8;
+    overflow: hidden;
   }
 
-  .progress-bar {
-    height: 4px;
-    background: #e0e0e0;
-    border-radius: 2px;
-    margin-top: 8px;
-
-    .progress-fill {
-      height: 100%;
-      background: #3B82F6;
-      border-radius: 2px;
-      transition: width 0.3s ease;
-    }
+  &__progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #fb923c 0%, #fdba74 100%);
+    transition: width 0.3s ease;
   }
-}
 
-.question-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
+  &__section-title {
+    font-size: 30px;
+    font-weight: 600;
+    color: #0f172a;
+  }
 
-  .question-label {
-    display: block;
-    font-size: 12px;
-    color: #3B82F6;
+  &__question-badge {
+    padding: 8px 18px;
+    border-radius: 999px;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 22px;
+  }
+
+  &__question-content {
+    font-size: 30px;
+    line-height: 1.7;
+    color: #0f172a;
+  }
+
+  &__history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  &__message {
+    padding: 18px 20px;
+    border-radius: 24px;
+  }
+
+  &__message--assistant {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  }
+
+  &__message--user {
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  }
+
+  &__message-role {
+    font-size: 22px;
+    color: #64748b;
     margin-bottom: 8px;
   }
 
-  .question-content {
-    display: block;
-    font-size: 16px;
-    color: #333;
-    line-height: 1.6;
+  &__message-content {
+    font-size: 24px;
+    line-height: 1.7;
+    color: #0f172a;
   }
-}
 
-.answer-area {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
-
-  .answer-input {
+  &__answer-input {
     width: 100%;
-    min-height: 150px;
-    font-size: 16px;
-    line-height: 1.6;
+    min-height: 280px;
+    font-size: 28px;
+    line-height: 1.7;
+    color: #0f172a;
   }
-}
 
-.actions {
-  .submit-btn {
+  &__answer-count {
+    margin-top: 12px;
+    text-align: right;
+    font-size: 22px;
+    color: #94a3b8;
+  }
+
+  &__actions {
+    padding: 4px 0 32px;
+  }
+
+  &__secondary-action,
+  &__submit-btn {
     width: 100%;
-    background: #3B82F6;
-    color: #fff;
-    border-radius: 8px;
+    border-radius: 999px;
+  }
+
+  &__secondary-action {
+    margin-bottom: 12px;
+  }
+
+  &__submit-btn {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
+    font-size: 30px;
+    font-weight: 700;
+    box-shadow: 0 16px 28px rgba(37, 99, 235, 0.2);
 
     &[disabled] {
-      background: #ccc;
+      background: #cbd5e1;
+      color: #ffffff;
+      box-shadow: none;
     }
   }
 }

@@ -35,7 +35,7 @@ export default function Upload() {
     setLoading(true);
     try {
       // 上传并分析简历
-      const res = await resumeApi.uploadAndAnalyze(file, fileName);
+      const res = await resumeApi.uploadAndAnalyze(file);
       Taro.showToast({ title: '上传成功', icon: 'success' });
       // 跳转到简历详情 - 兼容不同返回格式，确保转为字符串
       const resumeId = String(res.resume?.id ?? res.storage?.resumeId);

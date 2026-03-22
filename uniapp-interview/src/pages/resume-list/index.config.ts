@@ -1,3 +1,3 @@
 export default definePageConfig({
-  navigationBarTitleText: 'Resume Library',
+  navigationBarTitleText: '简历库',
 });

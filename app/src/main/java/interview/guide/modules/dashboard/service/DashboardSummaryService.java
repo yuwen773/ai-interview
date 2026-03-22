@@ -34,9 +34,9 @@ public class DashboardSummaryService {
         DashboardSummaryDTO.LatestInterviewSummary latestInterview = interviewSessionRepository.findFirstByOrderByCreatedAtDesc()
             .map(this::toLatestInterviewSummary)
             .orElse(null);
-        Integer latestReportScore = interviewSessionRepository
+        DashboardSummaryDTO.LatestReportSummary latestReport = interviewSessionRepository
             .findFirstByStatusInAndOverallScoreIsNotNullOrderByCompletedAtDescCreatedAtDesc(SCORED_STATUSES)
-            .map(InterviewSessionEntity::getOverallScore)
+            .map(this::toLatestReportSummary)
             .orElse(null);
 
         return new DashboardSummaryDTO(
@@ -45,7 +45,7 @@ public class DashboardSummaryService {
             Math.toIntExact(interviewSessionRepository.countByStatusIn(UNFINISHED_STATUSES)),
             latestResume,
             latestInterview,
-            latestReportScore
+            latestReport
         );
     }
 
@@ -64,6 +64,14 @@ public class DashboardSummaryService {
             session.getCreatedAt(),
             session.getCompletedAt(),
             session.getOverallScore()
+        );
+    }
+
+    private DashboardSummaryDTO.LatestReportSummary toLatestReportSummary(InterviewSessionEntity session) {
+        return new DashboardSummaryDTO.LatestReportSummary(
+            session.getSessionId(),
+            session.getOverallScore(),
+            session.getCompletedAt()
         );
     }
 }

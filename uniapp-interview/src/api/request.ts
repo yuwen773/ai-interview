@@ -43,12 +43,11 @@ class Request {
     }).then(res => this.handleResponse<T>(res.data));
   }
 
-  async upload<T>(url: string, filePath: string, fileName: string): Promise<T> {
+  async upload<T>(url: string, filePath: string): Promise<T> {
     return Taro.uploadFile({
       url: `${baseURL}${url}`,
       filePath,
       name: 'file',
-      fileName,
     }).then(res => this.handleResponse<T>(JSON.parse(res.data)));
   }
 

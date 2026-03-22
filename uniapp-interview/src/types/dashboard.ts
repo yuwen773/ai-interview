@@ -16,11 +16,17 @@ export interface DashboardLatestInterview {
   jobLabel?: string;
 }
 
+export interface DashboardLatestReport {
+  sessionId: string;
+  overallScore: number;
+  completedAt: string | null;
+}
+
 export interface DashboardSummary {
   resumeCount: number;
   totalInterviewCount: number;
   unfinishedInterviewCount: number;
   latestResume: DashboardLatestResume | null;
   latestInterview: DashboardLatestInterview | null;
-  latestReportScore: number | null;
+  latestReport: DashboardLatestReport | null;
 }

@@ -14,7 +14,7 @@ export default defineAppConfig({
   window: {
     backgroundTextStyle: 'light',
     navigationBarBackgroundColor: '#fff',
-    navigationBarTitleText: 'AI Interview Coach',
+    navigationBarTitleText: '面试练习',
     navigationBarTextStyle: 'black',
   },
   tabBar: {
@@ -25,19 +25,19 @@ export default defineAppConfig({
     list: [
       {
         pagePath: 'pages/index/index',
-        text: 'Home',
+        text: '首页',
       },
       {
         pagePath: 'pages/resume-list/index',
-        text: 'Resumes',
+        text: '简历库',
       },
       {
         pagePath: 'pages/interview-history/index',
-        text: 'History',
+        text: '面试记录',
       },
       {
         pagePath: 'pages/profile/index',
-        text: 'Profile',
+        text: '我的',
       },
     ],
   },
