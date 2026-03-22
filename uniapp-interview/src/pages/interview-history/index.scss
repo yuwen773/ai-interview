@@ -59,6 +59,11 @@
     justify-content: space-between;
     align-items: flex-start;
     gap: $space-3;
+
+    > View:first-child {
+      flex: 1;
+      min-width: 0;
+    }
   }
 
   &__card-title {
