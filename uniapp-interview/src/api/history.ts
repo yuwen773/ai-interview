@@ -1,5 +1,6 @@
 import Taro from '@tarojs/taro';
 import request from './request';
+import type { JobRole } from '../types/interview';
 
 const baseURL = process.env.API_BASE_URL || 'http://localhost:8080';
 
@@ -43,6 +44,8 @@ export interface AnalysisItem {
 export interface InterviewItem {
   id: number;
   sessionId: string;
+  jobRole?: JobRole;
+  jobLabel?: string;
   totalQuestions: number;
   status: string;
   evaluateStatus?: EvaluateStatus;
@@ -90,6 +93,31 @@ export interface InterviewDetail extends InterviewItem {
   answers: AnswerItem[];
 }
 
+export interface InterviewHistorySummaryStats {
+  totalCount: number;
+  completedCount: number;
+  averageScore: number;
+}
+
+export interface InterviewHistorySummaryItem {
+  sessionId: string;
+  resumeId: number;
+  resumeFilename: string;
+  jobRole: JobRole;
+  jobLabel: string;
+  totalQuestions: number;
+  status: string;
+  evaluateStatus: EvaluateStatus | null;
+  overallScore: number | null;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+export interface InterviewHistorySummary {
+  stats: InterviewHistorySummaryStats;
+  items: InterviewHistorySummaryItem[];
+}
+
 export const historyApi = {
   /**
    * 获取所有简历列表
@@ -110,6 +138,13 @@ export const historyApi = {
    */
   async getInterviewDetail(sessionId: string): Promise<InterviewDetail> {
     return request.get<InterviewDetail>(`/interview/sessions/${sessionId}/details`);
+  },
+
+  /**
+   * Fetch interview history summary for the redesigned history tab.
+   */
+  async getInterviewHistorySummary(): Promise<InterviewHistorySummary> {
+    return request.get<InterviewHistorySummary>('/interview/history/summary');
   },
 
   /**
