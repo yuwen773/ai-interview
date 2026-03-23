@@ -63,9 +63,13 @@
     }
   }
 
-  &__list {
+  &__grid {
     flex: 1;
     overflow-y: auto;
     padding: 16px 20px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    align-content: start;
   }
 }

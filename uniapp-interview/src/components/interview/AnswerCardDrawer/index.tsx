@@ -10,10 +10,10 @@ interface Props {
   items: AnswerCardItemType[];
   currentIndex: number;
   onClose: () => void;
-  onSaveAnswer?: (questionIndex: number, answer: string) => void;
+  onJump: (questionIndex: number) => void;
 }
 
-export default function AnswerCardDrawer({ visible, items, currentIndex, onClose, onSaveAnswer }: Props) {
+export default function AnswerCardDrawer({ visible, items, currentIndex, onClose, onJump }: Props) {
   const startX = useRef(0);
   const startY = useRef(0);
 
@@ -45,6 +45,11 @@ export default function AnswerCardDrawer({ visible, items, currentIndex, onClose
     onClose();
   };
 
+  // 判断某条目是否可跳转：index < currentIndex 的已答/暂存题目
+  const canJump = (item: AnswerCardItemType) => {
+    return item.questionIndex < currentIndex;
+  };
+
   if (!visible) return null;
 
   return (
@@ -73,15 +78,15 @@ export default function AnswerCardDrawer({ visible, items, currentIndex, onClose
           </View>
         </View>
 
-        <View className="answer-card-drawer__list">
+        <View className="answer-card-drawer__grid">
           {items.map((item) => (
-            <View key={`card-${item.questionIndex}`}>
-              <AnswerCardItem
-                item={item}
-                isCurrent={item.questionIndex === currentIndex}
-                onSaveAnswer={onSaveAnswer}
-              />
-            </View>
+            <AnswerCardItem
+              key={`card-${item.questionIndex}`}
+              item={item}
+              isCurrent={item.questionIndex === currentIndex}
+              canJump={canJump(item)}
+              onJump={onJump}
+            />
           ))}
         </View>
       </View>

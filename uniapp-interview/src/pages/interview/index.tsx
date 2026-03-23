@@ -1,4 +1,4 @@
-import { View, Text, Button, Textarea, ScrollView } from '@tarojs/components';
+import { View, Text, Button, Textarea } from '@tarojs/components';
 import { useEffect, useState, useRef } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { interviewApi } from '../../api/interview';
@@ -22,6 +22,7 @@ export default function Interview() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [progress, setProgress] = useState({ current: 0, total: 5 });
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [editable, setEditable] = useState(true);  // 是否可编辑答案
 
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
@@ -231,22 +232,24 @@ export default function Interview() {
     };
   });
 
-  // 保存答题卡中修改的答案
-  const handleSaveAnswer = async (questionIndex: number, ans: string) => {
-    try {
-      await interviewApi.saveAnswer({
-        sessionId,
-        answer: ans,
-        questionIndex,
-      });
-      // 更新本地 questions 状态
-      setQuestions(prev => prev.map((q, i) =>
-        i === questionIndex ? { ...q, userAnswer: ans } : q
-      ));
-      Taro.showToast({ title: '已保存', icon: 'success' });
-    } catch (error) {
-      Taro.showToast({ title: '保存失败', icon: 'none' });
-    }
+  // 跳转到指定题目
+  const handleJumpToQuestion = (questionIndex: number) => {
+    const targetQuestion = questions[questionIndex];
+    if (!targetQuestion) return;
+
+    // 已答过的题目不可编辑，暂存的可编辑
+    const isEditable = !targetQuestion.userAnswer;
+
+    setCurrentQuestionIndex(questionIndex);
+    setQuestion(targetQuestion);
+    setAnswer(targetQuestion.userAnswer || '');
+    setEditable(isEditable);
+    setProgress({
+      current: questionIndex + 1,
+      total: progress.total,
+    });
+    setDrawerVisible(false);
+    Taro.showToast({ title: `跳转到 Q${questionIndex + 1}`, icon: 'none' });
   };
 
   // 手势处理：从右向左滑打开抽屉
@@ -282,12 +285,12 @@ export default function Interview() {
 
   return (
     <View
-      className="interview-page"
+      className="interview-page page-shell"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      <ScrollView scrollY className="interview-page__scroll">
-        <View className="progress">
+      <View className="interview-page__content">
+        <View className="progress section-shell">
           <View className="progress__top">
             <Text className="job-label">{jobLabel || '模拟面试'}</Text>
             <View className="status-pill">第 {progress.current} 题</View>
@@ -310,7 +313,7 @@ export default function Interview() {
           </View>
         </View>
 
-        <View className="question-card">
+        <View className="question-card section-shell">
           <View className="question-card__header">
             <Text className="question-card__label">当前问题</Text>
             <Text className="question-badge">{question?.category || '待回答'}</Text>
@@ -323,39 +326,39 @@ export default function Interview() {
           <Text className="drawer-trigger__hint">点击查看全部题目</Text>
         </View>
 
-        <View className="answer-area">
+        <View className="answer-area section-shell">
           <Text className="answer-area__label">当前作答</Text>
           <Textarea
             className="answer-input"
             value={answer}
-            onInput={(e) => setAnswer(e.detail.value)}
-            placeholder="请输入你的答案..."
-            maxLength={2000}
+            onInput={(e) => editable && setAnswer(e.detail.value)}
+            placeholder={editable ? "请输入你的答案..." : "已答题目，不可修改"}
+            disabled={!editable}
           />
           <Text className="answer-count">{answer.trim().length} / 2000</Text>
         </View>
 
         <View className="actions">
           <View className="actions__secondary">
-            <Button className="action-chip action-chip--secondary" onClick={handleSaveDraft} disabled={!answer.trim() || loading}>
+            <Button className="action-chip action-chip--secondary" onClick={handleSaveDraft} disabled={!editable || !answer.trim() || loading}>
               暂存答案
             </Button>
             <Button className="action-chip action-chip--secondary" onClick={handleCompleteEarly} disabled={loading}>
               提前结束
             </Button>
           </View>
-          <Button className="submit-btn" onClick={handleSubmitAnswer} disabled={loading || !answer.trim()}>
+          <Button className="submit-btn" onClick={handleSubmitAnswer} disabled={!editable || loading || !answer.trim()}>
             {loading ? '提交中...' : '提交答案'}
           </Button>
         </View>
-      </ScrollView>
+      </View>
 
       <AnswerCardDrawer
         visible={drawerVisible}
         items={answerCards}
         currentIndex={currentQuestionIndex}
         onClose={() => setDrawerVisible(false)}
-        onSaveAnswer={handleSaveAnswer}
+        onJump={handleJumpToQuestion}
       />
     </View>
   );
