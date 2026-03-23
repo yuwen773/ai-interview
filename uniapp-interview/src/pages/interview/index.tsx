@@ -1,5 +1,5 @@
 import { View, Text, Button, Textarea } from '@tarojs/components';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { interviewApi } from '../../api/interview';
 import { resumeApi } from '../../api/resume';
@@ -24,12 +24,12 @@ export default function Interview() {
   const [progress, setProgress] = useState({ current: 0, total: 5 });
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [answerDrafts, setAnswerDrafts] = useState<Record<number, string>>({});
-  const [savedQuestionIndexes, setSavedQuestionIndexes] = useState<number[]>([]);
+  const [savedQuestionIndexes, setSavedQuestionIndexes] = useState<Set<number>>(new Set());
 
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
 
-  const viewingQuestion = questions[viewingQuestionIndex] ?? null;
+  const viewingQuestion = useMemo(() => questions[viewingQuestionIndex] ?? null, [questions, viewingQuestionIndex]);
 
   useEffect(() => {
     const params = router.params || {};
@@ -68,15 +68,15 @@ export default function Interview() {
     }, {});
   };
 
-  const buildInitialSavedIndexes = (session: InterviewSession) => {
+  const buildInitialSavedIndexes = (session: InterviewSession): Set<number> => {
     const current = session.currentQuestionIndex;
     const currentQuestion = session.questions?.[current];
 
     if (currentQuestion?.userAnswer?.trim()) {
-      return [current];
+      return new Set([current]);
     }
 
-    return [];
+    return new Set();
   };
 
   const applySession = (session: InterviewSession) => {
@@ -159,19 +159,25 @@ export default function Interview() {
   };
 
   const markQuestionSaved = (questionIndex: number) => {
-    setSavedQuestionIndexes(prev => (
-      prev.includes(questionIndex) ? prev : [...prev, questionIndex]
-    ));
+    setSavedQuestionIndexes(prev => {
+      const next = new Set(prev);
+      next.add(questionIndex);
+      return next;
+    });
   };
 
   const markQuestionSubmitted = (questionIndex: number) => {
-    setSavedQuestionIndexes(prev => prev.filter(index => index !== questionIndex));
+    setSavedQuestionIndexes(prev => {
+      const next = new Set(prev);
+      next.delete(questionIndex);
+      return next;
+    });
   };
 
-  const getQuestionStatus = (questionIndex: number, targetQuestion: Question | undefined): AnswerCardStatus => {
+  const getQuestionStatus = useCallback((questionIndex: number, targetQuestion: Question | undefined): AnswerCardStatus => {
     const hasAnswer = Boolean(targetQuestion?.userAnswer?.trim());
 
-    if (savedQuestionIndexes.includes(questionIndex)) {
+    if (savedQuestionIndexes.has(questionIndex)) {
       return 'saved';
     }
 
@@ -184,7 +190,7 @@ export default function Interview() {
     }
 
     return 'unanswered';
-  };
+  }, [savedQuestionIndexes, activeQuestionIndex]);
 
   const currentAnswer = viewingQuestion ? (answerDrafts[viewingQuestionIndex] ?? viewingQuestion.userAnswer ?? '') : '';
   const viewingStatus = viewingQuestion ? getQuestionStatus(viewingQuestionIndex, viewingQuestion) : 'unanswered';
@@ -365,13 +371,15 @@ export default function Interview() {
     }
   };
 
-  const answerCards: AnswerCardItem[] = questions.map((item, index) => ({
-    questionIndex: index,
-    displayIndex: index + 1,
-    status: getQuestionStatus(index, item),
-    question: item.question,
-    savedAnswer: item.userAnswer || undefined,
-  }));
+  const answerCards = useMemo<AnswerCardItem[]>(() => (
+    questions.map((item, index) => ({
+      questionIndex: index,
+      displayIndex: index + 1,
+      status: getQuestionStatus(index, item),
+      question: item.question,
+      savedAnswer: item.userAnswer || undefined,
+    }))
+  ), [questions, getQuestionStatus, activeQuestionIndex, savedQuestionIndexes]);
 
   const handleJumpToQuestion = (questionIndex: number) => {
     if (!questions[questionIndex] || questionIndex >= activeQuestionIndex) {
