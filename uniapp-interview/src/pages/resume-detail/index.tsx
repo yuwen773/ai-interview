@@ -4,6 +4,7 @@ import Taro, { useRouter } from '@tarojs/taro';
 import { historyApi, type InterviewItem, type ResumeDetail } from '../../api/history';
 import Loading from '../../components/common/Loading';
 import Empty from '../../components/common/Empty';
+import { isInterviewOngoing } from '../../utils/interviewSession';
 import './index.scss';
 
 interface Suggestion {
@@ -237,10 +238,9 @@ export default function ResumeDetailPage() {
   };
 
   const handleOpenInterview = (item: InterviewItem) => {
-    const target =
-      item.status === 'CREATED' || item.status === 'IN_PROGRESS'
-        ? `/pages/interview/index?sessionId=${item.sessionId}`
-        : `/pages/interview-report/index?sessionId=${item.sessionId}`;
+    const target = isInterviewOngoing(item)
+      ? `/pages/interview/index?sessionId=${item.sessionId}`
+      : `/pages/interview-report/index?sessionId=${item.sessionId}`;
     Taro.navigateTo({ url: target });
   };
 
@@ -424,7 +424,7 @@ export default function ResumeDetailPage() {
         {interviews.length ? (
           <View className="resume-detail-page__interview-list">
             {interviews.map((item) => {
-              const isOngoing = item.status === 'CREATED' || item.status === 'IN_PROGRESS';
+              const isOngoing = isInterviewOngoing(item);
               return (
                 <View key={item.sessionId} className="task-card task-card--info resume-detail-page__interview-card">
                   <View className="resume-detail-page__interview-head">

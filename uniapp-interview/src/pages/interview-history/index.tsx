@@ -8,6 +8,7 @@ import {
 } from '../../api/history';
 import Loading from '../../components/common/Loading';
 import Empty from '../../components/common/Empty';
+import { isInterviewCompleted, isInterviewOngoing } from '../../utils/interviewSession';
 import './index.scss';
 
 function formatDateTime(value?: string | null) {
@@ -28,7 +29,7 @@ function formatDateTime(value?: string | null) {
 }
 
 function getStatusMeta(item: InterviewHistorySummaryItem) {
-  const isOngoing = item.status === 'CREATED' || item.status === 'IN_PROGRESS';
+  const isOngoing = isInterviewOngoing(item);
   if (isOngoing) {
     return {
       label: '进行中',
@@ -75,10 +76,9 @@ export default function InterviewHistoryPage() {
   });
 
   const handleOpen = (item: InterviewHistorySummaryItem) => {
-    const target =
-      item.status === 'CREATED' || item.status === 'IN_PROGRESS'
-        ? `/pages/interview/index?sessionId=${item.sessionId}`
-        : `/pages/interview-report/index?sessionId=${item.sessionId}`;
+    const target = isInterviewOngoing(item)
+      ? `/pages/interview/index?sessionId=${item.sessionId}`
+      : `/pages/interview-report/index?sessionId=${item.sessionId}`;
     Taro.navigateTo({ url: target });
   };
 
@@ -109,7 +109,7 @@ export default function InterviewHistoryPage() {
       Taro.showToast({ title: '已删除', icon: 'success' });
       setSummary((current) => {
         const items = current.items.filter((entry) => entry.sessionId !== item.sessionId);
-        const completed = items.filter((entry) => entry.status === 'COMPLETED').length;
+        const completed = items.filter((entry) => isInterviewCompleted(entry)).length;
         const scores = items
           .map((entry) => entry.overallScore)
           .filter((score): score is number => typeof score === 'number');
@@ -202,7 +202,7 @@ export default function InterviewHistoryPage() {
                   </View>
                   <View className="interview-history-page__meta">
                     <Text className="interview-history-page__meta-value">
-                      {item.status === 'CREATED' || item.status === 'IN_PROGRESS' ? '继续中' : '已归档'}
+                      {isInterviewOngoing(item) ? '继续中' : '已归档'}
                     </Text>
                     <Text className="interview-history-page__meta-label">状态</Text>
                   </View>

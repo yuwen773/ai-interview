@@ -3,6 +3,7 @@ import Taro, { useDidShow } from '@tarojs/taro';
 import { useState } from 'react';
 import Loading from '../../components/common/Loading';
 import dashboardApi from '../../api/dashboard';
+import { isInterviewOngoing } from '../../utils/interviewSession';
 import type { DashboardSummary } from '../../types/dashboard';
 import './index.scss';
 
@@ -54,7 +55,7 @@ function getInterviewStatusMeta(summary: DashboardSummary) {
     };
   }
 
-  if (latestInterview.status === 'CREATED' || latestInterview.status === 'IN_PROGRESS') {
+  if (isInterviewOngoing(latestInterview)) {
     return {
       label: '进行中',
       className: 'status-pill status-pill--warning',

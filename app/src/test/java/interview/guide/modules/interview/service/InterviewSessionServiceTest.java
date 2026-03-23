@@ -18,6 +18,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
@@ -27,6 +28,46 @@ import static org.mockito.Mockito.when;
 
 @DisplayName("面试会话服务测试")
 class InterviewSessionServiceTest {
+
+    @Test
+    @DisplayName("已完成会话暂存答案时不应回写进行中状态")
+    void shouldRejectSaveAnswerForCompletedSession() {
+        InterviewQuestionService questionService = mock(InterviewQuestionService.class);
+        AnswerEvaluationService evaluationService = mock(AnswerEvaluationService.class);
+        InterviewPersistenceService persistenceService = mock(InterviewPersistenceService.class);
+        InterviewSessionCache sessionCache = mock(InterviewSessionCache.class);
+        EvaluateStreamProducer evaluateStreamProducer = mock(EvaluateStreamProducer.class);
+        ObjectMapper objectMapper = new ObjectMapper();
+        InterviewSessionService service = new InterviewSessionService(
+            questionService,
+            evaluationService,
+            persistenceService,
+            sessionCache,
+            objectMapper,
+            evaluateStreamProducer
+        );
+
+        InterviewSessionCache.CachedSession cachedSession = new InterviewSessionCache.CachedSession(
+            "session-completed",
+            "resume-text",
+            1L,
+            JobRole.JAVA_BACKEND,
+            "Java 后端",
+            List.of(InterviewQuestionDTO.create(0, "介绍项目", InterviewQuestionDTO.QuestionType.PROJECT, "项目经历")),
+            1,
+            InterviewSessionDTO.SessionStatus.COMPLETED,
+            objectMapper
+        );
+        when(sessionCache.getSession("session-completed")).thenReturn(Optional.of(cachedSession));
+
+        BusinessException exception = assertThrows(BusinessException.class, () -> service.saveAnswer(
+            new interview.guide.modules.interview.model.SubmitAnswerRequest("session-completed", 0, "新的答案")
+        ));
+
+        assertTrue(exception.getMessage().contains("已完成"));
+        verify(persistenceService, never()).saveAnswer(any(), anyInt(), any(), any(), any(), anyInt(), any());
+        verify(persistenceService, never()).updateSessionStatus(any(), any());
+    }
 
     @Test
     @DisplayName("存在未完成会话时应返回旧岗位会话且不重新生成题目")

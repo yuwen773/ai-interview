@@ -353,6 +353,7 @@ public class InterviewSessionService {
      */
     public void saveAnswer(SubmitAnswerRequest request) {
         CachedSession session = getOrRestoreSession(request.sessionId());
+        ensureSessionEditable(session.getStatus());
         List<InterviewQuestionDTO> questions = session.getQuestions(objectMapper);
 
         int index = request.questionIndex();
@@ -394,10 +395,7 @@ public class InterviewSessionService {
      */
     public void completeInterview(String sessionId) {
         CachedSession session = getOrRestoreSession(sessionId);
-
-        if (session.getStatus() == SessionStatus.COMPLETED || session.getStatus() == SessionStatus.EVALUATED) {
-            throw new BusinessException(ErrorCode.INTERVIEW_ALREADY_COMPLETED);
-        }
+        ensureSessionEditable(session.getStatus());
 
         // 更新 Redis 缓存
         sessionCache.updateSessionStatus(sessionId, SessionStatus.COMPLETED);
@@ -416,6 +414,12 @@ public class InterviewSessionService {
         evaluateStreamProducer.sendEvaluateTask(sessionId);
 
         log.info("会话 {} 提前交卷，评估任务已入队", sessionId);
+    }
+
+    private void ensureSessionEditable(SessionStatus status) {
+        if (status == SessionStatus.COMPLETED || status == SessionStatus.EVALUATED) {
+            throw new BusinessException(ErrorCode.INTERVIEW_ALREADY_COMPLETED);
+        }
     }
 
     /**
