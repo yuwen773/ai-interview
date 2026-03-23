@@ -8,12 +8,13 @@ import './index.scss';
 interface Props {
   visible: boolean;
   items: AnswerCardItemType[];
-  currentIndex: number;
+  activeIndex: number;
+  selectedIndex: number;
   onClose: () => void;
   onJump: (questionIndex: number) => void;
 }
 
-export default function AnswerCardDrawer({ visible, items, currentIndex, onClose, onJump }: Props) {
+export default function AnswerCardDrawer({ visible, items, activeIndex, selectedIndex, onClose, onJump }: Props) {
   const startX = useRef(0);
   const startY = useRef(0);
 
@@ -45,9 +46,9 @@ export default function AnswerCardDrawer({ visible, items, currentIndex, onClose
     onClose();
   };
 
-  // 判断某条目是否可跳转：index < currentIndex 的已答/暂存题目
+  // 只有真实当前题之前、且不是未答状态的题目才允许跳转查看
   const canJump = (item: AnswerCardItemType) => {
-    return item.questionIndex < currentIndex;
+    return item.questionIndex < activeIndex && item.status !== 'unanswered';
   };
 
   if (!visible) return null;
@@ -83,7 +84,8 @@ export default function AnswerCardDrawer({ visible, items, currentIndex, onClose
             <AnswerCardItem
               key={`card-${item.questionIndex}`}
               item={item}
-              isCurrent={item.questionIndex === currentIndex}
+              isActive={item.questionIndex === activeIndex}
+              isSelected={item.questionIndex === selectedIndex}
               canJump={canJump(item)}
               onJump={onJump}
             />

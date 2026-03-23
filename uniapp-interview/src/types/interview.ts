@@ -72,8 +72,11 @@ export interface SubmitAnswerRequest {
 export interface SubmitAnswerResponse {
   hasNextQuestion: boolean;
   nextQuestion?: Question | null;
-  currentIndex: number;
+  currentQuestionIndex: number;
+  currentIndex?: number;
   totalQuestions: number;
+  recognizedText?: string | null;
+  interviewerOutputMode?: 'TEXT' | 'TEXT_VOICE';
 }
 
 export interface InterviewReport {

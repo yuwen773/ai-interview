@@ -175,6 +175,10 @@
     line-height: 1.7;
     color: $color-text-primary;
     background: transparent;
+
+    &--readonly {
+      color: $color-text-secondary;
+    }
   }
 
   .answer-count {
@@ -182,6 +186,37 @@
     text-align: right;
     font-size: $font-size-caption;
     color: $color-text-muted;
+  }
+}
+
+.history-panel {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  margin-bottom: 0;
+
+  &__text {
+    font-size: $font-size-body;
+    color: $color-text-secondary;
+    line-height: 1.6;
+  }
+
+  &__button {
+    width: 100%;
+    min-height: 80px;
+    border-radius: $radius-pill;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: $font-size-body;
+    font-weight: 600;
+    color: $color-primary;
+    background: $color-bg-surface;
+    border: 1px solid $color-border-strong;
+
+    &::after {
+      border: none;
+    }
   }
 }
 

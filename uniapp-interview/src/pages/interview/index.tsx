@@ -1,5 +1,5 @@
 import { View, Text, Button, Textarea } from '@tarojs/components';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { interviewApi } from '../../api/interview';
 import { resumeApi } from '../../api/resume';
@@ -9,6 +9,8 @@ import AnswerCardDrawer from '../../components/interview/AnswerCardDrawer';
 import type { InterviewSession, JobRole, Question, AnswerCardItem, AnswerCardStatus } from '../../types/interview';
 import './index.scss';
 
+type ViewMode = 'active' | 'history-readonly' | 'history-editable';
+
 export default function Interview() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -16,16 +18,18 @@ export default function Interview() {
   const [resumeId, setResumeId] = useState('');
   const [resumeName, setResumeName] = useState('');
   const [jobLabel, setJobLabel] = useState('');
-  const [question, setQuestion] = useState<Question | null>(null);
-  const [answer, setAnswer] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+  const [viewingQuestionIndex, setViewingQuestionIndex] = useState(0);
   const [progress, setProgress] = useState({ current: 0, total: 5 });
   const [drawerVisible, setDrawerVisible] = useState(false);
-  const [editable, setEditable] = useState(true);  // 是否可编辑答案
+  const [answerDrafts, setAnswerDrafts] = useState<Record<number, string>>({});
+  const [savedQuestionIndexes, setSavedQuestionIndexes] = useState<number[]>([]);
 
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
+
+  const viewingQuestion = questions[viewingQuestionIndex] ?? null;
 
   useEffect(() => {
     const params = router.params || {};
@@ -55,14 +59,36 @@ export default function Interview() {
     void createSession(String(currentResumeId), jobRole, forceCreate);
   }, [router.params]);
 
+  const buildInitialDrafts = (sessionQuestions: Question[]) => {
+    return sessionQuestions.reduce<Record<number, string>>((drafts, item, index) => {
+      if (item.userAnswer?.trim()) {
+        drafts[index] = item.userAnswer;
+      }
+      return drafts;
+    }, {});
+  };
+
+  const buildInitialSavedIndexes = (session: InterviewSession) => {
+    const current = session.currentQuestionIndex;
+    const currentQuestion = session.questions?.[current];
+
+    if (currentQuestion?.userAnswer?.trim()) {
+      return [current];
+    }
+
+    return [];
+  };
+
   const applySession = (session: InterviewSession) => {
-    const currentQ = session.questions?.[session.currentQuestionIndex] ?? null;
+    const safeIndex = Math.min(session.currentQuestionIndex, Math.max(session.questions.length - 1, 0));
+
     setSessionId(session.sessionId);
     setJobLabel(session.jobLabel);
     setQuestions(session.questions || []);
-    setCurrentQuestionIndex(session.currentQuestionIndex);
-    setQuestion(currentQ);
-    setAnswer(currentQ?.userAnswer || '');
+    setActiveQuestionIndex(session.currentQuestionIndex);
+    setViewingQuestionIndex(safeIndex);
+    setAnswerDrafts(buildInitialDrafts(session.questions || []));
+    setSavedQuestionIndexes(buildInitialSavedIndexes(session));
     setProgress({
       current: Math.min(session.currentQuestionIndex + 1, session.totalQuestions),
       total: session.totalQuestions || 5,
@@ -87,10 +113,10 @@ export default function Interview() {
     }
   };
 
-  const createSession = async (resumeId: string, jobRole: JobRole, forceCreate = false) => {
+  const createSession = async (currentResumeId: string, jobRole: JobRole, forceCreate = false) => {
     setLoading(true);
     try {
-      const resumeDetail = await resumeApi.getDetail(resumeId);
+      const resumeDetail = await resumeApi.getDetail(currentResumeId);
       const resumeText = resumeDetail.resumeText;
       setResumeName(resumeDetail.filename || '');
 
@@ -100,14 +126,14 @@ export default function Interview() {
       }
 
       const session = await interviewApi.createSession({
-        resumeId: Number(resumeId),
+        resumeId: Number(currentResumeId),
         resumeText,
         questionCount: 5,
         jobRole,
         forceCreate,
       });
 
-      Taro.setStorageSync('currentResumeId', resumeId);
+      Taro.setStorageSync('currentResumeId', currentResumeId);
       Taro.setStorageSync('currentInterviewJobRole', session.jobRole);
       applySession(session);
     } catch (error) {
@@ -118,30 +144,127 @@ export default function Interview() {
     }
   };
 
-  const handleSaveDraft = async () => {
-    if (!question || !answer.trim()) {
-      Taro.showToast({ title: '先输入当前答案再暂存', icon: 'none' });
-      return;
+  const updateDraft = (questionIndex: number, nextAnswer: string) => {
+    setAnswerDrafts(prev => ({
+      ...prev,
+      [questionIndex]: nextAnswer,
+    }));
+  };
+
+  const updateQuestionAnswer = (questionIndex: number, nextAnswer: string) => {
+    setQuestions(prev => prev.map((item, index) => (
+      index === questionIndex ? { ...item, userAnswer: nextAnswer } : item
+    )));
+    updateDraft(questionIndex, nextAnswer);
+  };
+
+  const markQuestionSaved = (questionIndex: number) => {
+    setSavedQuestionIndexes(prev => (
+      prev.includes(questionIndex) ? prev : [...prev, questionIndex]
+    ));
+  };
+
+  const markQuestionSubmitted = (questionIndex: number) => {
+    setSavedQuestionIndexes(prev => prev.filter(index => index !== questionIndex));
+  };
+
+  const getQuestionStatus = (questionIndex: number, targetQuestion: Question | undefined): AnswerCardStatus => {
+    const hasAnswer = Boolean(targetQuestion?.userAnswer?.trim());
+
+    if (savedQuestionIndexes.includes(questionIndex)) {
+      return 'saved';
     }
 
+    if (questionIndex < activeQuestionIndex) {
+      return hasAnswer ? 'answered' : 'unanswered';
+    }
+
+    if (questionIndex === activeQuestionIndex) {
+      return hasAnswer ? 'saved' : 'unanswered';
+    }
+
+    return 'unanswered';
+  };
+
+  const currentAnswer = viewingQuestion ? (answerDrafts[viewingQuestionIndex] ?? viewingQuestion.userAnswer ?? '') : '';
+  const viewingStatus = viewingQuestion ? getQuestionStatus(viewingQuestionIndex, viewingQuestion) : 'unanswered';
+
+  const viewMode: ViewMode = useMemo(() => {
+    if (viewingQuestionIndex === activeQuestionIndex) {
+      return 'active';
+    }
+
+    return viewingStatus === 'saved' ? 'history-editable' : 'history-readonly';
+  }, [activeQuestionIndex, viewingQuestionIndex, viewingStatus]);
+
+  const isAnswerEditable = viewMode === 'active' || viewMode === 'history-editable';
+
+  const confirmAction = async (title: string, content: string, confirmText: string) => {
+    const result = await Taro.showModal({
+      title,
+      content,
+      confirmText,
+      confirmColor: '#2563eb',
+    });
+
+    return result.confirm;
+  };
+
+  const persistDraftAnswer = async (questionIndex: number, nextAnswer: string, successTitle: string) => {
     setLoading(true);
     try {
       await interviewApi.saveAnswer({
         sessionId,
-        answer,
-        questionIndex: question.questionIndex,
+        answer: nextAnswer,
+        questionIndex,
       });
-      // 更新本地 questions 状态
-      setQuestions(prev => prev.map((q, i) =>
-        i === currentQuestionIndex ? { ...q, userAnswer: answer } : q
-      ));
-      Taro.showToast({ title: '已暂存当前答案', icon: 'success' });
+      updateQuestionAnswer(questionIndex, nextAnswer);
+      markQuestionSaved(questionIndex);
+      Taro.showToast({ title: successTitle, icon: 'success' });
     } catch (error) {
       console.error('暂存答案失败:', error);
       Taro.showToast({ title: '暂存失败', icon: 'none' });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSaveDraft = async () => {
+    if (!viewingQuestion || !currentAnswer.trim()) {
+      Taro.showToast({ title: '先输入当前答案再暂存', icon: 'none' });
+      return;
+    }
+
+    const confirmed = await confirmAction(
+      '确认暂存',
+      `确认暂存 Q${viewingQuestionIndex + 1} 的答案吗？`,
+      '确认暂存'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    await persistDraftAnswer(viewingQuestionIndex, currentAnswer, '已暂存当前答案');
+  };
+
+  const handleSaveHistoryDraft = async () => {
+    if (!viewingQuestion || viewingStatus !== 'saved' || !currentAnswer.trim()) {
+      Taro.showToast({ title: '暂无可保存的暂存修改', icon: 'none' });
+      return;
+    }
+
+    const confirmed = await confirmAction(
+      '确认保存修改',
+      `确认保存 Q${viewingQuestionIndex + 1} 的暂存修改吗？`,
+      '确认保存'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    await persistDraftAnswer(viewingQuestionIndex, currentAnswer, '已保存暂存修改');
   };
 
   const handleCompleteEarly = async () => {
@@ -158,12 +281,14 @@ export default function Interview() {
 
     setLoading(true);
     try {
-      if (answer.trim()) {
+      if (currentAnswer.trim() && viewingQuestion) {
         await interviewApi.saveAnswer({
           sessionId,
-          answer,
-          questionIndex: question!.questionIndex,
+          answer: currentAnswer,
+          questionIndex: activeQuestionIndex,
         });
+        updateQuestionAnswer(activeQuestionIndex, currentAnswer);
+        markQuestionSaved(activeQuestionIndex);
       }
       await interviewApi.completeInterview(sessionId);
       Taro.showToast({ title: '已提交评估', icon: 'success' });
@@ -177,8 +302,18 @@ export default function Interview() {
   };
 
   const handleSubmitAnswer = async () => {
-    if (!answer.trim() || !question) {
-      Taro.showToast({ title: '请输入答案', icon: 'none' });
+    if (!viewingQuestion || viewingQuestionIndex !== activeQuestionIndex || !currentAnswer.trim()) {
+      Taro.showToast({ title: '请先回到当前题并输入答案', icon: 'none' });
+      return;
+    }
+
+    const confirmed = await confirmAction(
+      '确认提交',
+      `提交后将进入下一题，确认提交 Q${activeQuestionIndex + 1} 的答案吗？`,
+      '确认提交'
+    );
+
+    if (!confirmed) {
       return;
     }
 
@@ -186,24 +321,42 @@ export default function Interview() {
     try {
       const res = await interviewApi.submitAnswer({
         sessionId,
-        answer,
-        questionIndex: question.questionIndex,
+        answer: currentAnswer,
+        questionIndex: activeQuestionIndex,
       });
+      const nextActiveQuestionIndex = res.currentQuestionIndex ?? res.currentIndex;
 
-      // 更新 questions 中该题的 userAnswer
-      setQuestions(prev => prev.map((q, i) =>
-        i === currentQuestionIndex ? { ...q, userAnswer: answer } : q
-      ));
+      if (typeof nextActiveQuestionIndex !== 'number' || Number.isNaN(nextActiveQuestionIndex)) {
+        throw new Error('提交答案响应缺少 currentQuestionIndex');
+      }
+
+      setQuestions(prev => prev.map((item, index) => {
+        if (index === activeQuestionIndex) {
+          return { ...item, userAnswer: currentAnswer };
+        }
+
+        if (res.nextQuestion && index === nextActiveQuestionIndex) {
+          return { ...item, ...res.nextQuestion };
+        }
+
+        return item;
+      }));
+
+      updateDraft(activeQuestionIndex, currentAnswer);
+      markQuestionSubmitted(activeQuestionIndex);
 
       if (!res.hasNextQuestion || !res.nextQuestion) {
         Taro.navigateTo({ url: `/pages/interview-report/index?sessionId=${sessionId}` });
         return;
       }
 
-      setQuestion(res.nextQuestion);
-      setCurrentQuestionIndex(res.currentIndex);
-      setProgress({ current: res.currentIndex + 1, total: res.totalQuestions || 5 });
-      setAnswer('');
+      setActiveQuestionIndex(nextActiveQuestionIndex);
+      setViewingQuestionIndex(nextActiveQuestionIndex);
+      setProgress({ current: nextActiveQuestionIndex + 1, total: res.totalQuestions || 5 });
+      setAnswerDrafts(prev => ({
+        ...prev,
+        [nextActiveQuestionIndex]: prev[nextActiveQuestionIndex] ?? res.nextQuestion?.userAnswer ?? '',
+      }));
     } catch (error) {
       console.error('提交答案失败:', error);
       Taro.showToast({ title: '提交失败', icon: 'none' });
@@ -212,47 +365,28 @@ export default function Interview() {
     }
   };
 
-  // 答题卡数据派生
-  const answerCards: AnswerCardItem[] = questions.map((q, index) => {
-    let status: AnswerCardStatus;
-    if (index < currentQuestionIndex) {
-      status = 'answered';
-    } else if (index === currentQuestionIndex) {
-      status = q.userAnswer ? 'answered' : 'unanswered';
-    } else {
-      status = 'unanswered';
+  const answerCards: AnswerCardItem[] = questions.map((item, index) => ({
+    questionIndex: index,
+    displayIndex: index + 1,
+    status: getQuestionStatus(index, item),
+    question: item.question,
+    savedAnswer: item.userAnswer || undefined,
+  }));
+
+  const handleJumpToQuestion = (questionIndex: number) => {
+    if (!questions[questionIndex] || questionIndex >= activeQuestionIndex) {
+      return;
     }
 
-    return {
-      questionIndex: index,
-      displayIndex: index + 1,
-      status,
-      question: q.question,
-      savedAnswer: q.userAnswer || undefined,
-    };
-  });
-
-  // 跳转到指定题目
-  const handleJumpToQuestion = (questionIndex: number) => {
-    const targetQuestion = questions[questionIndex];
-    if (!targetQuestion) return;
-
-    // 已答过的题目不可编辑，暂存的可编辑
-    const isEditable = !targetQuestion.userAnswer;
-
-    setCurrentQuestionIndex(questionIndex);
-    setQuestion(targetQuestion);
-    setAnswer(targetQuestion.userAnswer || '');
-    setEditable(isEditable);
-    setProgress({
-      current: questionIndex + 1,
-      total: progress.total,
-    });
+    setViewingQuestionIndex(questionIndex);
     setDrawerVisible(false);
-    Taro.showToast({ title: `跳转到 Q${questionIndex + 1}`, icon: 'none' });
+    Taro.showToast({ title: `查看 Q${questionIndex + 1}`, icon: 'none' });
   };
 
-  // 手势处理：从右向左滑打开抽屉
+  const handleReturnToCurrent = () => {
+    setViewingQuestionIndex(activeQuestionIndex);
+  };
+
   const handleTouchStart = (e: any) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
@@ -262,18 +396,16 @@ export default function Interview() {
     const deltaX = e.changedTouches[0].clientX - touchStartX.current;
     const deltaY = e.changedTouches[0].clientY - touchStartY.current;
 
-    if (Math.abs(deltaX) > 50 && Math.abs(deltaY) < Math.abs(deltaX)) {
-      if (deltaX < 0) {
-        setDrawerVisible(true);
-      }
+    if (Math.abs(deltaX) > 50 && Math.abs(deltaY) < Math.abs(deltaX) && deltaX < 0) {
+      setDrawerVisible(true);
     }
   };
 
-  if (loading && !question) {
+  if (loading && !viewingQuestion) {
     return <Loading text="准备面试中..." fullPage />;
   }
 
-  if (!question && !sessionId) {
+  if (!viewingQuestion && !sessionId) {
     return (
       <Empty
         text="请先从岗位选择页开始面试"
@@ -315,10 +447,12 @@ export default function Interview() {
 
         <View className="question-card section-shell">
           <View className="question-card__header">
-            <Text className="question-card__label">当前问题</Text>
-            <Text className="question-badge">{question?.category || '待回答'}</Text>
+            <Text className="question-card__label">
+              {viewMode === 'active' ? '当前问题' : `历史查看 · Q${viewingQuestionIndex + 1}`}
+            </Text>
+            <Text className="question-badge">{viewMode === 'active' ? (viewingQuestion?.category || '待回答') : '历史题目'}</Text>
           </View>
-          <Text className="question-card__content">{question?.question || ''}</Text>
+          <Text className="question-card__content">{viewingQuestion?.question || ''}</Text>
         </View>
 
         <View className="drawer-trigger" onClick={() => setDrawerVisible(true)}>
@@ -327,36 +461,66 @@ export default function Interview() {
         </View>
 
         <View className="answer-area section-shell">
-          <Text className="answer-area__label">当前作答</Text>
+          <Text className="answer-area__label">
+            {viewMode === 'active' ? '当前作答' : `Q${viewingQuestionIndex + 1} 答案`}
+          </Text>
           <Textarea
-            className="answer-input"
-            value={answer}
-            onInput={(e) => editable && setAnswer(e.detail.value)}
-            placeholder={editable ? "请输入你的答案..." : "已答题目，不可修改"}
-            disabled={!editable}
+            className={`answer-input ${!isAnswerEditable ? 'answer-input--readonly' : ''}`}
+            value={currentAnswer}
+            onInput={(e) => isAnswerEditable && updateDraft(viewingQuestionIndex, e.detail.value)}
+            placeholder={isAnswerEditable ? '请输入你的答案...' : '该题答案仅供查看，不能修改'}
+            disabled={!isAnswerEditable}
           />
-          <Text className="answer-count">{answer.trim().length} / 2000</Text>
+          <Text className="answer-count">{currentAnswer.trim().length} / 2000</Text>
         </View>
 
-        <View className="actions">
-          <View className="actions__secondary">
-            <Button className="action-chip action-chip--secondary" onClick={handleSaveDraft} disabled={!editable || !answer.trim() || loading}>
-              暂存答案
-            </Button>
-            <Button className="action-chip action-chip--secondary" onClick={handleCompleteEarly} disabled={loading}>
-              提前结束
+        {viewMode === 'active' && (
+          <View className="actions">
+            <View className="actions__secondary">
+              <Button className="action-chip action-chip--secondary" onClick={handleSaveDraft} disabled={!currentAnswer.trim() || loading}>
+                暂存答案
+              </Button>
+              <Button className="action-chip action-chip--secondary" onClick={handleCompleteEarly} disabled={loading}>
+                提前结束
+              </Button>
+            </View>
+            <Button className="submit-btn" onClick={handleSubmitAnswer} disabled={loading || !currentAnswer.trim()}>
+              {loading ? '提交中...' : '提交答案'}
             </Button>
           </View>
-          <Button className="submit-btn" onClick={handleSubmitAnswer} disabled={!editable || loading || !answer.trim()}>
-            {loading ? '提交中...' : '提交答案'}
-          </Button>
-        </View>
+        )}
+
+        {viewMode === 'history-readonly' && (
+          <View className="history-panel section-shell">
+            <Text className="history-panel__text">该题答案已提交，当前仅支持查看。</Text>
+            <Button className="history-panel__button" onClick={handleReturnToCurrent}>
+              返回当前题
+            </Button>
+          </View>
+        )}
+
+        {viewMode === 'history-editable' && (
+          <View className="actions">
+            <View className="history-panel section-shell">
+              <Text className="history-panel__text">这是暂存题目，你可以修改并再次保存。</Text>
+            </View>
+            <View className="actions__secondary">
+              <Button className="action-chip action-chip--secondary" onClick={handleReturnToCurrent} disabled={loading}>
+                返回当前题
+              </Button>
+              <Button className="action-chip" onClick={handleSaveHistoryDraft} disabled={!currentAnswer.trim() || loading}>
+                保存暂存修改
+              </Button>
+            </View>
+          </View>
+        )}
       </View>
 
       <AnswerCardDrawer
         visible={drawerVisible}
         items={answerCards}
-        currentIndex={currentQuestionIndex}
+        activeIndex={activeQuestionIndex}
+        selectedIndex={viewingQuestionIndex}
         onClose={() => setDrawerVisible(false)}
         onJump={handleJumpToQuestion}
       />

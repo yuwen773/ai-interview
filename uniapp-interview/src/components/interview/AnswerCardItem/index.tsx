@@ -4,8 +4,9 @@ import './index.scss';
 
 interface Props {
   item: AnswerCardItemType;
-  isCurrent: boolean;
-  canJump: boolean;  // 是否可跳转（当前题之前的已答/暂存题目）
+  isActive: boolean;
+  isSelected: boolean;
+  canJump: boolean;  // 是否可跳转（真实当前题之前的已答/暂存题目）
   onJump: (questionIndex: number) => void;
 }
 
@@ -15,7 +16,7 @@ const STATUS_COLORS = {
   unanswered: '#ef4444', // 红色
 };
 
-export default function AnswerCardItem({ item, isCurrent, canJump, onJump }: Props) {
+export default function AnswerCardItem({ item, isActive, isSelected, canJump, onJump }: Props) {
   const bgColor = STATUS_COLORS[item.status];
 
   const handleClick = () => {
@@ -26,12 +27,12 @@ export default function AnswerCardItem({ item, isCurrent, canJump, onJump }: Pro
 
   return (
     <View
-      className={`answer-card-item ${isCurrent ? 'answer-card-item--current' : ''} ${canJump ? 'answer-card-item--clickable' : ''}`}
+      className={`answer-card-item ${isSelected ? 'answer-card-item--selected' : ''} ${canJump ? 'answer-card-item--clickable' : ''}`}
       style={{ backgroundColor: bgColor }}
       onClick={handleClick}
     >
       <Text className="answer-card-item__index">Q{item.displayIndex}</Text>
-      {isCurrent && <View className="answer-card-item__current-dot" />}
+      {isActive && <View className="answer-card-item__current-dot" />}
     </View>
   );
 }
