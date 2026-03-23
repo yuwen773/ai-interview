@@ -449,12 +449,13 @@ public class InterviewSessionService {
             throw new BusinessException(ErrorCode.INTERVIEW_NOT_COMPLETED, "面试尚未完成，无法生成报告");
         }
 
-        if (session.getStatus() == SessionStatus.EVALUATED) {
-            Optional<InterviewReportDTO> persistedReport = persistenceService.getPersistedReport(sessionId);
-            if (persistedReport.isPresent()) {
-                log.info("返回已持久化的面试报告: {}", sessionId);
-                return persistedReport.get();
+        Optional<InterviewReportDTO> persistedReport = persistenceService.getPersistedReport(sessionId);
+        if (persistedReport.isPresent()) {
+            if (session.getStatus() != SessionStatus.EVALUATED) {
+                sessionCache.updateSessionStatus(sessionId, SessionStatus.EVALUATED);
             }
+            log.info("杩斿洖宸叉寔涔呭寲鐨勯潰璇曟姤鍛? {}", sessionId);
+            return persistedReport.get();
         }
 
         Optional<AsyncTaskStatus> evaluateStatus = persistenceService.getEvaluateStatus(sessionId);

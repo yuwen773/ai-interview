@@ -4,10 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import interview.guide.common.async.AbstractStreamConsumer;
 import interview.guide.common.constant.AsyncTaskStreamConstants;
 import interview.guide.common.model.AsyncTaskStatus;
+import interview.guide.infrastructure.redis.InterviewSessionCache;
 import interview.guide.infrastructure.redis.RedisService;
 import interview.guide.modules.interview.model.InterviewQuestionDTO;
 import interview.guide.modules.interview.model.InterviewReportDTO;
 import interview.guide.modules.interview.model.InterviewSessionEntity;
+import interview.guide.modules.interview.model.InterviewSessionDTO.SessionStatus;
 import interview.guide.modules.interview.repository.InterviewSessionRepository;
 import interview.guide.modules.interview.service.AnswerEvaluationService;
 import interview.guide.modules.interview.service.InterviewPersistenceService;
@@ -32,6 +34,7 @@ public class EvaluateStreamConsumer extends AbstractStreamConsumer<EvaluateStrea
     private final InterviewSessionRepository sessionRepository;
     private final AnswerEvaluationService evaluationService;
     private final InterviewPersistenceService persistenceService;
+    private final InterviewSessionCache sessionCache;
     private final ObjectMapper objectMapper;
 
     public EvaluateStreamConsumer(
@@ -39,12 +42,14 @@ public class EvaluateStreamConsumer extends AbstractStreamConsumer<EvaluateStrea
         InterviewSessionRepository sessionRepository,
         AnswerEvaluationService evaluationService,
         InterviewPersistenceService persistenceService,
+        InterviewSessionCache sessionCache,
         ObjectMapper objectMapper
     ) {
         super(redisService);
         this.sessionRepository = sessionRepository;
         this.evaluationService = evaluationService;
         this.persistenceService = persistenceService;
+        this.sessionCache = sessionCache;
         this.objectMapper = objectMapper;
     }
 
@@ -128,6 +133,7 @@ public class EvaluateStreamConsumer extends AbstractStreamConsumer<EvaluateStrea
         String resumeText = session.getResume().getResumeText();
         InterviewReportDTO report = evaluationService.evaluateInterview(sessionId, resumeText, questions);
         persistenceService.saveReport(sessionId, report);
+        sessionCache.updateSessionStatus(sessionId, SessionStatus.EVALUATED);
     }
 
     @Override
