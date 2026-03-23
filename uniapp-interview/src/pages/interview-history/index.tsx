@@ -133,7 +133,7 @@ export default function InterviewHistoryPage() {
   if (loading) {
     return (
       <View className="interview-history-page page-shell">
-        <Loading text="正在整理最近的面试记录..." />
+        <Loading text="正在整理最近的面试记录..." fullPage />
       </View>
     );
   }

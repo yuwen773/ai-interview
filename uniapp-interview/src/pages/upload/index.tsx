@@ -69,7 +69,7 @@ export default function Upload() {
         {loading ? '上传中...' : '开始分析'}
       </Button>
 
-      {loading && <Loading text="正在分析简历..." />}
+      {loading && <Loading text="正在分析简历..." fullPage />}
     </View>
   );
 }

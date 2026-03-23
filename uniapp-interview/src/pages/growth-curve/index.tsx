@@ -67,7 +67,7 @@ export default function GrowthCurvePage() {
   if (loading) {
     return (
       <View className="growth-curve-page page-shell">
-        <Loading text="正在整理成长曲线..." />
+        <Loading text="正在整理成长曲线..." fullPage />
       </View>
     );
   }

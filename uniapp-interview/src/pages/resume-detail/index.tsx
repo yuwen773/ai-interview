@@ -247,7 +247,7 @@ export default function ResumeDetailPage() {
   if (loading) {
     return (
       <View className="resume-detail-page page-shell">
-        <Loading text="正在加载简历详情..." />
+        <Loading text="正在加载简历详情..." fullPage />
       </View>
     );
   }

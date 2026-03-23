@@ -117,7 +117,7 @@ export default function ResumeListPage() {
   if (loading) {
     return (
       <View className="resume-list-page page-shell">
-        <Loading text="正在加载你的简历档案..." />
+        <Loading text="正在加载你的简历档案..." fullPage />
       </View>
     );
   }

@@ -270,7 +270,7 @@ export default function Interview() {
   };
 
   if (loading && !question) {
-    return <Loading text="准备面试中..." />;
+    return <Loading text="准备面试中..." fullPage />;
   }
 
   if (!question && !sessionId) {

@@ -106,7 +106,7 @@ export default function InterviewConfig() {
   };
 
   if (loading) {
-    return <Loading text="加载岗位配置中..." />;
+    return <Loading text="加载岗位配置中..." fullPage />;
   }
 
   if (!resumeId) {
