@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Virtuoso } from 'react-virtuoso';
-import { Send, Volume2, VolumeX } from 'lucide-react';
+import { Volume2, VolumeX } from 'lucide-react';
 import type { InterviewQuestion, InterviewSession } from '../../types/interview';
 
 interface Message {
@@ -27,9 +27,6 @@ interface InterviewSubtitlePanelProps {
   onQuestionVoiceEnabledChange: (enabled: boolean) => void;
   onReplayQuestionAudio: () => void;
   onStopQuestionAudio: () => void;
-  answer: string;
-  onAnswerChange: (answer: string) => void;
-  onSubmit: () => void;
 }
 
 export function InterviewSubtitlePanel({
@@ -46,9 +43,6 @@ export function InterviewSubtitlePanel({
   onQuestionVoiceEnabledChange,
   onReplayQuestionAudio,
   onStopQuestionAudio,
-  answer,
-  onAnswerChange,
-  onSubmit,
 }: InterviewSubtitlePanelProps) {
   const isBusy = isSubmitting || isRecognizing || isRecording;
 
@@ -57,104 +51,101 @@ export function InterviewSubtitlePanel({
     return ((currentQuestion.questionIndex + 1) / session.totalQuestions) * 100;
   }, [session, currentQuestion]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      if (isBusy || !answer.trim()) return;
-      onSubmit();
-    }
-  };
-
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <div className="flex flex-col h-full bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-slate-700/30 overflow-hidden">
       {/* 顶部控制区 */}
-      <div className="p-4 border-b border-slate-200 dark:border-slate-600 space-y-3">
+      <div className="p-4 border-b border-slate-700/30 space-y-4">
         {/* 进度条 */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            <span className="text-sm font-medium text-slate-300">
               题目 {currentQuestion ? currentQuestion.questionIndex + 1 : 0} / {session.totalQuestions}
             </span>
-            <span className="text-sm text-slate-500 dark:text-slate-400">
+            <span className="text-sm text-slate-400">
               {Math.round(progress)}%
             </span>
           </div>
-          <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-primary-500 to-primary-600 rounded-full"
+              className="h-full bg-gradient-to-r from-primary-500 to-primary-400 rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
             />
           </div>
         </div>
 
-        {/* 播报控制 */}
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="inline-flex rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 p-1">
+        {/* 题目语音播报控制 */}
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-800/40 border border-slate-700/30 px-4 py-3">
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => onQuestionVoiceEnabledChange(!questionVoiceEnabled)}
               disabled={isBusy}
-              className={`px-3 py-1.5 text-xs rounded-lg transition-colors flex items-center gap-1.5 ${
-                questionVoiceEnabled
-                  ? 'bg-primary-500 text-white'
-                  : 'text-slate-600 dark:text-slate-300'
-              }`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
+                questionVoiceEnabled ? 'bg-primary-500' : 'bg-slate-600'
+              } disabled:opacity-40 disabled:cursor-not-allowed`}
             >
-              <span className={`inline-flex h-4 w-7 items-center rounded-full transition-colors ${
-                questionVoiceEnabled ? 'bg-white/30' : 'bg-slate-300 dark:bg-slate-600'
-              }`}>
-                <span className={`h-3 w-3 rounded-full bg-white transition-transform ${
-                  questionVoiceEnabled ? 'translate-x-3' : 'translate-x-0.5'
-                }`} />
-              </span>
-              播报
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${
+                questionVoiceEnabled ? 'translate-x-6' : 'translate-x-1'
+              }`} />
             </button>
+            <div>
+              <p className="text-sm font-medium text-slate-300">题目播报</p>
+              <p className="text-xs text-slate-500">
+                {isLoadingQuestionAudio
+                  ? '生成中...'
+                  : isPlayingQuestionAudio
+                    ? '播放中'
+                    : questionVoiceEnabled
+                      ? '已开启'
+                      : '已关闭'}
+              </p>
+            </div>
           </div>
-        </div>
-
-        {/* 题目语音播报控制 */}
-        <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 px-3 py-2">
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            {isLoadingQuestionAudio
-              ? '正在生成语音...'
-              : isPlayingQuestionAudio
-                ? '播放中'
-                : questionVoiceEnabled
-                  ? '自动播报已开启'
-                  : '自动播报已关闭'}
-          </p>
-          <div className="flex gap-1">
+          <div className="flex gap-2">
             <motion.button
               type="button"
               onClick={onReplayQuestionAudio}
-              disabled={isBusy || isLoadingQuestionAudio}
-              className="px-2 py-1 bg-primary-500 text-white rounded text-xs hover:bg-primary-600 disabled:opacity-50 flex items-center gap-1"
-              whileHover={isBusy || isLoadingQuestionAudio ? {} : { scale: 1.02 }}
-              whileTap={isBusy || isLoadingQuestionAudio ? {} : { scale: 0.98 }}
+              disabled={isBusy || isLoadingQuestionAudio || !currentQuestion}
+              className="p-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              whileHover={isBusy || isLoadingQuestionAudio ? {} : { scale: 1.05 }}
+              whileTap={isBusy || isLoadingQuestionAudio ? {} : { scale: 0.95 }}
+              title="播放题目"
             >
-              <Volume2 className="w-3 h-3" />
-              播放
+              {isLoadingQuestionAudio ? (
+                <motion.div
+                  className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                />
+              ) : (
+                <Volume2 className="w-4 h-4" />
+              )}
             </motion.button>
             <motion.button
               type="button"
               onClick={onStopQuestionAudio}
-              disabled={!isPlayingQuestionAudio && !isLoadingQuestionAudio}
-              className="px-2 py-1 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded text-xs hover:bg-slate-300 dark:hover:bg-slate-500 disabled:opacity-50 flex items-center gap-1"
-              whileHover={isPlayingQuestionAudio || isLoadingQuestionAudio ? {} : { scale: 1.02 }}
-              whileTap={isPlayingQuestionAudio || isLoadingQuestionAudio ? {} : { scale: 0.98 }}
+              disabled={!isPlayingQuestionAudio}
+              className="p-2 bg-slate-700/50 hover:bg-red-500/20 text-slate-300 hover:text-red-400 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              whileHover={isPlayingQuestionAudio ? { scale: 1.05 } : {}}
+              whileTap={isPlayingQuestionAudio ? { scale: 0.95 } : {}}
+              title="停止播放"
             >
-              <VolumeX className="w-3 h-3" />
-              停止
+              <VolumeX className="w-4 h-4" />
             </motion.button>
           </div>
         </div>
 
         {/* 错误提示 */}
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-900/20">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs"
+          >
             {error}
-          </div>
+          </motion.div>
         )}
       </div>
 
@@ -172,38 +163,6 @@ export function InterviewSubtitlePanel({
           )}
         />
       </div>
-
-      {/* 文字输入区域 */}
-      <div className="border-t border-slate-200 dark:border-slate-600 p-4 bg-slate-50 dark:bg-slate-700/50">
-        <div className="flex gap-2">
-          <textarea
-            value={answer}
-            onChange={(e) => onAnswerChange(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="输入你的回答... (Ctrl/Cmd + Enter 提交)"
-            className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none bg-white dark:bg-slate-800 text-sm"
-            rows={2}
-            disabled={isSubmitting || isRecognizing}
-          />
-          <motion.button
-            onClick={onSubmit}
-            disabled={!answer.trim() || isSubmitting || isRecognizing}
-            className="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm hover:bg-primary-600 disabled:opacity-50 flex items-center gap-1 self-end"
-            whileHover={isSubmitting || isRecognizing || !answer.trim() ? {} : { scale: 1.02 }}
-            whileTap={isSubmitting || isRecognizing || !answer.trim() ? {} : { scale: 0.98 }}
-          >
-            {isSubmitting ? (
-              <motion.div
-                className="w-3 h-3 border-2 border-white border-t-transparent rounded-full"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-              />
-            ) : (
-              <Send className="w-3 h-3" />
-            )}
-          </motion.button>
-        </div>
-      </div>
     </div>
   );
 }
@@ -212,23 +171,24 @@ function MessageBubble({ message }: { message: Message }) {
   if (message.type === 'interviewer') {
     return (
       <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="flex items-start gap-2"
+        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.2 }}
+        className="flex items-start gap-3"
       >
-        <div className="w-6 h-6 bg-primary-100 dark:bg-primary-900/50 rounded-full flex items-center justify-center flex-shrink-0">
-          <span className="text-xs text-primary-600 dark:text-primary-400">AI</span>
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500/20 to-primary-600/10 border border-primary-500/20 flex items-center justify-center flex-shrink-0">
+          <span className="text-sm font-medium text-primary-400">AI</span>
         </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">面试官</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-xs font-medium text-slate-400">面试官</span>
             {message.category && (
-              <span className="px-2 py-0.5 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-xs rounded-full">
+              <span className="px-2 py-0.5 bg-primary-500/10 text-primary-400/80 text-xs rounded-full border border-primary-500/20">
                 {message.category}
               </span>
             )}
           </div>
-          <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl rounded-tl-none p-3 text-slate-800 dark:text-slate-200 text-sm leading-relaxed">
+          <div className="bg-slate-800/60 border border-slate-700/30 rounded-2xl rounded-tl-none px-4 py-3 text-slate-200 text-sm leading-relaxed">
             {message.content}
           </div>
         </div>
@@ -238,17 +198,18 @@ function MessageBubble({ message }: { message: Message }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="flex items-start gap-2 justify-end"
+      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.2 }}
+      className="flex items-start gap-3 justify-end"
     >
-      <div className="flex-1 max-w-[80%]">
-        <div className="bg-primary-500 text-white rounded-2xl rounded-tr-none p-3 text-sm leading-relaxed">
+      <div className="flex-1 max-w-[85%] min-w-0">
+        <div className="bg-gradient-to-r from-primary-500/20 to-primary-600/10 border border-primary-500/20 rounded-2xl rounded-tr-none px-4 py-3 text-slate-200 text-sm leading-relaxed">
           {message.content}
         </div>
       </div>
-      <div className="w-6 h-6 bg-slate-200 dark:bg-slate-600 rounded-full flex items-center justify-center flex-shrink-0">
-        <span className="text-xs text-slate-600 dark:text-slate-300">我</span>
+      <div className="w-8 h-8 rounded-xl bg-slate-800/60 border border-slate-700/30 flex items-center justify-center flex-shrink-0">
+        <span className="text-sm font-medium text-slate-400">我</span>
       </div>
     </motion.div>
   );

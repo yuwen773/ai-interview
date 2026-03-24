@@ -480,6 +480,9 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
               isRecognizing={isRecognizing}
               isSubmitting={isSubmitting}
               audioLevel={0}
+              answer={answer}
+              onAnswerChange={setAnswer}
+              onSubmit={handleSubmitAnswer}
               onStartRecording={handleStartRecording}
               onStopRecording={handleStopRecording}
               onStopInterview={handleCompleteEarly}
@@ -505,9 +508,6 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
             onQuestionVoiceEnabledChange={handleQuestionVoiceEnabledChange}
             onReplayQuestionAudio={handleReplayQuestionAudio}
             onStopQuestionAudio={stopQuestionAudio}
-            answer={answer}
-            onAnswerChange={setAnswer}
-            onSubmit={handleSubmitAnswer}
           />
         </div>
       </div>
