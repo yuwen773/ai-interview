@@ -18,11 +18,13 @@ export function InterviewRoomScene({
 }: InterviewRoomSceneProps) {
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`}>
-      {/* 背景层 - 面试室 */}
-      <div className="absolute inset-0 bg-slate-900">
-        {/* 使用CSS渐变模拟面试室背景 */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950" />
-
+      {/* 背景层 - 面试室图片 */}
+      <div className="absolute inset-0">
+        <img
+          src="/images/interview-room.png"
+          alt="Interview Room"
+          className="w-full h-full object-cover"
+        />
         {/* 背景遮罩 */}
         <div className="absolute inset-0 bg-gradient-to-b from-slate-900/30 via-slate-900/10 to-slate-900/50" />
       </div>
