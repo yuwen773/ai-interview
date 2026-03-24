@@ -4,12 +4,16 @@ import {interviewApi} from '../api/interview';
 import {getErrorMessage} from '../api/request';
 import ConfirmDialog from '../components/ConfirmDialog';
 import InterviewConfigPanel from '../components/InterviewConfigPanel';
-import InterviewChatPanel from '../components/InterviewChatPanel';
 import {useRecording} from '../hooks/useRecording';
 import {useQuestionVoicePrefetch} from '../hooks/useQuestionVoicePrefetch';
 import {useQuestionVoicePlayer} from '../hooks/useQuestionVoicePlayer';
+import {useLipSync} from '../hooks/useLipSync';
 import type {CandidateInputMode, InterviewQuestion, InterviewSession, JobRole, JobRoleDTO} from '../types/interview';
 import {deleteSessionAudio} from '../utils/interviewVoiceCache';
+import {InterviewRoomScene} from '../components/InterviewRoom/InterviewRoomScene';
+import {InterviewControlPanel} from '../components/InterviewRoom/InterviewControlPanel';
+import {InterviewSubtitlePanel} from '../components/InterviewRoom/InterviewSubtitlePanel';
+import {getInterviewerMode} from '../utils/interviewMode';
 
 type InterviewStage = 'config' | 'interview';
 
@@ -50,6 +54,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [forceCreateNew, setForceCreateNew] = useState(false);
   const { isRecording, startRecording, stopRecording, audioUrl, clearRecording } = useRecording();
+  const { mouthOpen } = useLipSync();
   const lastAutoPlayedQuestionRef = useRef<string | null>(null);
   // 用 ref 做轻量级幂等保护，避免状态更新异步时同一动作被快速连点触发多次。
   const submitInFlightRef = useRef(false);
@@ -495,38 +500,68 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const renderInterview = () => {
     if (!session || !currentQuestion) return null;
 
+    // 计算面试官模式
+    const interviewerMode = getInterviewerMode(
+      stage,
+      isRecording,
+      isSubmitting,
+      isPlayingQuestionAudio
+    );
+
     return (
-      <InterviewChatPanel
-        session={session}
-        currentQuestion={currentQuestion}
-        messages={messages}
-        candidateInputMode={candidateInputMode}
-        onCandidateInputModeChange={handleCandidateInputModeChange}
-        questionVoiceEnabled={questionVoiceEnabled}
-        onQuestionVoiceEnabledChange={handleQuestionVoiceEnabledChange}
-        answer={answer}
-        onAnswerChange={setAnswer}
-        recognizedText={recognizedText}
-        onRecognizedTextChange={setRecognizedText}
-        onStartRecording={handleStartRecording}
-        onStopRecording={handleStopRecording}
-        onRetryVoiceAnswer={handleRetryVoiceAnswer}
-        onSubmitRecognizedAnswer={handleSubmitRecognizedAnswer}
-        onSwitchToTextMode={handleSwitchToTextMode}
-        isRecording={isRecording}
-        isRecognizing={isRecognizing}
-        audioUrl={audioUrl}
-        isPlayingQuestionAudio={isPlayingQuestionAudio}
-        isLoadingQuestionAudio={isLoadingQuestionAudio}
-        onReplayQuestionAudio={handleReplayQuestionAudio}
-        onStopQuestionAudio={stopQuestionAudio}
-        onSubmit={handleSubmitAnswer}
-        onCompleteEarly={handleCompleteEarly}
-        isSubmitting={isSubmitting}
-        showCompleteConfirm={showCompleteConfirm}
-        onShowCompleteConfirm={setShowCompleteConfirm}
-        error={error}
-      />
+      <div className="flex gap-6 h-[calc(100vh-200px)]">
+        {/* 左侧：场景区域 */}
+        <div className="flex-1 relative rounded-2xl overflow-hidden shadow-lg">
+          <InterviewRoomScene mode={interviewerMode} mouthOpen={mouthOpen}>
+            {/* 底部控制栏作为 children */}
+            <InterviewControlPanel
+              mode={interviewerMode}
+              isRecording={isRecording}
+              isRecognizing={isRecognizing}
+              isSubmitting={isSubmitting}
+              audioLevel={0}
+              onStartRecording={handleStartRecording}
+              onStopRecording={handleStopRecording}
+              onStopInterview={handleCompleteEarly}
+              error={error}
+            />
+          </InterviewRoomScene>
+        </div>
+
+        {/* 右侧：对话侧边栏 */}
+        <div className="w-[380px] hidden lg:block">
+          <InterviewSubtitlePanel
+            session={session}
+            currentQuestion={currentQuestion}
+            messages={messages}
+            candidateInputMode={candidateInputMode}
+            questionVoiceEnabled={questionVoiceEnabled}
+            isRecording={isRecording}
+            isRecognizing={isRecognizing}
+            isSubmitting={isSubmitting}
+            answer={answer}
+            recognizedText={recognizedText}
+            audioUrl={audioUrl}
+            isPlayingQuestionAudio={isPlayingQuestionAudio}
+            isLoadingQuestionAudio={isLoadingQuestionAudio}
+            error={error}
+            onCandidateInputModeChange={handleCandidateInputModeChange}
+            onQuestionVoiceEnabledChange={handleQuestionVoiceEnabledChange}
+            onAnswerChange={setAnswer}
+            onRecognizedTextChange={setRecognizedText}
+            onStartRecording={handleStartRecording}
+            onStopRecording={handleStopRecording}
+            onRetryVoiceAnswer={handleRetryVoiceAnswer}
+            onSubmitRecognizedAnswer={handleSubmitRecognizedAnswer}
+            onSwitchToTextMode={handleSwitchToTextMode}
+            onReplayQuestionAudio={handleReplayQuestionAudio}
+            onStopQuestionAudio={stopQuestionAudio}
+            onSubmit={handleSubmitAnswer}
+            onCompleteEarly={handleCompleteEarly}
+            onShowCompleteConfirm={setShowCompleteConfirm}
+          />
+        </div>
+      </div>
     );
   };
 
