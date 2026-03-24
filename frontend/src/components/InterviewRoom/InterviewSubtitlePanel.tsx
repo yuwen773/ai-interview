@@ -1,7 +1,7 @@
 // frontend/src/components/InterviewRoom/InterviewSubtitlePanel.tsx
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
+import { Virtuoso } from 'react-virtuoso';
 import { Mic, RotateCcw, Send, Square, Volume2, VolumeX } from 'lucide-react';
 import type { CandidateInputMode, InterviewQuestion, InterviewSession } from '../../types/interview';
 
@@ -66,11 +66,9 @@ export function InterviewSubtitlePanel({
   onStopRecording,
   onRetryVoiceAnswer,
   onSubmitRecognizedAnswer,
-  onSwitchToTextMode,
   onReplayQuestionAudio,
   onStopQuestionAudio,
   onSubmit,
-  onCompleteEarly,
   onShowCompleteConfirm,
 }: InterviewSubtitlePanelProps) {
   const isBusy = isSubmitting || isRecognizing || isRecording;

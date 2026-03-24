@@ -4,7 +4,6 @@ import {interviewApi} from '../api/interview';
 import {getErrorMessage} from '../api/request';
 import ConfirmDialog from '../components/ConfirmDialog';
 import InterviewConfigPanel from '../components/InterviewConfigPanel';
-import InterviewChatPanel from '../components/InterviewChatPanel';
 import {useRecording} from '../hooks/useRecording';
 import {useQuestionVoicePrefetch} from '../hooks/useQuestionVoicePrefetch';
 import {useQuestionVoicePlayer} from '../hooks/useQuestionVoicePlayer';
@@ -55,8 +54,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [forceCreateNew, setForceCreateNew] = useState(false);
   const { isRecording, startRecording, stopRecording, audioUrl, clearRecording } = useRecording();
-  const { mouthOpen, startAnalyzing, stopAnalyzing } = useLipSync();
-  const [audioLevel, setAudioLevel] = useState(0);
+  const { mouthOpen } = useLipSync();
   const lastAutoPlayedQuestionRef = useRef<string | null>(null);
   // 用 ref 做轻量级幂等保护，避免状态更新异步时同一动作被快速连点触发多次。
   const submitInFlightRef = useRef(false);
@@ -521,7 +519,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
               isRecording={isRecording}
               isRecognizing={isRecognizing}
               isSubmitting={isSubmitting}
-              audioLevel={audioLevel}
+              audioLevel={0}
               onStartRecording={handleStartRecording}
               onStopRecording={handleStopRecording}
               onStopInterview={handleCompleteEarly}

@@ -1,7 +1,6 @@
 // frontend/src/components/InterviewRoom/Interviewer2D.tsx
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
 
 type InterviewMode = 'idle' | 'listening' | 'thinking' | 'speaking';
 
