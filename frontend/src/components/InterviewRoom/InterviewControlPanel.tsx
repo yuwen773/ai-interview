@@ -1,10 +1,12 @@
 // frontend/src/components/InterviewRoom/InterviewControlPanel.tsx
 import { AnimatePresence, motion } from 'framer-motion';
-import { Mic, Square } from 'lucide-react';
+import { Mic, Square, Keyboard } from 'lucide-react';
 import type { InterviewMode } from './Interviewer2D';
+import type { CandidateInputMode } from '../../types/interview';
 
 interface InterviewControlPanelProps {
   mode: InterviewMode;
+  candidateInputMode: CandidateInputMode;
   isRecording: boolean;
   isRecognizing: boolean;
   isSubmitting: boolean;
@@ -12,11 +14,13 @@ interface InterviewControlPanelProps {
   onStartRecording: () => void;
   onStopRecording: () => void;
   onStopInterview: () => void;
+  onCandidateInputModeChange: (mode: CandidateInputMode) => void;
   error?: string | null;
 }
 
 export function InterviewControlPanel({
   mode,
+  candidateInputMode,
   isRecording,
   isRecognizing,
   isSubmitting,
@@ -24,6 +28,7 @@ export function InterviewControlPanel({
   onStartRecording,
   onStopRecording,
   onStopInterview,
+  onCandidateInputModeChange,
   error,
 }: InterviewControlPanelProps) {
   const isBusy = isSubmitting || isRecognizing || isRecording;
@@ -106,29 +111,62 @@ export function InterviewControlPanel({
       <div className="flex items-center gap-2">
         {!isIdle && (
           <>
-            <motion.button
-              onClick={isRecording ? onStopRecording : onStartRecording}
-              disabled={isBusy || mode === 'thinking' || mode === 'speaking'}
-              className={`px-6 py-5 rounded-xl font-medium transition-all ${
-                isRecording
-                  ? 'bg-red-500 hover:bg-red-600 text-white'
-                  : 'border border-slate-600 hover:bg-slate-800 text-white'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-              whileHover={isBusy ? {} : { scale: 1.02 }}
-              whileTap={isBusy ? {} : { scale: 0.98 }}
-            >
-              {isRecording ? (
-                <>
-                  <Square className="w-4 h-4 inline mr-2" />
-                  停止回答
-                </>
-              ) : (
-                <>
-                  <Mic className="w-4 h-4 inline mr-2" />
-                  开始回答
-                </>
-              )}
-            </motion.button>
+            {/* 文字/语音切换 */}
+            <div className="inline-flex rounded-xl bg-slate-700/50 border border-slate-600 p-1">
+              <button
+                type="button"
+                onClick={() => onCandidateInputModeChange('text')}
+                disabled={isBusy}
+                className={`px-3 py-2 text-sm rounded-lg transition-colors flex items-center gap-1.5 ${
+                  candidateInputMode === 'text'
+                    ? 'bg-primary-500 text-white'
+                    : 'text-slate-300 hover:bg-slate-600'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                <Keyboard className="w-4 h-4" />
+                文字
+              </button>
+              <button
+                type="button"
+                onClick={() => onCandidateInputModeChange('voice')}
+                disabled={isBusy}
+                className={`px-3 py-2 text-sm rounded-lg transition-colors flex items-center gap-1.5 ${
+                  candidateInputMode === 'voice'
+                    ? 'bg-primary-500 text-white'
+                    : 'text-slate-300 hover:bg-slate-600'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                <Mic className="w-4 h-4" />
+                语音
+              </button>
+            </div>
+
+            {/* 录音按钮 */}
+            {candidateInputMode === 'voice' && (
+              <motion.button
+                onClick={isRecording ? onStopRecording : onStartRecording}
+                disabled={isRecording ? false : (isBusy || mode === 'thinking' || mode === 'speaking')}
+                className={`px-6 py-5 rounded-xl font-medium transition-all ${
+                  isRecording
+                    ? 'bg-red-500 hover:bg-red-600 text-white'
+                    : 'border border-slate-600 hover:bg-slate-800 text-white'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                whileHover={isRecording ? { scale: 1.02 } : (isBusy ? {} : { scale: 1.02 })}
+                whileTap={isRecording ? { scale: 0.98 } : (isBusy ? {} : { scale: 0.98 })}
+              >
+                {isRecording ? (
+                  <>
+                    <Square className="w-4 h-4 inline mr-2" />
+                    停止
+                  </>
+                ) : (
+                  <>
+                    <Mic className="w-4 h-4 inline mr-2" />
+                    开始录音
+                  </>
+                )}
+              </motion.button>
+            )}
 
             <motion.button
               onClick={onStopInterview}

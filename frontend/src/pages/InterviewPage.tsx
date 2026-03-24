@@ -346,8 +346,9 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         inputMode: candidateInputMode
       });
 
-      // Auto-submit voice answer after recognition
-      await submitAnswerText(response.recognizedText);
+      // 识别结果回显到文字输入框，切换到文字模式让用户确认后提交
+      setAnswer(response.recognizedText);
+      setCandidateInputMode('text');
     } catch (err) {
       resetVoiceAnswer();
       setError(getErrorMessage(err) || '语音识别失败，请重试或切回文字模式');
@@ -474,6 +475,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
             {/* 底部控制栏作为 children */}
             <InterviewControlPanel
               mode={interviewerMode}
+              candidateInputMode={candidateInputMode}
               isRecording={isRecording}
               isRecognizing={isRecognizing}
               isSubmitting={isSubmitting}
@@ -481,6 +483,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
               onStartRecording={handleStartRecording}
               onStopRecording={handleStopRecording}
               onStopInterview={handleCompleteEarly}
+              onCandidateInputModeChange={setCandidateInputMode}
               error={error}
             />
           </InterviewRoomScene>
