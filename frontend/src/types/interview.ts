@@ -48,6 +48,15 @@ export interface JobRoleDTO {
   techKeywords: string[];
 }
 
+export interface InterviewPackageOption {
+  id: 'warmup' | 'standard' | 'deep' | 'challenge';
+  name: string;
+  totalQuestions: number;
+  estimatedDuration: string;
+  description: string;
+  mainQuestionCount: number;
+}
+
 export interface CreateInterviewRequest {
   resumeText: string;
   questionCount: number;

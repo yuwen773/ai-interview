@@ -59,7 +59,7 @@ export function InterviewSubtitlePanel({
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-slate-300">
-              题目 {currentQuestion ? currentQuestion.questionIndex + 1 : 0} / {session.totalQuestions}
+              已答 {currentQuestion ? currentQuestion.questionIndex + 1 : 0} / {session.totalQuestions} 题
             </span>
             <span className="text-sm text-slate-400">
               {Math.round(progress)}%

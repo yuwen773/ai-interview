@@ -8,7 +8,14 @@ import {useRecording} from '../hooks/useRecording';
 import {useQuestionVoicePrefetch} from '../hooks/useQuestionVoicePrefetch';
 import {useQuestionVoicePlayer} from '../hooks/useQuestionVoicePlayer';
 import {useLipSync} from '../hooks/useLipSync';
-import type {CandidateInputMode, InterviewQuestion, InterviewSession, JobRole, JobRoleDTO} from '../types/interview';
+import type {
+  CandidateInputMode,
+  InterviewPackageOption,
+  InterviewQuestion,
+  InterviewSession,
+  JobRole,
+  JobRoleDTO
+} from '../types/interview';
 import {deleteSessionAudio} from '../utils/interviewVoiceCache';
 import {InterviewRoomScene} from '../components/InterviewRoom/InterviewRoomScene';
 import {InterviewControlPanel} from '../components/InterviewRoom/InterviewControlPanel';
@@ -31,12 +38,47 @@ interface InterviewProps {
   onInterviewComplete: () => void;
 }
 
+const INTERVIEW_PACKAGES: InterviewPackageOption[] = [
+  {
+    id: 'warmup',
+    name: '快速热身',
+    totalQuestions: 6,
+    estimatedDuration: '8-10 分钟',
+    description: '适合碎片时间练习，快速找状态，先把表达和答题节奏跑顺。',
+    mainQuestionCount: 3,
+  },
+  {
+    id: 'standard',
+    name: '标准模拟',
+    totalQuestions: 8,
+    estimatedDuration: '12-15 分钟',
+    description: '适合日常完整训练，覆盖核心知识点和常规追问。',
+    mainQuestionCount: 4,
+  },
+  {
+    id: 'deep',
+    name: '深度训练',
+    totalQuestions: 12,
+    estimatedDuration: '18-25 分钟',
+    description: '适合系统复盘，追问更充分，更容易暴露知识盲区。',
+    mainQuestionCount: 6,
+  },
+  {
+    id: 'challenge',
+    name: '全真挑战',
+    totalQuestions: 16,
+    estimatedDuration: '25-35 分钟',
+    description: '适合面试前压测，整体节奏更接近正式技术面试。',
+    mainQuestionCount: 8,
+  },
+];
+
 export default function Interview({ resumeText, resumeId, onBack, onInterviewComplete }: InterviewProps) {
   const [stage, setStage] = useState<InterviewStage>('config');
   const [jobRoles, setJobRoles] = useState<JobRoleDTO[]>([]);
   const [selectedJobRole, setSelectedJobRole] = useState<JobRole | null>(null);
   const [loadingRoles, setLoadingRoles] = useState(true);
-  const [questionCount, setQuestionCount] = useState(8);
+  const [selectedPackageId, setSelectedPackageId] = useState<InterviewPackageOption['id']>('standard');
   const [session, setSession] = useState<InterviewSession | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<InterviewQuestion | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -86,6 +128,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       console.warn('question_voice_cache_cleanup_failed', { sessionId, error });
     }
   }, []);
+  const selectedPackage = INTERVIEW_PACKAGES.find((item) => item.id === selectedPackageId) ?? INTERVIEW_PACKAGES.find((item) => item.id === 'standard')!;
 
   // 初始化配置页数据：岗位列表 + 未完成会话。
   useEffect(() => {
@@ -191,7 +234,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         setStage('interview');
   };
 
-  const startInterview = async () => {
+  const startInterview = useCallback(async () => {
     if (createInFlightRef.current || !selectedJobRole) return;
     createInFlightRef.current = true;
     setIsCreating(true);
@@ -201,32 +244,32 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     setCandidateInputMode('text');
     resetVoiceAnswer();
 
-        try {
+    try {
       // 创建新面试（如果 forceCreateNew 为 true，则强制创建新会话）
       const newSession = await interviewApi.createSession({
         resumeText,
-        questionCount,
+        questionCount: selectedPackage.mainQuestionCount,
         resumeId,
         jobRole: selectedJobRole,
         forceCreate: forceCreateNew
       });
 
-            // 重置强制创建标志
+      // 重置强制创建标志
       setForceCreateNew(false);
 
-            // 如果返回的是未完成的会话（currentQuestionIndex > 0 或已有答案），恢复它
-            const hasProgress = newSession.currentQuestionIndex > 0 ||
+      // 如果返回的是未完成的会话（currentQuestionIndex > 0 或已有答案），恢复它
+      const hasProgress = newSession.currentQuestionIndex > 0 ||
                           newSession.questions.some(q => q.userAnswer) ||
                           newSession.status === 'IN_PROGRESS';
 
-            if (hasProgress) {
+      if (hasProgress) {
         // 这是恢复的会话
         restoreSession(newSession);
       } else {
         // 全新的会话
         setSession(newSession);
 
-                if (newSession.questions.length > 0) {
+        if (newSession.questions.length > 0) {
           const firstQuestion = newSession.questions[0];
           setCurrentQuestion(firstQuestion);
           setMessages([{
@@ -237,7 +280,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
           }]);
         }
 
-                setStage('interview');
+        setStage('interview');
       }
     } catch (err) {
       setError('创建面试失败，请重试');
@@ -247,7 +290,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       createInFlightRef.current = false;
       setIsCreating(false);
     }
-  };
+  }, [selectedJobRole, selectedPackage, resumeText, resumeId, forceCreateNew, stopQuestionAudio, resetVoiceAnswer, restoreSession]);
 
   const handleSubmitAnswer = async () => {
     await submitAnswerText(answer);
@@ -439,8 +482,9 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
             ? distributionMap[selectedJobRole]
             : '请选择岗位后查看对应题目分布'
         }
-        questionCount={questionCount}
-        onQuestionCountChange={setQuestionCount}
+        packages={INTERVIEW_PACKAGES}
+        selectedPackageId={selectedPackageId}
+        onPackageChange={setSelectedPackageId}
         onStart={startInterview}
         isCreating={isCreating}
         loadingRoles={loadingRoles}

@@ -105,7 +105,7 @@ export default function InterviewChatPanel({
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 mb-4 shadow-sm dark:shadow-slate-900/50 border border-slate-100 dark:border-slate-700">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-            题目 {currentQuestion ? currentQuestion.questionIndex + 1 : 0} / {session.totalQuestions}
+            已答 {currentQuestion ? currentQuestion.questionIndex + 1 : 0} / {session.totalQuestions} 题
           </span>
           <span className="text-sm text-slate-500 dark:text-slate-400">
             {Math.round(progress)}%
