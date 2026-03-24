@@ -20,9 +20,10 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import {knowledgeBaseApi, KnowledgeBaseItem, KnowledgeBaseStats, SortOption, VectorStatus} from '../api/knowledgebase';
+import {knowledgeBaseApi, KnowledgeBaseItem, KnowledgeBaseStats, PreviewMeta, SortOption, TextPreview, VectorStatus} from '../api/knowledgebase';
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
-import FilePreviewPanel from '../components/FilePreviewPanel';
+import FilePreviewModal from '../components/FilePreviewModal';
+import {formatDateTime} from '../utils/date';
 
 interface KnowledgeBaseManagePageProps {
   onUpload: () => void;
@@ -35,17 +36,6 @@ function formatFileSize(bytes: number): string {
   const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 }
 
 function StatusIcon({ status }: { status: VectorStatus }) {
@@ -118,7 +108,15 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
   const [categories, setCategories] = useState<string[]>([]);
   const [deleteItem, setDeleteItem] = useState<KnowledgeBaseItem | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [previewItem, setPreviewItem] = useState<KnowledgeBaseItem | null>(null);
+
+  // Preview modal state
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewMeta, setPreviewMeta] = useState<PreviewMeta | null>(null);
+  const [previewText, setPreviewText] = useState<TextPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewPdfError, setPreviewPdfError] = useState<string | null>(null);
+  const [numPages, setNumPages] = useState(0);
 
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [editingCategoryValue, setEditingCategoryValue] = useState('');
@@ -204,8 +202,8 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
     try {
       setDeleting(true);
       await knowledgeBaseApi.deleteKnowledgeBase(deleteItem.id);
-      if (previewItem?.id === deleteItem.id) {
-        setPreviewItem(null);
+      if (previewMeta?.sourceId === deleteItem.id) {
+        handlePreviewClose();
       }
       setDeleteItem(null);
       await loadData();
@@ -272,6 +270,74 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     loadData();
+  };
+
+  // Preview modal handlers
+  const loadPreview = useCallback(async (kbId: number) => {
+    setPreviewLoading(true);
+    setPreviewError(null);
+    setPreviewPdfError(null);
+    setNumPages(0);
+    setPreviewMeta(null);
+    setPreviewText(null);
+
+    try {
+      const meta = await knowledgeBaseApi.getPreviewMeta(kbId);
+      setPreviewMeta(meta);
+
+      if (meta.previewType === 'text' && meta.textUrl) {
+        const text = await knowledgeBaseApi.getPreviewText(kbId);
+        setPreviewText(text);
+      }
+    } catch (err) {
+      setPreviewError(err instanceof Error ? err.message : '预览加载失败');
+    } finally {
+      setPreviewLoading(false);
+    }
+  }, []);
+
+  const handlePreviewOpen = async (kb: KnowledgeBaseItem) => {
+    setPreviewOpen(true);
+    await loadPreview(kb.id);
+  };
+
+  const handlePreviewClose = () => {
+    setPreviewOpen(false);
+    setPreviewMeta(null);
+    setPreviewText(null);
+    setPreviewError(null);
+    setPreviewPdfError(null);
+    setNumPages(0);
+  };
+
+  const handlePreviewReload = async () => {
+    if (previewMeta?.sourceId) {
+      await loadPreview(previewMeta.sourceId);
+    }
+  };
+
+  const handlePreviewDownload = async () => {
+    if (!previewMeta?.downloadUrl) return;
+    try {
+      const targetUrl = new URL(previewMeta.downloadUrl, window.location.origin);
+      if (targetUrl.origin === window.location.origin) {
+        const response = await fetch(targetUrl.toString(), { credentials: 'include' });
+        if (!response.ok) throw new Error(`下载失败 (${response.status})`);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = previewMeta.filename ?? '';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+        return;
+      }
+    } catch {
+      // fall through
+    }
+    window.open(previewMeta.downloadUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -364,11 +430,9 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
         </div>
       </div>
 
-      <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+      <div className="flex flex-col gap-6">
         <div
-          className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden min-w-0 ${
-            previewItem ? 'xl:flex-1' : 'w-full'
-          }`}
+          className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden min-w-0"
         >
           {loading ? (
             <div className="flex items-center justify-center py-20">
@@ -519,7 +583,7 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
                         {kb.questionCount}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
-                        {formatDate(kb.uploadedAt)}
+                        {formatDateTime(kb.uploadedAt)}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1">
@@ -531,12 +595,8 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
                             <Download className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => setPreviewItem(kb)}
-                            className={`p-2 rounded-lg transition-colors ${
-                              previewItem?.id === kb.id
-                                ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/30'
-                                : 'text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30'
-                            }`}
+                            onClick={() => void handlePreviewOpen(kb)}
+                            className="p-2 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-colors"
                             title="预览"
                           >
                             <Eye className="w-4 h-4" />
@@ -567,44 +627,6 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
             </div>
           )}
         </div>
-
-        <AnimatePresence initial={false}>
-          {previewItem && (
-            <motion.aside
-              key={previewItem.id}
-              initial={{ opacity: 0, x: 24 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 24 }}
-              transition={{ duration: 0.2 }}
-              className="w-full xl:w-[420px] xl:shrink-0"
-            >
-              <div className="sticky top-6 space-y-4">
-                <div className="flex items-center justify-between gap-3 px-1">
-                  <div className="min-w-0">
-                    <h2 className="text-lg font-semibold text-slate-800 dark:text-white">文件预览</h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                      {previewItem.originalFilename}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewItem(null)}
-                    className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                    title="关闭预览"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <FilePreviewPanel
-                  fetchMeta={() => knowledgeBaseApi.getPreviewMeta(previewItem.id)}
-                  fetchText={() => knowledgeBaseApi.getPreviewText(previewItem.id)}
-                  reloadKey={previewItem.id}
-                />
-              </div>
-            </motion.aside>
-          )}
-        </AnimatePresence>
       </div>
 
       <DeleteConfirmDialog
@@ -614,6 +636,21 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
         loading={deleting}
         onConfirm={handleDelete}
         onCancel={() => setDeleteItem(null)}
+      />
+
+      <FilePreviewModal
+        open={previewOpen}
+        meta={previewMeta}
+        text={previewText}
+        loading={previewLoading}
+        error={previewError}
+        pdfError={previewPdfError}
+        numPages={numPages}
+        onClose={handlePreviewClose}
+        onDownload={handlePreviewDownload}
+        onReload={handlePreviewReload}
+        onLoadSuccess={setNumPages}
+        onLoadError={setPreviewPdfError}
       />
     </div>
   );

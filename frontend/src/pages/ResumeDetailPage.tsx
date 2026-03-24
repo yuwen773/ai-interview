@@ -2,12 +2,13 @@ import {useCallback, useEffect, useState} from 'react';
 import {useLocation} from 'react-router-dom';
 import {AnimatePresence, motion} from 'framer-motion';
 import {historyApi, InterviewDetail, ResumeDetail} from '../api/history';
+import type {PreviewMeta, TextPreview} from '../api/knowledgebase';
 import AnalysisPanel from '../components/AnalysisPanel';
-import FilePreviewPanel from '../components/FilePreviewPanel';
+import FilePreviewModal from '../components/FilePreviewModal';
 import InterviewPanel from '../components/InterviewPanel';
 import InterviewDetailPanel from '../components/InterviewDetailPanel';
 import {formatDateOnly} from '../utils/date';
-import {CheckSquare, ChevronLeft, Clock, Download, FileText, MessageSquare, Mic, TrendingUp} from 'lucide-react';
+import {CheckSquare, ChevronLeft, Clock, Download, Eye, MessageSquare, Mic, TrendingUp} from 'lucide-react';
 
 interface ResumeDetailPageProps {
   resumeId: number;
@@ -16,13 +17,12 @@ interface ResumeDetailPageProps {
   onViewGrowth: () => void;
 }
 
-type TabType = 'analysis' | 'preview' | 'interview';
+type TabType = 'analysis' | 'interview';
 type DetailViewType = 'list' | 'interviewDetail';
 
 const TAB_PAGE_INDEX: Record<TabType, number> = {
   analysis: 0,
-  preview: 1,
-  interview: 2,
+  interview: 1,
 };
 
 export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, onViewGrowth }: ResumeDetailPageProps) {
@@ -36,6 +36,15 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
   const [selectedInterview, setSelectedInterview] = useState<InterviewDetail | null>(null);
   const [loadingInterview, setLoadingInterview] = useState(false);
   const [reanalyzing, setReanalyzing] = useState(false);
+
+  // Preview modal state
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewMeta, setPreviewMeta] = useState<PreviewMeta | null>(null);
+  const [previewText, setPreviewText] = useState<TextPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewPdfError, setPreviewPdfError] = useState<string | null>(null);
+  const [numPages, setNumPages] = useState(0);
 
   // 静默加载数据（用于轮询）
   const loadResumeDetailSilent = useCallback(async () => {
@@ -183,6 +192,72 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
     }
   };
 
+  // Preview modal handlers
+  const loadPreview = useCallback(async () => {
+    setPreviewLoading(true);
+    setPreviewError(null);
+    setPreviewPdfError(null);
+    setNumPages(0);
+    setPreviewMeta(null);
+    setPreviewText(null);
+
+    try {
+      const meta = await historyApi.getResumePreviewMeta(resumeId);
+      setPreviewMeta(meta);
+
+      if (meta.previewType === 'text' && meta.textUrl) {
+        const text = await historyApi.getResumePreviewText(resumeId);
+        setPreviewText(text);
+      }
+    } catch (err) {
+      setPreviewError(err instanceof Error ? err.message : '预览加载失败');
+    } finally {
+      setPreviewLoading(false);
+    }
+  }, [resumeId]);
+
+  const handlePreviewOpen = async () => {
+    setPreviewOpen(true);
+    await loadPreview();
+  };
+
+  const handlePreviewClose = () => {
+    setPreviewOpen(false);
+    setPreviewMeta(null);
+    setPreviewText(null);
+    setPreviewError(null);
+    setPreviewPdfError(null);
+    setNumPages(0);
+  };
+
+  const handlePreviewReload = async () => {
+    await loadPreview();
+  };
+
+  const handlePreviewDownload = async () => {
+    if (!previewMeta?.downloadUrl) return;
+    try {
+      const targetUrl = new URL(previewMeta.downloadUrl, window.location.origin);
+      if (targetUrl.origin === window.location.origin) {
+        const response = await fetch(targetUrl.toString(), { credentials: 'include' });
+        if (!response.ok) throw new Error(`下载失败 (${response.status})`);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = previewMeta.filename ?? '';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+        return;
+      }
+    } catch {
+      // fall through
+    }
+    window.open(previewMeta.downloadUrl, '_blank', 'noopener,noreferrer');
+  };
+
   const handleTabChange = (tab: TabType) => {
     const newPage = TAB_PAGE_INDEX[tab];
     setPage([newPage, newPage > page ? 1 : -1]);
@@ -230,7 +305,6 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
   const latestAnalysis = resume.analyses?.[0];
   const tabs = [
     { id: 'analysis' as const, label: '简历分析', icon: CheckSquare },
-    { id: 'preview' as const, label: '文件预览', icon: FileText },
     { id: 'interview' as const, label: '面试记录', icon: MessageSquare, count: resume.interviews?.length || 0 },
   ];
 
@@ -272,15 +346,26 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
 
         <div className="flex gap-3">
           {detailView !== 'interviewDetail' && (
-            <motion.button
-              onClick={onViewGrowth}
-              className="px-5 py-2.5 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-50 transition-all flex items-center gap-2"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <TrendingUp className="w-4 h-4" />
-              成长曲线
-            </motion.button>
+            <>
+              <motion.button
+                onClick={() => void handlePreviewOpen()}
+                className="px-5 py-2.5 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-50 transition-all flex items-center gap-2"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Eye className="w-4 h-4" />
+                文件预览
+              </motion.button>
+              <motion.button
+                onClick={onViewGrowth}
+                className="px-5 py-2.5 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-50 transition-all flex items-center gap-2"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <TrendingUp className="w-4 h-4" />
+                成长曲线
+              </motion.button>
+            </>
           )}
           {detailView === 'interviewDetail' && selectedInterview && (
             <motion.button
@@ -365,12 +450,6 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
                   onReanalyze={handleReanalyze}
                   reanalyzing={reanalyzing}
                 />
-              ) : activeTab === 'preview' ? (
-                <FilePreviewPanel
-                  fetchMeta={() => historyApi.getResumePreviewMeta(resumeId)}
-                  fetchText={() => historyApi.getResumePreviewText(resumeId)}
-                  reloadKey={resumeId}
-                />
               ) : (
                   <InterviewPanel
                       interviews={resume.interviews || []}
@@ -386,6 +465,21 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
           </AnimatePresence>
         )}
       </div>
+
+      <FilePreviewModal
+        open={previewOpen}
+        meta={previewMeta}
+        text={previewText}
+        loading={previewLoading}
+        error={previewError}
+        pdfError={previewPdfError}
+        numPages={numPages}
+        onClose={handlePreviewClose}
+        onDownload={handlePreviewDownload}
+        onReload={handlePreviewReload}
+        onLoadSuccess={setNumPages}
+        onLoadError={setPreviewPdfError}
+      />
     </motion.div>
   );
 }
