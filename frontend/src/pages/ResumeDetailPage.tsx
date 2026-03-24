@@ -3,10 +3,11 @@ import {useLocation} from 'react-router-dom';
 import {AnimatePresence, motion} from 'framer-motion';
 import {historyApi, InterviewDetail, ResumeDetail} from '../api/history';
 import AnalysisPanel from '../components/AnalysisPanel';
+import FilePreviewPanel from '../components/FilePreviewPanel';
 import InterviewPanel from '../components/InterviewPanel';
 import InterviewDetailPanel from '../components/InterviewDetailPanel';
 import {formatDateOnly} from '../utils/date';
-import {CheckSquare, ChevronLeft, Clock, Download, MessageSquare, Mic, TrendingUp} from 'lucide-react';
+import {CheckSquare, ChevronLeft, Clock, Download, FileText, MessageSquare, Mic, TrendingUp} from 'lucide-react';
 
 interface ResumeDetailPageProps {
   resumeId: number;
@@ -15,8 +16,14 @@ interface ResumeDetailPageProps {
   onViewGrowth: () => void;
 }
 
-type TabType = 'analysis' | 'interview';
+type TabType = 'analysis' | 'preview' | 'interview';
 type DetailViewType = 'list' | 'interviewDetail';
+
+const TAB_PAGE_INDEX: Record<TabType, number> = {
+  analysis: 0,
+  preview: 1,
+  interview: 2,
+};
 
 export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, onViewGrowth }: ResumeDetailPageProps) {
   const location = useLocation();
@@ -177,7 +184,7 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
   };
 
   const handleTabChange = (tab: TabType) => {
-    const newPage = tab === 'analysis' ? 0 : 1;
+    const newPage = TAB_PAGE_INDEX[tab];
     setPage([newPage, newPage > page ? 1 : -1]);
     setActiveTab(tab);
     setDetailView('list');
@@ -223,6 +230,7 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
   const latestAnalysis = resume.analyses?.[0];
   const tabs = [
     { id: 'analysis' as const, label: '简历分析', icon: CheckSquare },
+    { id: 'preview' as const, label: '文件预览', icon: FileText },
     { id: 'interview' as const, label: '面试记录', icon: MessageSquare, count: resume.interviews?.length || 0 },
   ];
 
@@ -356,6 +364,12 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
                   exporting={exporting === 'analysis'}
                   onReanalyze={handleReanalyze}
                   reanalyzing={reanalyzing}
+                />
+              ) : activeTab === 'preview' ? (
+                <FilePreviewPanel
+                  fetchMeta={() => historyApi.getResumePreviewMeta(resumeId)}
+                  fetchText={() => historyApi.getResumePreviewText(resumeId)}
+                  reloadKey={resumeId}
                 />
               ) : (
                   <InterviewPanel
