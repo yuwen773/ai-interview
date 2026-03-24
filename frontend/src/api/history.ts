@@ -1,4 +1,5 @@
 import { request } from './request';
+import type { PreviewMeta, TextPreview } from './knowledgebase';
 
 export type AnalyzeStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 export type EvaluateStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
@@ -127,6 +128,20 @@ export const historyApi = {
   },
 
   /**
+   * 获取简历预览元数据
+   */
+  async getResumePreviewMeta(id: number): Promise<PreviewMeta> {
+    return request.get<PreviewMeta>(`/api/resumes/${id}/preview-meta`);
+  },
+
+  /**
+   * 获取简历文本预览
+   */
+  async getResumePreviewText(id: number): Promise<TextPreview> {
+    return request.get<TextPreview>(`/api/resumes/${id}/preview/text`);
+  },
+
+  /**
    * 获取面试详情
    */
   async getInterviewDetail(sessionId: string): Promise<InterviewDetail> {
@@ -143,7 +158,7 @@ export const historyApi = {
   },
 
   /**
-   * 导出简历分析报告PDF
+   * 导出简历分析报告 PDF
    */
   async exportAnalysisPdf(resumeId: number): Promise<Blob> {
     const response = await request.getInstance().get(`/api/resumes/${resumeId}/export`, {
@@ -154,10 +169,21 @@ export const historyApi = {
   },
 
   /**
-   * 导出面试报告PDF
+   * 导出面试报告 PDF
    */
   async exportInterviewPdf(sessionId: string): Promise<Blob> {
     const response = await request.getInstance().get(`/api/interview/sessions/${sessionId}/export`, {
+      responseType: 'blob',
+      skipResultTransform: true,
+    } as never);
+    return response.data;
+  },
+
+  /**
+   * 下载简历原文件
+   */
+  async downloadResume(id: number): Promise<Blob> {
+    const response = await request.getInstance().get(`/api/resumes/${id}/download`, {
       responseType: 'blob',
       skipResultTransform: true,
     } as never);
