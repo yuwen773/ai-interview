@@ -2,7 +2,13 @@ package interview.guide.modules.resume;
 
 import interview.guide.common.annotation.RateLimit;
 import interview.guide.common.result.Result;
+import interview.guide.infrastructure.file.DocumentPreviewService;
+import interview.guide.infrastructure.file.FileStorageService;
+import interview.guide.infrastructure.file.PreviewContent;
+import interview.guide.infrastructure.file.PreviewMetaDTO;
+import interview.guide.infrastructure.file.TextPreviewDTO;
 import interview.guide.modules.resume.model.ResumeDetailDTO;
+import interview.guide.modules.resume.model.ResumeEntity;
 import interview.guide.modules.resume.model.ResumeListItemDTO;
 import interview.guide.modules.resume.service.ResumeDeleteService;
 import interview.guide.modules.resume.service.ResumeHistoryService;
@@ -32,6 +38,8 @@ public class ResumeController {
     private final ResumeUploadService uploadService;
     private final ResumeDeleteService deleteService;
     private final ResumeHistoryService historyService;
+    private final DocumentPreviewService previewService;
+    private final FileStorageService fileStorageService;
 
     /**
      * 上传简历并获取分析结果
@@ -69,6 +77,36 @@ public class ResumeController {
     }
 
     /**
+     * 获取简历预览元数据
+     */
+    @GetMapping("/api/resumes/{id}/preview-meta")
+    public Result<PreviewMetaDTO> getResumePreviewMeta(@PathVariable("id") Long id) {
+        return Result.success(previewService.buildResumePreviewMeta(id));
+    }
+
+    /**
+     * 获取简历文本预览
+     */
+    @GetMapping("/api/resumes/{id}/preview/text")
+    public Result<TextPreviewDTO> getResumeTextPreview(@PathVariable("id") Long id) {
+        return Result.success(previewService.loadResumeTextPreview(id));
+    }
+
+    /**
+     * 获取简历预览 PDF 内容
+     */
+    @GetMapping("/api/resumes/{id}/preview/content")
+    public ResponseEntity<byte[]> getResumePreviewContent(@PathVariable("id") Long id) {
+        PreviewContent previewContent = previewService.loadResumePreviewContent(id);
+        String filename = encodeFilename(previewContent.filename());
+
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename*=UTF-8''" + filename)
+            .contentType(MediaType.APPLICATION_PDF)
+            .body(previewContent.content());
+    }
+
+    /**
      * 导出简历分析报告为PDF
      */
     @GetMapping("/api/resumes/{id}/export")
@@ -82,9 +120,25 @@ public class ResumeController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(result.pdfBytes());
         } catch (Exception e) {
-            log.error("导出PDF失败: resumeId={}", id, e);
+            log.error("Export PDF failed: resumeId={}", id, e);
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    /**
+     * 下载原始简历文件
+     */
+    @GetMapping("/api/resumes/{id}/download")
+    public ResponseEntity<byte[]> downloadResumeFile(@PathVariable("id") Long id) {
+        ResumeEntity resume = historyService.getResumeEntity(id);
+        String storageKey = resume.getStorageKey();
+        byte[] fileContent = fileStorageService.downloadFile(storageKey);
+        String filename = encodeFilename(resume.getOriginalFilename());
+
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + filename)
+            .contentType(resolveMediaType(resume.getContentType()))
+            .body(fileContent);
     }
 
     /**
@@ -124,4 +178,19 @@ public class ResumeController {
         ));
     }
 
+    private String encodeFilename(String filename) {
+        return URLEncoder.encode(filename == null ? "resume" : filename, StandardCharsets.UTF_8)
+            .replace("+", "%20");
+    }
+
+    private MediaType resolveMediaType(String contentType) {
+        if (contentType == null || contentType.isBlank()) {
+            return MediaType.APPLICATION_OCTET_STREAM;
+        }
+        try {
+            return MediaType.parseMediaType(contentType);
+        } catch (IllegalArgumentException exception) {
+            return MediaType.APPLICATION_OCTET_STREAM;
+        }
+    }
 }
