@@ -6,6 +6,29 @@ const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:8080';
 // 向量化状态
 export type VectorStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 
+export type PreviewSourceType = 'RESUME' | 'KNOWLEDGE_BASE';
+export type PreviewType = 'pdf' | 'text' | 'unsupported';
+
+export interface PreviewMeta {
+  sourceType: PreviewSourceType;
+  sourceId: number;
+  filename: string;
+  contentType: string;
+  previewType: PreviewType;
+  supported: boolean;
+  previewUrl: string | null;
+  textUrl: string | null;
+  downloadUrl: string;
+  message: string | null;
+}
+
+export interface TextPreview {
+  filename: string;
+  contentType: string;
+  text: string;
+  truncated: boolean;
+}
+
 export interface KnowledgeBaseItem {
   id: number;
   name: string;
@@ -75,15 +98,29 @@ export const knowledgeBaseApi = {
     return request.upload<UploadKnowledgeBaseResponse>('/api/knowledgebase/upload', formData);
   },
 
-    /**
-     * 下载知识库文件
-     */
-    async downloadKnowledgeBase(id: number): Promise<Blob> {
-        const response = await axios.get(`${API_BASE_URL}/api/knowledgebase/${id}/download`, {
-            responseType: 'blob',
-        });
-        return response.data;
-    },
+  /**
+   * 下载知识库文件
+   */
+  async downloadKnowledgeBase(id: number): Promise<Blob> {
+    const response = await axios.get(`${API_BASE_URL}/api/knowledgebase/${id}/download`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  /**
+   * 获取知识库预览元数据
+   */
+  async getPreviewMeta(id: number): Promise<PreviewMeta> {
+    return request.get<PreviewMeta>(`/api/knowledgebase/${id}/preview-meta`);
+  },
+
+  /**
+   * 获取知识库文本预览
+   */
+  async getPreviewText(id: number): Promise<TextPreview> {
+    return request.get<TextPreview>(`/api/knowledgebase/${id}/preview/text`);
+  },
 
   /**
    * 获取所有知识库列表
@@ -181,7 +218,7 @@ export const knowledgeBaseApi = {
   },
 
   /**
-   * 基于知识库回答问题（流式SSE）
+   * 基于知识库回答问题（流式 SSE）
    * 注意：SSE 使用 fetch API，不走统一的 axios 封装
    */
   async queryKnowledgeBaseStream(

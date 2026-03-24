@@ -174,6 +174,14 @@ public class ResumeHistoryService {
     }
 
     /**
+     * 根据ID获取简历实体（用于预览等文件操作）
+     */
+    public ResumeEntity getResumeEntity(Long id) {
+        return resumePersistenceService.findById(id)
+            .orElseThrow(() -> new BusinessException(ErrorCode.RESUME_NOT_FOUND));
+    }
+
+    /**
      * PDF导出结果
      */
     public record ExportResult(byte[] pdfBytes, String filename) {}

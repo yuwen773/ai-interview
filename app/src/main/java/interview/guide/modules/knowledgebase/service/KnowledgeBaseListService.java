@@ -196,8 +196,7 @@ public class KnowledgeBaseListService {
      * 下载知识库文件
      */
     public byte[] downloadFile(Long id) {
-        KnowledgeBaseEntity entity = knowledgeBaseRepository.findById(id)
-            .orElseThrow(() -> new BusinessException(ErrorCode.KNOWLEDGE_BASE_NOT_FOUND, "知识库不存在"));
+        KnowledgeBaseEntity entity = requireKnowledgeBase(id);
 
         String storageKey = entity.getStorageKey();
         if (storageKey == null || storageKey.isBlank()) {
@@ -212,6 +211,17 @@ public class KnowledgeBaseListService {
      * 获取知识库文件信息（用于下载）
      */
     public KnowledgeBaseEntity getEntityForDownload(Long id) {
+        return requireKnowledgeBase(id);
+    }
+
+    /**
+     * 获取知识库实体（用于预览等文件操作）
+     */
+    public KnowledgeBaseEntity getEntityForPreview(Long id) {
+        return requireKnowledgeBase(id);
+    }
+
+    private KnowledgeBaseEntity requireKnowledgeBase(Long id) {
         return knowledgeBaseRepository.findById(id)
             .orElseThrow(() -> new BusinessException(ErrorCode.KNOWLEDGE_BASE_NOT_FOUND, "知识库不存在"));
     }
