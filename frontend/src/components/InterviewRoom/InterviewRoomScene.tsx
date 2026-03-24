@@ -1,6 +1,7 @@
 // frontend/src/components/InterviewRoom/InterviewRoomScene.tsx
 import { motion } from 'framer-motion';
 import { Interviewer2D, InterviewMode } from './Interviewer2D';
+import './interviewRoom.css';
 
 interface InterviewRoomSceneProps {
   mode: InterviewMode;
