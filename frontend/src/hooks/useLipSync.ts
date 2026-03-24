@@ -44,9 +44,13 @@ export function useLipSync(): UseLipSyncReturn {
 
       // 平滑处理
       const smoothed = previousValueRef.current * 0.6 + normalized * 0.4;
-      previousValueRef.current = smoothed;
 
-      setMouthOpen(smoothed);
+      // 只在值变化较大时更新状态，减少重渲染
+      if (Math.abs(smoothed - previousValueRef.current) > 0.01) {
+        setMouthOpen(smoothed);
+      }
+
+      previousValueRef.current = smoothed;
 
       animationFrameRef.current = requestAnimationFrame(analyze);
     };
