@@ -2,8 +2,8 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Virtuoso } from 'react-virtuoso';
-import { Mic, RotateCcw, Send, Square, Volume2, VolumeX } from 'lucide-react';
-import type { CandidateInputMode, InterviewQuestion, InterviewSession } from '../../types/interview';
+import { Volume2, VolumeX } from 'lucide-react';
+import type { InterviewQuestion, InterviewSession } from '../../types/interview';
 
 interface Message {
   type: 'interviewer' | 'user';
@@ -16,60 +16,33 @@ interface InterviewSubtitlePanelProps {
   session: InterviewSession;
   currentQuestion: InterviewQuestion | null;
   messages: Message[];
-  candidateInputMode: CandidateInputMode;
   questionVoiceEnabled: boolean;
   isRecording: boolean;
   isRecognizing: boolean;
   isSubmitting: boolean;
-  answer: string;
-  recognizedText: string;
-  audioUrl: string | null;
   isPlayingQuestionAudio: boolean;
   isLoadingQuestionAudio: boolean;
   error?: string | null;
 
-  onCandidateInputModeChange: (mode: CandidateInputMode) => void;
   onQuestionVoiceEnabledChange: (enabled: boolean) => void;
-  onAnswerChange: (answer: string) => void;
-  onRecognizedTextChange: (text: string) => void;
-  onStartRecording: () => void;
-  onStopRecording: () => void;
-  onRetryVoiceAnswer: () => void;
-  onSubmitRecognizedAnswer: () => void;
-  onSwitchToTextMode: () => void;
   onReplayQuestionAudio: () => void;
   onStopQuestionAudio: () => void;
-  onSubmit: () => void;
-  onCompleteEarly: () => void;
-  onShowCompleteConfirm: (show: boolean) => void;
 }
 
 export function InterviewSubtitlePanel({
   session,
   currentQuestion,
   messages,
-  candidateInputMode,
   questionVoiceEnabled,
   isRecording,
   isRecognizing,
   isSubmitting,
-  answer,
-  recognizedText,
   isPlayingQuestionAudio,
   isLoadingQuestionAudio,
   error,
-  onCandidateInputModeChange,
   onQuestionVoiceEnabledChange,
-  onAnswerChange,
-  onRecognizedTextChange,
-  onStartRecording,
-  onStopRecording,
-  onRetryVoiceAnswer,
-  onSubmitRecognizedAnswer,
   onReplayQuestionAudio,
   onStopQuestionAudio,
-  onSubmit,
-  onShowCompleteConfirm,
 }: InterviewSubtitlePanelProps) {
   const isBusy = isSubmitting || isRecognizing || isRecording;
 
@@ -77,17 +50,6 @@ export function InterviewSubtitlePanel({
     if (!session || !currentQuestion) return 0;
     return ((currentQuestion.questionIndex + 1) / session.totalQuestions) * 100;
   }, [session, currentQuestion]);
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      if (isBusy) return;
-      if (candidateInputMode === 'voice' && recognizedText.trim()) {
-        onSubmitRecognizedAnswer();
-        return;
-      }
-      onSubmit();
-    }
-  };
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -113,67 +75,28 @@ export function InterviewSubtitlePanel({
           </div>
         </div>
 
-        {/* 模式切换和播报控制 */}
+        {/* 播报控制 */}
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex gap-2">
-            <div className="inline-flex rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 p-1">
-              <button
-                type="button"
-                onClick={() => onCandidateInputModeChange('text')}
-                disabled={isBusy}
-                className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
-                  candidateInputMode === 'text'
-                    ? 'bg-primary-500 text-white'
-                    : 'text-slate-600 dark:text-slate-300'
-                }`}
-              >
-                文字回答
-              </button>
-              <button
-                type="button"
-                onClick={() => onCandidateInputModeChange('voice')}
-                disabled={isBusy}
-                className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
-                  candidateInputMode === 'voice'
-                    ? 'bg-primary-500 text-white'
-                    : 'text-slate-600 dark:text-slate-300'
-                }`}
-              >
-                语音回答
-              </button>
-            </div>
-            <div className="inline-flex rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 p-1">
-              <button
-                type="button"
-                onClick={() => onQuestionVoiceEnabledChange(!questionVoiceEnabled)}
-                disabled={isBusy}
-                className={`px-3 py-1.5 text-xs rounded-lg transition-colors flex items-center gap-1.5 ${
-                  questionVoiceEnabled
-                    ? 'bg-primary-500 text-white'
-                    : 'text-slate-600 dark:text-slate-300'
-                }`}
-              >
-                <span className={`inline-flex h-4 w-7 items-center rounded-full transition-colors ${
-                  questionVoiceEnabled ? 'bg-white/30' : 'bg-slate-300 dark:bg-slate-600'
-                }`}>
-                  <span className={`h-3 w-3 rounded-full bg-white transition-transform ${
-                    questionVoiceEnabled ? 'translate-x-3' : 'translate-x-0.5'
-                  }`} />
-                </span>
-                播报
-              </button>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <motion.button
-              onClick={() => onShowCompleteConfirm(true)}
+          <div className="inline-flex rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 p-1">
+            <button
+              type="button"
+              onClick={() => onQuestionVoiceEnabledChange(!questionVoiceEnabled)}
               disabled={isBusy}
-              className="px-3 py-1.5 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors disabled:opacity-50"
-              whileHover={isBusy ? {} : { scale: 1.02 }}
-              whileTap={isBusy ? {} : { scale: 0.98 }}
+              className={`px-3 py-1.5 text-xs rounded-lg transition-colors flex items-center gap-1.5 ${
+                questionVoiceEnabled
+                  ? 'bg-primary-500 text-white'
+                  : 'text-slate-600 dark:text-slate-300'
+              }`}
             >
-              提前交卷
-            </motion.button>
+              <span className={`inline-flex h-4 w-7 items-center rounded-full transition-colors ${
+                questionVoiceEnabled ? 'bg-white/30' : 'bg-slate-300 dark:bg-slate-600'
+              }`}>
+                <span className={`h-3 w-3 rounded-full bg-white transition-transform ${
+                  questionVoiceEnabled ? 'translate-x-3' : 'translate-x-0.5'
+                }`} />
+              </span>
+              播报
+            </button>
           </div>
         </div>
 
@@ -235,109 +158,6 @@ export function InterviewSubtitlePanel({
             </div>
           )}
         />
-      </div>
-
-      {/* 输入区域 */}
-      <div className="border-t border-slate-200 dark:border-slate-600 p-4 bg-slate-50 dark:bg-slate-700/50">
-        {candidateInputMode === 'text' ? (
-          <div className="flex gap-2">
-            <textarea
-              value={answer}
-              onChange={(e) => onAnswerChange(e.target.value)}
-              onKeyDown={handleKeyPress}
-              placeholder="输入你的回答... (Ctrl/Cmd + Enter 提交)"
-              className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none bg-white dark:bg-slate-800 text-sm"
-              rows={2}
-              disabled={isSubmitting || isRecognizing}
-            />
-            <motion.button
-              onClick={onSubmit}
-              disabled={!answer.trim() || isSubmitting || isRecognizing}
-              className="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm hover:bg-primary-600 disabled:opacity-50 flex items-center gap-1 self-end"
-              whileHover={isSubmitting || isRecognizing || !answer.trim() ? {} : { scale: 1.02 }}
-              whileTap={isSubmitting || isRecognizing || !answer.trim() ? {} : { scale: 0.98 }}
-            >
-              {isSubmitting ? (
-                <>
-                  <motion.div
-                    className="w-3 h-3 border-2 border-white border-t-transparent rounded-full"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                  />
-                </>
-              ) : (
-                <>
-                  <Send className="w-3 h-3" />
-                </>
-              )}
-            </motion.button>
-          </div>
-        ) : (
-          <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-500 bg-white/80 dark:bg-slate-800/80 p-3 space-y-3">
-            {!recognizedText ? (
-              <div className="flex gap-2">
-                {isRecording ? (
-                  <motion.button
-                    onClick={onStopRecording}
-                    className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 flex items-center gap-2"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Square className="w-3 h-3" />
-                    停止并识别
-                  </motion.button>
-                ) : (
-                  <motion.button
-                    onClick={onStartRecording}
-                    disabled={isRecognizing || isSubmitting || isLoadingQuestionAudio}
-                    className="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm hover:bg-primary-600 disabled:opacity-50 flex items-center gap-2"
-                    whileHover={isRecognizing || isSubmitting || isLoadingQuestionAudio ? {} : { scale: 1.02 }}
-                    whileTap={isRecognizing || isSubmitting || isLoadingQuestionAudio ? {} : { scale: 0.98 }}
-                  >
-                    <Mic className="w-3 h-3" />
-                    开始录音
-                  </motion.button>
-                )}
-                <div className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-xs text-slate-600 dark:text-slate-300">
-                  {isRecording ? '录音中...' : isRecognizing ? '正在识别...' : '点击开始录音'}
-                </div>
-              </div>
-            ) : (
-              <>
-                <textarea
-                  value={recognizedText}
-                  onChange={(e) => onRecognizedTextChange(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  rows={3}
-                  disabled={isSubmitting}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none bg-white dark:bg-slate-800 text-sm"
-                />
-                <div className="flex gap-2">
-                  <motion.button
-                    onClick={onSubmitRecognizedAnswer}
-                    disabled={!recognizedText.trim() || isSubmitting}
-                    className="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm hover:bg-primary-600 disabled:opacity-50 flex items-center gap-1"
-                    whileHover={isSubmitting || !recognizedText.trim() ? {} : { scale: 1.02 }}
-                    whileTap={isSubmitting || !recognizedText.trim() ? {} : { scale: 0.98 }}
-                  >
-                    <Send className="w-3 h-3" />
-                    {isSubmitting ? '提交中' : '确认提交'}
-                  </motion.button>
-                  <motion.button
-                    onClick={onRetryVoiceAnswer}
-                    disabled={isSubmitting || isRecognizing}
-                    className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50 flex items-center gap-1"
-                    whileHover={isSubmitting || isRecognizing ? {} : { scale: 1.02 }}
-                    whileTap={isSubmitting || isRecognizing ? {} : { scale: 0.98 }}
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    重录
-                  </motion.button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

@@ -40,11 +40,8 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const [session, setSession] = useState<InterviewSession | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<InterviewQuestion | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [answer, setAnswer] = useState('');
   const [candidateInputMode, setCandidateInputMode] = useState<CandidateInputMode>('text');
   const [questionVoiceEnabled, setQuestionVoiceEnabled] = useState(false);
-  const [recognizedText, setRecognizedText] = useState('');
-  const [originalRecognizedText, setOriginalRecognizedText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [error, setError] = useState('');
@@ -53,7 +50,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const [unfinishedSession, setUnfinishedSession] = useState<InterviewSession | null>(null);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [forceCreateNew, setForceCreateNew] = useState(false);
-  const { isRecording, startRecording, stopRecording, audioUrl, clearRecording } = useRecording();
+  const { isRecording, startRecording, stopRecording, clearRecording } = useRecording();
   const { mouthOpen } = useLipSync();
   const lastAutoPlayedQuestionRef = useRef<string | null>(null);
   // 用 ref 做轻量级幂等保护，避免状态更新异步时同一动作被快速连点触发多次。
@@ -140,9 +137,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   }, [resumeId]);
 
   const resetVoiceAnswer = () => {
-    // 语音答题相关状态需要一起清空，避免切模式或重录后遗留上一次识别结果。
-    setRecognizedText('');
-    setOriginalRecognizedText('');
+    // 语音答题相关状态需要一起清空，避免重录后遗留上一次识别结果。
     clearRecording();
   };
 
@@ -171,13 +166,6 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     const currentQ = sessionToRestore.questions[sessionToRestore.currentQuestionIndex];
     if (currentQ) {
       setCurrentQuestion(currentQ);
-
-        // 如果当前问题已有答案，显示在输入框中
-      if (currentQ.userAnswer) {
-        setAnswer(currentQ.userAnswer);
-      } else {
-        setAnswer('');
-      }
 
         // 恢复消息历史
       const restoredMessages: Message[] = [];
@@ -236,7 +224,6 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       } else {
         // 全新的会话
         setSession(newSession);
-        setAnswer('');
 
                 if (newSession.questions.length > 0) {
           const firstQuestion = newSession.questions[0];
@@ -283,7 +270,6 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         interviewerOutputMode: questionVoiceEnabled ? 'textVoice' : 'text'
       });
 
-      setAnswer('');
       resetVoiceAnswer();
 
       if (response.hasNextQuestion && response.nextQuestion) {
@@ -309,19 +295,6 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     } finally {
       submitInFlightRef.current = false;
       setIsSubmitting(false);
-    }
-  };
-
-  const handleSubmitAnswer = async () => {
-    await submitAnswerText(answer);
-  };
-
-  const handleCandidateInputModeChange = (mode: CandidateInputMode) => {
-    if (isSubmitting || isRecognizing || isRecording) return;
-    setCandidateInputMode(mode);
-    setError('');
-    if (mode === 'text') {
-      resetVoiceAnswer();
     }
   };
 
@@ -367,8 +340,8 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         inputMode: candidateInputMode
       });
 
-      setRecognizedText(response.recognizedText);
-      setOriginalRecognizedText(response.recognizedText);
+      // Auto-submit voice answer after recognition
+      await submitAnswerText(response.recognizedText);
     } catch (err) {
       resetVoiceAnswer();
       setError(getErrorMessage(err) || '语音识别失败，请重试或切回文字模式');
@@ -377,20 +350,6 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       recognizeInFlightRef.current = false;
       setIsRecognizing(false);
     }
-  };
-
-  const handleSubmitRecognizedAnswer = async () => {
-    // 先记录“识别文本是否被人工修改”，后续可据此评估 ASR 质量。
-    if (originalRecognizedText && recognizedText.trim() && originalRecognizedText.trim() !== recognizedText.trim()) {
-      console.info('voice_telemetry event=recognition_edited');
-    }
-    await submitAnswerText(recognizedText);
-  };
-
-  const handleRetryVoiceAnswer = () => {
-    if (isSubmitting || isRecognizing || isRecording) return;
-    setError('');
-    resetVoiceAnswer();
   };
 
   const handleCompleteEarly = async () => {
@@ -413,13 +372,6 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       completeInFlightRef.current = false;
       setIsSubmitting(false);
     }
-  };
-
-  const handleSwitchToTextMode = () => {
-    if (isSubmitting || isRecognizing || isRecording) return;
-    setCandidateInputMode('text');
-    setError('');
-    resetVoiceAnswer();
   };
 
   const handleReplayQuestionAudio = async () => {
@@ -534,31 +486,16 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
             session={session}
             currentQuestion={currentQuestion}
             messages={messages}
-            candidateInputMode={candidateInputMode}
             questionVoiceEnabled={questionVoiceEnabled}
             isRecording={isRecording}
             isRecognizing={isRecognizing}
             isSubmitting={isSubmitting}
-            answer={answer}
-            recognizedText={recognizedText}
-            audioUrl={audioUrl}
             isPlayingQuestionAudio={isPlayingQuestionAudio}
             isLoadingQuestionAudio={isLoadingQuestionAudio}
             error={error}
-            onCandidateInputModeChange={handleCandidateInputModeChange}
             onQuestionVoiceEnabledChange={handleQuestionVoiceEnabledChange}
-            onAnswerChange={setAnswer}
-            onRecognizedTextChange={setRecognizedText}
-            onStartRecording={handleStartRecording}
-            onStopRecording={handleStopRecording}
-            onRetryVoiceAnswer={handleRetryVoiceAnswer}
-            onSubmitRecognizedAnswer={handleSubmitRecognizedAnswer}
-            onSwitchToTextMode={handleSwitchToTextMode}
             onReplayQuestionAudio={handleReplayQuestionAudio}
             onStopQuestionAudio={stopQuestionAudio}
-            onSubmit={handleSubmitAnswer}
-            onCompleteEarly={handleCompleteEarly}
-            onShowCompleteConfirm={setShowCompleteConfirm}
           />
         </div>
       </div>
