@@ -2,6 +2,10 @@ package interview.guide.modules.knowledgebase;
 
 import interview.guide.common.annotation.RateLimit;
 import interview.guide.common.result.Result;
+import interview.guide.infrastructure.file.DocumentPreviewService;
+import interview.guide.infrastructure.file.PreviewContent;
+import interview.guide.infrastructure.file.PreviewMetaDTO;
+import interview.guide.infrastructure.file.TextPreviewDTO;
 import interview.guide.modules.knowledgebase.model.KnowledgeBaseListItemDTO;
 import interview.guide.modules.knowledgebase.model.KnowledgeBaseStatsDTO;
 import interview.guide.modules.knowledgebase.model.QueryRequest;
@@ -38,6 +42,7 @@ public class KnowledgeBaseController {
     private final KnowledgeBaseQueryService queryService;
     private final KnowledgeBaseListService listService;
     private final KnowledgeBaseDeleteService deleteService;
+    private final DocumentPreviewService documentPreviewService;
 
     /**
      * 获取所有知识库列表
@@ -79,8 +84,38 @@ public class KnowledgeBaseController {
     }
 
     /**
-     * 基于知识库回答问题（支持多知识库）
+     * 获取知识库预览元数据
      */
+    @GetMapping("/api/knowledgebase/{id}/preview-meta")
+    public Result<PreviewMetaDTO> getKnowledgeBasePreviewMeta(@PathVariable("id") Long id) {
+        return Result.success(documentPreviewService.buildKnowledgeBasePreviewMeta(id));
+    }
+
+    /**
+     * 获取知识库文本预览
+     */
+    @GetMapping("/api/knowledgebase/{id}/preview/text")
+    public Result<TextPreviewDTO> getKnowledgeBaseTextPreview(@PathVariable("id") Long id) {
+        return Result.success(documentPreviewService.loadKnowledgeBaseTextPreview(id));
+    }
+
+    /**
+     * 获取知识库内嵌 PDF 预览内容
+     */
+    @GetMapping("/api/knowledgebase/{id}/preview/content")
+    public ResponseEntity<byte[]> getKnowledgeBaseInlinePdfPreviewContent(@PathVariable("id") Long id) {
+        PreviewContent previewContent = documentPreviewService.loadKnowledgeBasePreviewContent(id);
+        String filename = previewContent.filename();
+        String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8)
+                .replaceAll("\\+", "%20");
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + encodedFilename + "\"; filename*=UTF-8''" + encodedFilename)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(previewContent.content());
+    }
+
     @PostMapping("/api/knowledgebase/query")
     @RateLimit(dimensions = {RateLimit.Dimension.GLOBAL, RateLimit.Dimension.IP}, count = 10)
     public Result<QueryResponse> queryKnowledgeBase(@Valid @RequestBody QueryRequest request) {
