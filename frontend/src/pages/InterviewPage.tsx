@@ -40,6 +40,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const [session, setSession] = useState<InterviewSession | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<InterviewQuestion | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [answer, setAnswer] = useState('');
   const [candidateInputMode, setCandidateInputMode] = useState<CandidateInputMode>('text');
   const [questionVoiceEnabled, setQuestionVoiceEnabled] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -248,6 +249,10 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     }
   };
 
+  const handleSubmitAnswer = async () => {
+    await submitAnswerText(answer);
+  };
+
   const submitAnswerText = async (submittedAnswer: string) => {
     if (!submittedAnswer.trim() || !session || !currentQuestion || submitInFlightRef.current) return;
 
@@ -270,6 +275,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         interviewerOutputMode: questionVoiceEnabled ? 'textVoice' : 'text'
       });
 
+      setAnswer('');
       resetVoiceAnswer();
 
       if (response.hasNextQuestion && response.nextQuestion) {
@@ -496,6 +502,9 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
             onQuestionVoiceEnabledChange={handleQuestionVoiceEnabledChange}
             onReplayQuestionAudio={handleReplayQuestionAudio}
             onStopQuestionAudio={stopQuestionAudio}
+            answer={answer}
+            onAnswerChange={setAnswer}
+            onSubmit={handleSubmitAnswer}
           />
         </div>
       </div>

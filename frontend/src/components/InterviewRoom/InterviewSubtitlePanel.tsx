@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Virtuoso } from 'react-virtuoso';
-import { Volume2, VolumeX } from 'lucide-react';
+import { Send, Volume2, VolumeX } from 'lucide-react';
 import type { InterviewQuestion, InterviewSession } from '../../types/interview';
 
 interface Message {
@@ -27,6 +27,9 @@ interface InterviewSubtitlePanelProps {
   onQuestionVoiceEnabledChange: (enabled: boolean) => void;
   onReplayQuestionAudio: () => void;
   onStopQuestionAudio: () => void;
+  answer: string;
+  onAnswerChange: (answer: string) => void;
+  onSubmit: () => void;
 }
 
 export function InterviewSubtitlePanel({
@@ -43,6 +46,9 @@ export function InterviewSubtitlePanel({
   onQuestionVoiceEnabledChange,
   onReplayQuestionAudio,
   onStopQuestionAudio,
+  answer,
+  onAnswerChange,
+  onSubmit,
 }: InterviewSubtitlePanelProps) {
   const isBusy = isSubmitting || isRecognizing || isRecording;
 
@@ -50,6 +56,13 @@ export function InterviewSubtitlePanel({
     if (!session || !currentQuestion) return 0;
     return ((currentQuestion.questionIndex + 1) / session.totalQuestions) * 100;
   }, [session, currentQuestion]);
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      if (isBusy || !answer.trim()) return;
+      onSubmit();
+    }
+  };
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -158,6 +171,38 @@ export function InterviewSubtitlePanel({
             </div>
           )}
         />
+      </div>
+
+      {/* 文字输入区域 */}
+      <div className="border-t border-slate-200 dark:border-slate-600 p-4 bg-slate-50 dark:bg-slate-700/50">
+        <div className="flex gap-2">
+          <textarea
+            value={answer}
+            onChange={(e) => onAnswerChange(e.target.value)}
+            onKeyDown={handleKeyPress}
+            placeholder="输入你的回答... (Ctrl/Cmd + Enter 提交)"
+            className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none bg-white dark:bg-slate-800 text-sm"
+            rows={2}
+            disabled={isSubmitting || isRecognizing}
+          />
+          <motion.button
+            onClick={onSubmit}
+            disabled={!answer.trim() || isSubmitting || isRecognizing}
+            className="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm hover:bg-primary-600 disabled:opacity-50 flex items-center gap-1 self-end"
+            whileHover={isSubmitting || isRecognizing || !answer.trim() ? {} : { scale: 1.02 }}
+            whileTap={isSubmitting || isRecognizing || !answer.trim() ? {} : { scale: 0.98 }}
+          >
+            {isSubmitting ? (
+              <motion.div
+                className="w-3 h-3 border-2 border-white border-t-transparent rounded-full"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+              />
+            ) : (
+              <Send className="w-3 h-3" />
+            )}
+          </motion.button>
+        </div>
       </div>
     </div>
   );
