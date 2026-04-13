@@ -14,7 +14,6 @@ interface Interviewer2DProps {
 
 export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Interviewer2DProps) {
   const [isBlinking, setIsBlinking] = useState(false);
-  const [breathPhase, setBreathPhase] = useState(0);
   const [thinkingAngle, setThinkingAngle] = useState(0);
   const [imageFailed, setImageFailed] = useState(false);
 
@@ -36,12 +35,6 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
     return () => clearTimeout(timer);
   }, []);
 
-  // 呼吸动画
-  useEffect(() => {
-    const interval = setInterval(() => { setBreathPhase(prev => (prev + 1) % 100); }, 50);
-    return () => clearInterval(interval);
-  }, []);
-
   // 思考时头部微动
   useEffect(() => {
     if (mode !== 'thinking') return;
@@ -55,8 +48,6 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
     return 0;
   }, [mode, thinkingAngle]);
 
-  const breathOffset = Math.sin(breathPhase * 0.1) * 2;
-
   const filterStyle = useMemo(() => {
     switch (mode) {
       case 'listening': return 'brightness(1.05)';
@@ -66,84 +57,79 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
     }
   }, [mode]);
 
+  const avatarInitial = avatarId.split('.')[1]?.[0] ?? 'I';
+
   return (
     <div className={`ah-character-avatar ${className}`} style={{ position: 'relative', overflow: 'hidden', width: '100%', height: '100%' }}>
+
+      {/* 头像层：图片或 CSS fallback（始终占满容器） */}
+      {imageFailed ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-slate-700 to-slate-900">
+          <div className="w-full h-full rounded-t-3xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+            <span className="text-8xl font-bold text-white drop-shadow-lg">{avatarInitial}</span>
+          </div>
+        </div>
+      ) : (
+        <img
+          id="character-static-image"
+          src={getAvatarImageUrl(avatarId)}
+          alt="Interviewer"
+          onError={() => setImageFailed(true)}
+          className="absolute inset-0 w-full h-full"
+          style={{ objectFit: 'cover', objectPosition: 'center top' }}
+        />
+      )}
+
+      {/* 动态视频层（初始隐藏） */}
+      <video
+        id="character-avatar-video"
+        className="absolute inset-0 w-full h-full"
+        style={{ objectFit: 'cover', objectPosition: 'center top', display: 'none' }}
+      />
+
+      {/* 表情动画层 */}
       <motion.div
-        className="relative"
-        animate={{ rotate: headTilt, y: breathOffset }}
+        className="absolute inset-0 pointer-events-none"
+        animate={{ rotate: headTilt }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
         style={{ filter: filterStyle }}
       >
-          {/* 静态图像层 */}
-          {imageFailed ? (
-            /* 图片加载失败时显示 CSS 占位头像 */
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-slate-700 to-slate-900">
-              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-5xl font-bold text-white shadow-lg">
-                {avatarId.split('.')[1]?.[0] ?? 'I'}
-              </div>
-            </div>
-          ) : (
-            <img
-              id="character-static-image"
-              src={getAvatarImageUrl(avatarId)}
-              alt="Interviewer"
-              onError={() => setImageFailed(true)}
-              style={{
-                position: 'absolute', top: '50%', left: '50%',
-                width: '100%', height: '100%',
-                objectFit: 'cover',
-                transform: 'translate(-50%, -50%)',
-              }}
+        {/* 眨眼遮罩 */}
+        <AnimatePresence>
+          {isBlinking && (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.1 }}
+              className="absolute inset-0 bg-gradient-to-b from-transparent via-[#fcd5b8]/20 to-transparent"
+              style={{ clipPath: 'polygon(0 35%, 100% 35%, 100% 42%, 0 42%)' }}
             />
           )}
-          {/* 动态视频层（初始隐藏） */}
-          <video
-            id="character-avatar-video"
-            style={{
-              position: 'absolute', top: '50%', left: '50%',
-              width: '100%', height: '100%',
-              objectFit: 'cover',
-              transform: 'translate(-50%, -50%)',
-              display: 'none',
-            }}
+        </AnimatePresence>
+
+        {/* 说话时嘴部动态 */}
+        {mode === 'speaking' && mouthOpen > 0.1 && (
+          <motion.div
+            className="absolute bottom-[28%] left-1/2 -translate-x-1/2"
+            animate={{ scale: [1, 1 + mouthOpen * 0.15, 1], opacity: mouthOpen * 0.4 }}
+            transition={{ duration: 0.15, repeat: Infinity, repeatType: 'reverse' }}
+          >
+            <div className="w-10 h-5 bg-gradient-to-b from-[#c94a4a]/40 to-transparent rounded-full blur-sm" />
+          </motion.div>
+        )}
+
+        {/* 思考时光效 */}
+        {mode === 'thinking' && (
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-transparent"
+            animate={{ opacity: [0.3, 0.6, 0.3] }}
+            transition={{ duration: 2, repeat: Infinity }}
           />
+        )}
 
-          {/* 眼睛遮罩（眨眼效果） */}
-          <AnimatePresence>
-            {isBlinking && (
-              <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.1 }}
-                className="absolute inset-0 bg-gradient-to-b from-transparent via-[#fcd5b8]/20 to-transparent"
-                style={{ clipPath: 'polygon(0 35%, 100% 35%, 100% 42%, 0 42%)' }}
-              />
-            )}
-          </AnimatePresence>
-
-          {/* 说话时嘴部动态效果 */}
-          {mode === 'speaking' && mouthOpen > 0.1 && (
-            <motion.div
-              className="absolute bottom-[30%] left-1/2 -translate-x-1/2"
-              animate={{ scale: [1, 1 + mouthOpen * 0.1, 1], opacity: mouthOpen * 0.3 }}
-              transition={{ duration: 0.15, repeat: Infinity, repeatType: 'reverse' }}
-            >
-              <div className="w-8 h-4 bg-gradient-to-b from-[#c94a4a]/30 to-transparent rounded-full blur-sm" />
-            </motion.div>
-          )}
-
-          {/* 思考时的光影效果 */}
-          {mode === 'thinking' && (
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent"
-              animate={{ opacity: [0.3, 0.5, 0.3] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-          )}
-
-          {/* 倾听时的光影效果 */}
-          {mode === 'listening' && (
-            <div className="absolute inset-0 bg-gradient-to-t from-blue-500/5 via-transparent to-transparent" />
-          )}
+        {/* 倾听时光效 */}
+        {mode === 'listening' && (
+          <div className="absolute inset-0 bg-gradient-to-t from-blue-500/10 via-transparent to-transparent" />
+        )}
       </motion.div>
 
       {/* 桌子前景 */}
