@@ -82,7 +82,7 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
       />
 
       {/* ── 口型动画层 ── */}
-      {/* 说话时整体面部光晕（提升"活感"，不需要精确定位） */}
+      {/* 说话时整体面部光晕（提升"活感"） */}
       <div
         className="absolute pointer-events-none"
         style={{
@@ -97,38 +97,107 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
         }}
       />
 
-      {/* 嘴部开合叠加层：深色椭圆随 mouthOpen 放大 */}
-      {/* NavTalk 角色为半身像，嘴部约在容器 top 22-25% */}
+      {/* === 重新设计的自然口型 === */}
+      {/* 嘴部区域容器（定位基准点） */}
       <div
         className="absolute pointer-events-none"
         style={{
-          top: '22%',
+          top: '20%',
           left: '50%',
-          // 宽度随开度微变，高度随开度大幅变化（模拟张嘴）
-          width: `${24 + openness * 8}px`,
-          height: `${Math.max(2, openness * 22)}px`,
           transform: 'translateX(-50%)',
-          background: 'radial-gradient(ellipse at 50% 40%, rgba(18,6,6,0.82) 0%, rgba(90,22,22,0.35) 65%, transparent 100%)',
-          borderRadius: '50%',
-          opacity: openness < 0.05 ? 0 : 0.25 + openness * 0.65,
-          transition: 'width 60ms linear, height 60ms linear, opacity 60ms linear',
+          width: '70px',
+          height: '40px',
         }}
-      />
+      >
+        {/* 下唇（微微凸起的弧形） */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '2px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: `${28 + openness * 14}px`,
+            height: `${4 + openness * 8}px`,
+            background: openness < 0.05
+              ? 'rgba(160,80,60,0.3)'
+              : `linear-gradient(to bottom, rgba(180,90,70,0.7) 0%, rgba(140,60,50,0.85) 50%, rgba(100,40,35,0.9) 100%)`,
+            borderRadius: '50%',
+            transition: 'width 50ms ease, height 50ms ease, background 50ms ease',
+          }}
+        />
 
-      {/* 上唇高光（增加立体感） */}
-      <div
-        className="absolute pointer-events-none"
-        style={{
-          top: '21.5%',
-          left: '50%',
-          width: `${20 + openness * 6}px`,
-          height: '3px',
-          transform: 'translateX(-50%)',
-          background: `rgba(200,150,120,${openness * 0.4})`,
-          borderRadius: '2px',
-          transition: 'background 60ms linear, width 60ms linear',
-        }}
-      />
+        {/* 口腔开口（深色椭圆形，模拟张嘴） */}
+        <div
+          style={{
+            position: 'absolute',
+            top: `${8 + (1 - openness) * 4}px`,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: `${18 + openness * 20}px`,
+            height: `${openness * 26}px`,
+            background: openness < 0.06
+              ? 'rgba(20,5,5,0)'
+              : `radial-gradient(ellipse at 50% 30%, rgba(25,5,5,0.95) 0%, rgba(60,10,10,0.8) 60%, rgba(40,8,8,0.6) 100%)`,
+            borderRadius: '50%',
+            opacity: openness < 0.06 ? 0 : 1,
+            transition: 'width 45ms ease, height 45ms ease, opacity 45ms ease, top 45ms ease',
+          }}
+        />
+
+        {/* 上唇（两侧翼 + 唇弓） */}
+        <div
+          style={{
+            position: 'absolute',
+            top: `${6 + (1 - openness) * 5}px`,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: `${22 + openness * 16}px`,
+            height: `${3 + openness * 6}px`,
+            background: openness < 0.05
+              ? 'rgba(170,85,65,0.25)'
+              : `linear-gradient(to bottom, rgba(190,95,70,0.8) 0%, rgba(170,80,60,0.9) 100%)`,
+            borderRadius: openness < 0.1 ? '50%' : `${50 + (1 - openness) * 50}%`,
+            clipPath: openness < 0.1 ? 'none' : 'inset(0 15% 40% 15% round 50%)',
+            transition: 'width 50ms ease, height 50ms ease, background 50ms ease, border-radius 50ms ease',
+          }}
+        />
+
+        {/* 上唇唇弓高光（左右两个小高光点） */}
+        <div style={{ position: 'absolute', top: '5px', left: '50%', transform: 'translateX(-50%)', width: '30px', height: '8px' }}>
+          <div style={{
+            position: 'absolute', left: '2px', top: '2px',
+            width: '6px', height: '3px',
+            background: `rgba(255,200,180,${openness * 0.5})`,
+            borderRadius: '50%',
+            transition: 'background 50ms ease',
+          }} />
+          <div style={{
+            position: 'absolute', right: '2px', top: '2px',
+            width: '6px', height: '3px',
+            background: `rgba(255,200,180,${openness * 0.5})`,
+            borderRadius: '50%',
+            transition: 'background 50ms ease',
+          }} />
+        </div>
+
+        {/* 牙齿（张嘴较大时可见） */}
+        {openness > 0.55 && (
+          <div
+            style={{
+              position: 'absolute',
+              top: `${10 + (1 - openness) * 3}px`,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: `${12 + openness * 10}px`,
+              height: `${Math.min((openness - 0.55) * 30, 10)}px`,
+              background: 'linear-gradient(to bottom, rgba(245,240,235,0.95) 0%, rgba(230,225,220,0.9) 100%)',
+              borderRadius: '2px 2px 1px 1px',
+              opacity: 0.85,
+              transition: 'height 40ms ease, width 40ms ease',
+            }}
+          />
+        )}
+      </div>
 
       {/* 表情动画层（眨眼 + 头部倾斜 + 环境光效） */}
       <motion.div

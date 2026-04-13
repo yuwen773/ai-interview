@@ -101,19 +101,57 @@ export function useLipSync(): UseLipSyncReturn & {
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
-    const tick = () => {
+    // 辅助数组（避免每帧分配）
+  const timeDataRef = { current: new Uint8Array(0) };
+
+  const tick = () => {
       if (!analyserRef.current) return;
-      analyserRef.current.getByteFrequencyData(dataArray);
-      const avg = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
-      // 非线性映射：让低音量时嘴型动画仍然可见
-      const norm = Math.pow(avg / 100, 0.7);
-      // 响应速度：开口快(0.3旧+0.7新)，闭口慢(0.7旧+0.3新)
+      const analyser = analyserRef.current;
+      const freqData = dataArray;
+      analyser.getByteFrequencyData(freqData);
+
+      // --- 改进1: 聚焦语音频率范围 (300Hz~3kHz) ---
+      // fftSize=256 → bin宽 ≈ sampleRate/256 ≈ 172Hz
+      // bin[2] ≈ 344Hz, bin[17] ≈ 2924Hz, 取 2~17 (共16个bin)
+      const SPEECH_BIN_START = 2;
+      const SPEECH_BIN_END = 17;
+      let speechSum = 0;
+      let speechCount = 0;
+      for (let i = SPEECH_BIN_START; i <= SPEECH_BIN_END && i < bufferLength; i++) {
+        speechSum += freqData[i];
+        speechCount++;
+      }
+      const speechAvg = speechCount > 0 ? speechSum / speechCount : 0;
+
+      // --- 改进2: 结合时域 RMS 获得更准确的口型能量 ---
+      // 初始化时分配正确大小的数组
+      if (timeDataRef.current.length !== analyser.fftSize) {
+        timeDataRef.current = new Uint8Array(analyser.fftSize);
+      }
+      analyser.getByteTimeDomainData(timeDataRef.current);
+      let rmsSum = 0;
+      for (let i = 0; i < timeDataRef.current.length; i++) {
+        const v = (timeDataRef.current[i] - 128) / 128;
+        rmsSum += v * v;
+      }
+      const rms = Math.sqrt(rmsSum / timeDataRef.current.length);
+
+      // --- 改进3: 混合频率和 RMS，频率主导、RMS 补细节 ---
+      // freqPart: 频率成分（主导，开启灵敏）
+      const freqPart = Math.pow(speechAvg / 90, 0.6);
+      // rmsPart: 音量包络（辅助，让微小声也有动画）
+      const rmsPart = Math.pow(rms / 0.15, 0.5);
+      // 混合：频率权重 0.7，RMS 权重 0.3
+      const combined = freqPart * 0.7 + rmsPart * 0.3;
+
+      // --- 改进4: 自适应平滑系数（开口极快、闭口稍快） ---
       const prev = prevValueRef.current;
-      const smoothed = norm > prev
-        ? prev * 0.3 + norm * 0.7
-        : prev * 0.7 + norm * 0.3;
+      // 新算法：开口极快(0.15旧+0.85新)，闭口也快(0.5旧+0.5新)
+      const alpha = combined > prev ? 0.15 : 0.5;
+      const smoothed = prev + (combined - prev) * (1 - alpha);
       const clamped = Math.min(Math.max(smoothed, 0), 1);
-      if (Math.abs(clamped - prev) > 0.005) {
+
+      if (Math.abs(clamped - prev) > 0.008) {
         setMouthOpen(clamped);
       }
       prevValueRef.current = clamped;
