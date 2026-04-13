@@ -3,6 +3,8 @@ import { fetchQuestionAudioBlob } from '../utils/interviewVoiceAudio';
 
 interface UseQuestionVoicePlayerOptions {
   onError?: (message: string) => void;
+  /** 音频元素就绪回调，用于对接唇同步等分析工具 */
+  onAudioElement?: (audio: HTMLAudioElement, isPlaying: boolean) => void;
 }
 
 interface PlayQuestionOptions {
@@ -20,7 +22,7 @@ interface UseQuestionVoicePlayerReturn {
 export function useQuestionVoicePlayer(
   options: UseQuestionVoicePlayerOptions = {}
 ): UseQuestionVoicePlayerReturn {
-  const { onError } = options;
+  const { onError, onAudioElement } = options;
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -49,24 +51,28 @@ export function useQuestionVoicePlayer(
     audioRef.current = audio;
     audio.onended = () => {
       setIsPlaying(false);
+      onAudioElement?.(audio, false);
     };
     await audio.play();
     setIsPlaying(true);
+    onAudioElement?.(audio, true);
     return true;
-  }, []);
+  }, [onAudioElement]);
 
   const stopPlayback = useCallback(() => {
+    const audio = audioRef.current;
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current.src = '';
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.src = '';
+      onAudioElement?.(audio, false);
       audioRef.current = null;
     }
     setIsPlaying(false);
     setIsLoading(false);
-  }, []);
+  }, [onAudioElement]);
 
   const playQuestion = useCallback(async (text: string, options: PlayQuestionOptions) => {
     const trimmedText = text.trim();
