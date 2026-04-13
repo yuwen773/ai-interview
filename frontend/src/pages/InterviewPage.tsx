@@ -529,7 +529,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       <div className="flex gap-6 h-[calc(100vh-200px)]">
         {/* 左侧：场景区域 */}
         <div className="flex-1 relative rounded-xl overflow-hidden">
-          <InterviewRoomScene avatarId={JOB_AVATAR_MAP[selectedJobRole] ?? 'navtalk.Ethan'} mode={interviewerMode} mouthOpen={mouthOpen}>
+          <InterviewRoomScene avatarId={selectedJobRole ? (JOB_AVATAR_MAP[selectedJobRole] ?? 'navtalk.Ethan') : 'navtalk.Ethan'} mode={interviewerMode} mouthOpen={mouthOpen}>
             {/* 底部控制栏作为 children */}
             <InterviewControlPanel
               mode={interviewerMode}
