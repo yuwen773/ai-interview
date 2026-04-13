@@ -48,21 +48,15 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
     return 0;
   }, [mode, thinkingAngle]);
 
-  const filterStyle = useMemo(() => {
-    switch (mode) {
-      case 'listening': return 'brightness(1.05)';
-      case 'thinking':   return 'brightness(0.98)';
-      case 'speaking':   return 'brightness(1.02)';
-      default:          return 'brightness(1)';
-    }
-  }, [mode]);
-
   const avatarInitial = avatarId.split('.')[1]?.[0] ?? 'I';
+
+  // 口型开度：clamp 到 [0, 1]，非说话状态归零
+  const openness = mode === 'speaking' ? Math.min(Math.max(mouthOpen, 0), 1) : 0;
 
   return (
     <div className={`ah-character-avatar ${className}`} style={{ position: 'relative', overflow: 'hidden', width: '100%', height: '100%' }}>
 
-      {/* 头像层：图片或 CSS fallback（始终占满容器） */}
+      {/* 头像层 */}
       {imageFailed ? (
         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-slate-700 to-slate-900">
           <div className="w-full h-full rounded-t-3xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
@@ -80,42 +74,81 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
         />
       )}
 
-      {/* 动态视频层（初始隐藏） */}
+      {/* 动态视频层（NavTalk WebRTC 接入后使用，初始隐藏） */}
       <video
         id="character-avatar-video"
         className="absolute inset-0 w-full h-full"
         style={{ objectFit: 'cover', objectPosition: 'center top', display: 'none' }}
       />
 
-      {/* 表情动画层 */}
+      {/* ── 口型动画层 ── */}
+      {/* 说话时整体面部光晕（提升"活感"，不需要精确定位） */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          top: '8%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '65%',
+          height: '35%',
+          borderRadius: '50%',
+          background: `radial-gradient(ellipse, rgba(255,215,160,${openness * 0.18}) 0%, transparent 70%)`,
+          transition: 'background 80ms linear',
+        }}
+      />
+
+      {/* 嘴部开合叠加层：深色椭圆随 mouthOpen 放大 */}
+      {/* NavTalk 角色为半身像，嘴部约在容器 top 22-25% */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          top: '22%',
+          left: '50%',
+          // 宽度随开度微变，高度随开度大幅变化（模拟张嘴）
+          width: `${24 + openness * 8}px`,
+          height: `${Math.max(2, openness * 22)}px`,
+          transform: 'translateX(-50%)',
+          background: 'radial-gradient(ellipse at 50% 40%, rgba(18,6,6,0.82) 0%, rgba(90,22,22,0.35) 65%, transparent 100%)',
+          borderRadius: '50%',
+          opacity: openness < 0.05 ? 0 : 0.25 + openness * 0.65,
+          transition: 'width 60ms linear, height 60ms linear, opacity 60ms linear',
+        }}
+      />
+
+      {/* 上唇高光（增加立体感） */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          top: '21.5%',
+          left: '50%',
+          width: `${20 + openness * 6}px`,
+          height: '3px',
+          transform: 'translateX(-50%)',
+          background: `rgba(200,150,120,${openness * 0.4})`,
+          borderRadius: '2px',
+          transition: 'background 60ms linear, width 60ms linear',
+        }}
+      />
+
+      {/* 表情动画层（眨眼 + 头部倾斜 + 环境光效） */}
       <motion.div
         className="absolute inset-0 pointer-events-none"
         animate={{ rotate: headTilt }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
-        style={{ filter: filterStyle }}
       >
         {/* 眨眼遮罩 */}
         <AnimatePresence>
           {isBlinking && (
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.1 }}
-              className="absolute inset-0 bg-gradient-to-b from-transparent via-[#fcd5b8]/20 to-transparent"
-              style={{ clipPath: 'polygon(0 35%, 100% 35%, 100% 42%, 0 42%)' }}
+              transition={{ duration: 0.08 }}
+              className="absolute inset-0"
+              style={{
+                background: 'linear-gradient(to bottom, transparent 30%, rgba(200,160,120,0.25) 37%, rgba(200,160,120,0.25) 42%, transparent 49%)',
+              }}
             />
           )}
         </AnimatePresence>
-
-        {/* 说话时嘴部动态 */}
-        {mode === 'speaking' && mouthOpen > 0.1 && (
-          <motion.div
-            className="absolute bottom-[28%] left-1/2 -translate-x-1/2"
-            animate={{ scale: [1, 1 + mouthOpen * 0.15, 1], opacity: mouthOpen * 0.4 }}
-            transition={{ duration: 0.15, repeat: Infinity, repeatType: 'reverse' }}
-          >
-            <div className="w-10 h-5 bg-gradient-to-b from-[#c94a4a]/40 to-transparent rounded-full blur-sm" />
-          </motion.div>
-        )}
 
         {/* 思考时光效 */}
         {mode === 'thinking' && (
@@ -128,14 +161,12 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
 
         {/* 倾听时光效 */}
         {mode === 'listening' && (
-          <div className="absolute inset-0 bg-gradient-to-t from-blue-500/10 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-blue-500/8 via-transparent to-transparent" />
         )}
       </motion.div>
 
       {/* 桌子前景 */}
-      <div className="absolute bottom-0 left-0 right-0 h-[25%] bg-gradient-to-t from-slate-800 via-slate-800/80 to-transparent">
-        <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-700/50 to-transparent" />
-      </div>
+      <div className="absolute bottom-0 left-0 right-0 h-[22%] bg-gradient-to-t from-slate-800 via-slate-800/70 to-transparent" />
 
       {/* 状态指示器 */}
       <AnimatePresence mode="wait">
@@ -144,20 +175,18 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
           initial={{ opacity: 0, scale: 0.8, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: -10 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20"
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20"
         >
-          <div className={`px-5 py-2.5 rounded-full border ${
-            mode === 'speaking'  ? 'bg-green-500/20 text-green-300 border-green-500/40'
-            : mode === 'listening' ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
-            : mode === 'thinking'  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-            : 'bg-slate-500/20 text-slate-300 border-slate-500/40'
+          <div className={`px-4 py-2 rounded-full border text-xs font-medium flex items-center gap-1.5 backdrop-blur-sm ${
+            mode === 'speaking'  ? 'bg-green-500/15 text-green-300 border-green-500/35'
+            : mode === 'listening' ? 'bg-blue-500/15 text-blue-300 border-blue-500/35'
+            : mode === 'thinking'  ? 'bg-amber-500/15 text-amber-300 border-amber-500/35'
+            : 'bg-slate-500/15 text-slate-400 border-slate-500/30'
           }`}>
-            <span className="text-sm font-medium flex items-center gap-2">
-              {mode === 'speaking'  && <><SpeakingIndicator />提问中</>}
-              {mode === 'listening' && <><ListeningIndicator />倾听中</>}
-              {mode === 'thinking'  && <><ThinkingIndicator />思考中</>}
-              {mode === 'idle'      && <><span className="w-2 h-2 rounded-full bg-slate-400" />待机中</>}
-            </span>
+            {mode === 'speaking'  && <><SpeakingIndicator />提问中</>}
+            {mode === 'listening' && <><ListeningIndicator />倾听中</>}
+            {mode === 'thinking'  && <><ThinkingIndicator />思考中</>}
+            {mode === 'idle'      && <><span className="w-1.5 h-1.5 rounded-full bg-slate-500" />待机</>}
           </div>
         </motion.div>
       </AnimatePresence>
@@ -167,11 +196,11 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
 
 function SpeakingIndicator() {
   return (
-    <div className="flex items-end gap-0.5 h-4">
+    <div className="flex items-end gap-0.5 h-3">
       {[0, 1, 2].map(i => (
-        <motion.div key={i} className="w-1 bg-green-400 rounded-full"
-          animate={{ height: ['4px', '12px', '4px'] }}
-          transition={{ duration: 0.4, repeat: Infinity, delay: i * 0.1 }}
+        <motion.div key={i} className="w-0.5 bg-green-400 rounded-full"
+          animate={{ height: ['3px', '10px', '3px'] }}
+          transition={{ duration: 0.4, repeat: Infinity, delay: i * 0.12 }}
         />
       ))}
     </div>
@@ -180,8 +209,8 @@ function SpeakingIndicator() {
 
 function ListeningIndicator() {
   return (
-    <motion.div className="w-4 h-4 rounded-full border-2 border-blue-400"
-      animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+    <motion.div className="w-3 h-3 rounded-full border border-blue-400"
+      animate={{ scale: [1, 1.25, 1], opacity: [0.5, 1, 0.5] }}
       transition={{ duration: 1.5, repeat: Infinity }}
     />
   );
@@ -189,8 +218,8 @@ function ListeningIndicator() {
 
 function ThinkingIndicator() {
   return (
-    <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }} className="w-4 h-4">
-      <div className="w-full h-full rounded-full border-2 border-amber-400 border-t-transparent" />
+    <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }} className="w-3 h-3">
+      <div className="w-full h-full rounded-full border border-amber-400 border-t-transparent" />
     </motion.div>
   );
 }

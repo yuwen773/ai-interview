@@ -1,11 +1,18 @@
 // frontend/src/components/InterviewRoom/InterviewRoomScene.tsx
 import { motion } from 'framer-motion';
 import { Interviewer2D, InterviewMode } from './Interviewer2D';
+import type { AvatarId } from '../../config/avatar-config';
 import './interviewRoom.css';
+
+const prefersReducedMotion =
+  typeof window !== 'undefined'
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    : false;
 
 interface InterviewRoomSceneProps {
   mode: InterviewMode;
   mouthOpen: number;
+  avatarId: AvatarId;
   className?: string;
   children?: React.ReactNode;
 }
@@ -13,6 +20,7 @@ interface InterviewRoomSceneProps {
 export function InterviewRoomScene({
   mode,
   mouthOpen,
+  avatarId,
   className = '',
   children
 }: InterviewRoomSceneProps) {
@@ -22,72 +30,33 @@ export function InterviewRoomScene({
       <div className="absolute inset-0">
         <img
           src="/images/interview-room.png"
-          alt="Interview Room"
+          alt=""
+          aria-hidden="true"
           className="w-full h-full object-cover"
         />
         {/* 背景遮罩 */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/30 via-slate-900/10 to-slate-900/50" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/20 via-slate-900/10 to-slate-900/60" />
       </div>
 
-      {/* 环境光效 */}
+      {/* 环境光效 - 简化 */}
       <div className="absolute inset-0 pointer-events-none">
-        {/* 顶部灯光 */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-48 bg-gradient-radial from-white/10 to-transparent blur-2xl" />
-        {/* 左侧暖光 */}
-        <div className="absolute top-1/3 left-0 w-64 h-64 bg-gradient-radial from-amber-500/5 to-transparent blur-3xl" />
-        {/* 右侧冷光 */}
-        <div className="absolute top-1/3 right-0 w-64 h-64 bg-gradient-radial from-blue-500/5 to-transparent blur-3xl" />
+        {/* 顶部柔和灯光 */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-40 bg-gradient-to-b from-white/5 to-transparent blur-3xl" />
+        {/* 底部暗角 */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-slate-900/60 to-transparent" />
       </div>
 
       {/* 面试官区域 */}
       <div className="absolute inset-0 flex items-end justify-center pb-0">
         <motion.div
-          className="relative w-[280px] md:w-[350px] lg:w-[400px] h-[70%] md:h-[75%]"
-          initial={{ opacity: 0, y: 50 }}
+          className="relative w-[320px] md:w-[420px] lg:w-[500px] h-[78%] md:h-[85%]"
+          initial={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
         >
-          <Interviewer2D mode={mode} mouthOpen={mouthOpen} />
+          <Interviewer2D mode={mode} mouthOpen={mouthOpen} avatarId={avatarId} />
         </motion.div>
       </div>
-
-      {/* 桌面层（前景遮罩） */}
-      <div className="absolute bottom-0 left-0 right-0 h-[20%] pointer-events-none">
-        {/* 桌面渐变 */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-800/90 to-transparent" />
-
-        {/* 桌面反光 */}
-        <motion.div
-          className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-slate-700/30 to-transparent"
-          animate={{
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-
-        {/* 桌面上的物品轮廓（装饰） */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-end gap-8 opacity-20">
-          {/* 简历/文件 */}
-          <div className="w-12 h-16 bg-white/10 rounded shadow-lg transform -rotate-3" />
-          {/* 笔 */}
-          <div className="w-2 h-14 bg-gradient-to-t from-slate-600 to-slate-400 rounded-full transform rotate-12" />
-          {/* 水杯 */}
-          <div className="w-6 h-8 bg-gradient-to-t from-slate-600 to-slate-500 rounded-b-lg" />
-        </div>
-      </div>
-
-      {/* 边框装饰 */}
-      <div className="absolute inset-0 border-4 border-slate-800/50 rounded-3xl pointer-events-none" />
-
-      {/* 角落装饰 */}
-      <div className="absolute top-4 left-4 w-8 h-8 border-l-2 border-t-2 border-slate-600/30 rounded-tl-lg" />
-      <div className="absolute top-4 right-4 w-8 h-8 border-r-2 border-t-2 border-slate-600/30 rounded-tr-lg" />
-      <div className="absolute bottom-4 left-4 w-8 h-8 border-l-2 border-b-2 border-slate-600/30 rounded-bl-lg" />
-      <div className="absolute bottom-4 right-4 w-8 h-8 border-r-2 border-b-2 border-slate-600/30 rounded-br-lg" />
 
       {/* 子元素（底部控制栏） */}
       {children && (

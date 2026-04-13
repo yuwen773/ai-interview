@@ -532,7 +532,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     );
 
     return (
-      <div className="flex gap-6 h-[calc(100vh-200px)]">
+      <div className="flex gap-6 h-[calc(100vh-100px)]">
         {/* 左侧：场景区域 */}
         <div className="flex-1 relative rounded-xl overflow-hidden">
           <InterviewRoomScene avatarId={selectedJobRole ? (JOB_AVATAR_MAP[selectedJobRole] ?? 'navtalk.Ethan') : 'navtalk.Ethan'} mode={interviewerMode} mouthOpen={mouthOpen}>
@@ -599,8 +599,9 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   };
 
     return (
-    <div className="pb-10">
-      {/* 页面头部 */}
+    <div className={stage === 'interview' ? '-mt-6' : 'pb-10'}>
+      {/* 页面头部：面试阶段隐藏，节省纵向空间 */}
+      {stage !== 'interview' && (
         <motion.div
         className="text-center mb-10"
         initial={{ opacity: 0, y: -20 }}
@@ -619,6 +620,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         </h1>
             <p className="text-slate-500 dark:text-slate-400">{stageSubtitles[stage]}</p>
       </motion.div>
+      )}
 
         <AnimatePresence mode="wait" initial={false}>
         {stage === 'config' && (
