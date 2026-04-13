@@ -21,6 +21,7 @@ import {InterviewRoomScene} from '../components/InterviewRoom/InterviewRoomScene
 import {InterviewControlPanel} from '../components/InterviewRoom/InterviewControlPanel';
 import {InterviewSubtitlePanel} from '../components/InterviewRoom/InterviewSubtitlePanel';
 import {getInterviewerMode} from '../utils/interviewMode';
+import {JOB_AVATAR_MAP} from '../config/avatar-config';
 
 type InterviewStage = 'config' | 'interview';
 
@@ -75,6 +76,7 @@ const INTERVIEW_PACKAGES: InterviewPackageOption[] = [
 
 export default function Interview({ resumeText, resumeId, onBack, onInterviewComplete }: InterviewProps) {
   const [stage, setStage] = useState<InterviewStage>('config');
+  const [configStep, setConfigStep] = useState<1 | 2>(1);
   const [jobRoles, setJobRoles] = useState<JobRoleDTO[]>([]);
   const [selectedJobRole, setSelectedJobRole] = useState<JobRole | null>(null);
   const [loadingRoles, setLoadingRoles] = useState(true);
@@ -93,6 +95,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const [unfinishedSession, setUnfinishedSession] = useState<InterviewSession | null>(null);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [forceCreateNew, setForceCreateNew] = useState(false);
+  const [voiceJustRecognized, setVoiceJustRecognized] = useState(false);
   const { isRecording, startRecording, stopRecording, clearRecording } = useRecording();
   const { mouthOpen } = useLipSync();
   const lastAutoPlayedQuestionRef = useRef<string | null>(null);
@@ -121,11 +124,18 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     windowSize: 3,
   });
 
+  // Reset config step when returning to config stage
+  useEffect(() => {
+    if (stage === 'config') {
+      setConfigStep(1);
+    }
+  }, [stage]);
+
   const cleanupSessionVoiceCache = useCallback(async (sessionId: string) => {
     try {
       await deleteSessionAudio(sessionId);
-    } catch (error) {
-      console.warn('question_voice_cache_cleanup_failed', { sessionId, error });
+    } catch {
+      // 静默处理缓存清理失败，不影响用户流程
     }
   }, []);
   const selectedPackage = INTERVIEW_PACKAGES.find((item) => item.id === selectedPackageId) ?? INTERVIEW_PACKAGES.find((item) => item.id === 'standard')!;
@@ -158,11 +168,14 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
           if (currentRole && roles.some((role) => role.code === currentRole)) {
             return currentRole;
           }
+          // Auto-select first role if none selected
+          if (roles.length > 0 && !currentRole) {
+            return roles[0].code;
+          }
           return null;
         });
       } catch (err) {
         if (!cancelled) {
-          console.error('加载面试配置失败', err);
           setError('加载岗位配置失败，请刷新后重试');
         }
       } finally {
@@ -189,6 +202,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     if (!unfinishedSession) return;
     setForceCreateNew(false);  // 重置强制创建标志
     setSelectedJobRole(unfinishedSession.jobRole);
+    setConfigStep(1);  // Reset to step 1
     restoreSession(unfinishedSession);
     setUnfinishedSession(null);
   };
@@ -196,6 +210,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const handleStartNew = () => {
     setUnfinishedSession(null);
     setForceCreateNew(true);  // 标记需要强制创建新会话
+    setConfigStep(1);  // Reset to step 1
   };
 
   const restoreSession = (sessionToRestore: InterviewSession) => {
@@ -282,9 +297,8 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
 
         setStage('interview');
       }
-    } catch (err) {
+    } catch {
       setError('创建面试失败，请重试');
-      console.error(err);
       setForceCreateNew(false);  // 出错时也重置标志
     } finally {
       createInFlightRef.current = false;
@@ -319,6 +333,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       });
 
       setAnswer('');
+      setVoiceJustRecognized(false);
       resetVoiceAnswer();
 
       if (response.hasNextQuestion && response.nextQuestion) {
@@ -340,7 +355,6 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     } catch (err) {
       setMessages(prev => prev.slice(0, -1));
       setError(getErrorMessage(err) || '提交答案失败，请重试');
-      console.error(err);
     } finally {
       submitInFlightRef.current = false;
       setIsSubmitting(false);
@@ -365,7 +379,6 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       await startRecording();
     } catch (err) {
       setError(getErrorMessage(err) || '无法开始录音');
-      console.error(err);
     }
   };
 
@@ -392,10 +405,10 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       // 识别结果回显到文字输入框，切换到文字模式让用户确认后提交
       setAnswer(response.recognizedText);
       setCandidateInputMode('text');
+      setVoiceJustRecognized(true);
     } catch (err) {
       resetVoiceAnswer();
       setError(getErrorMessage(err) || '语音识别失败，请重试或切回文字模式');
-      console.error(err);
     } finally {
       recognizeInFlightRef.current = false;
       setIsRecognizing(false);
@@ -415,9 +428,8 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       setShowCompleteConfirm(false);
       // 面试已完成，评估将在后台进行，跳转到面试记录页
       onInterviewComplete();
-    } catch (err) {
+    } catch {
       setError('提前交卷失败，请重试');
-      console.error(err);
     } finally {
       completeInFlightRef.current = false;
       setIsSubmitting(false);
@@ -495,6 +507,8 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         resumeText={resumeText}
         onBack={onBack}
         error={error}
+        configStep={configStep}
+        onStepChange={setConfigStep}
       />
     );
   };
@@ -514,8 +528,8 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     return (
       <div className="flex gap-6 h-[calc(100vh-200px)]">
         {/* 左侧：场景区域 */}
-        <div className="flex-1 relative rounded-2xl overflow-hidden shadow-lg">
-          <InterviewRoomScene mode={interviewerMode} mouthOpen={mouthOpen}>
+        <div className="flex-1 relative rounded-xl overflow-hidden">
+          <InterviewRoomScene avatarId={JOB_AVATAR_MAP[selectedJobRole] ?? 'navtalk.Ethan'} mode={interviewerMode} mouthOpen={mouthOpen}>
             {/* 底部控制栏作为 children */}
             <InterviewControlPanel
               mode={interviewerMode}
@@ -525,12 +539,27 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
               isSubmitting={isSubmitting}
               audioLevel={0}
               answer={answer}
-              onAnswerChange={setAnswer}
+              onAnswerChange={(text) => {
+                setAnswer(text);
+                // Clear the "just recognized" flag if user manually edits the text
+                if (voiceJustRecognized && text !== answer) {
+                  setVoiceJustRecognized(false);
+                }
+              }}
               onSubmit={handleSubmitAnswer}
               onStartRecording={handleStartRecording}
               onStopRecording={handleStopRecording}
               onStopInterview={handleCompleteEarly}
-              onCandidateInputModeChange={setCandidateInputMode}
+              onCandidateInputModeChange={(mode) => {
+                setCandidateInputMode(mode);
+                if (mode === 'voice') setVoiceJustRecognized(false);
+              }}
+              onReRecordVoice={() => {
+                setAnswer('');
+                setVoiceJustRecognized(false);
+                setCandidateInputMode('voice');
+              }}
+              voiceJustRecognized={voiceJustRecognized}
               error={error}
             />
           </InterviewRoomScene>
@@ -572,8 +601,8 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         animate={{ opacity: 1, y: 0 }}
       >
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 flex items-center justify-center gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center">
-            <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none">
+          <div className="w-12 h-12 bg-primary-500 rounded-xl flex items-center justify-center">
+            <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
