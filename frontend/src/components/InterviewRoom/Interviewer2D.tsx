@@ -16,6 +16,12 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
   const [isBlinking, setIsBlinking] = useState(false);
   const [breathPhase, setBreathPhase] = useState(0);
   const [thinkingAngle, setThinkingAngle] = useState(0);
+  const [imageFailed, setImageFailed] = useState(false);
+
+  // avatarId 变化时重置图片加载状态
+  useEffect(() => {
+    setImageFailed(false);
+  }, [avatarId]);
 
   // 随机眨眼
   useEffect(() => {
@@ -61,27 +67,35 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
   }, [mode]);
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`ah-character-avatar ${className}`} style={{ position: 'relative', overflow: 'hidden', width: '100%', height: '100%' }}>
       <motion.div
         className="relative"
         animate={{ rotate: headTilt, y: breathOffset }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
         style={{ filter: filterStyle }}
       >
-        {/* 双层叠加容器 — 对齐 NavTalk DigitalHuman.jsx */}
-        <div className="ah-character-avatar" style={{ position: 'relative', overflow: 'hidden', width: '100%', height: '100%' }}>
           {/* 静态图像层 */}
-          <img
-            id="character-static-image"
-            src={getAvatarImageUrl(avatarId)}
-            alt="Interviewer"
-            style={{
-              position: 'absolute', top: '50%', left: '50%',
-              width: '100%', height: '100%',
-              objectFit: 'cover',
-              transform: 'translate(-50%, -50%)',
-            }}
-          />
+          {imageFailed ? (
+            /* 图片加载失败时显示 CSS 占位头像 */
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-slate-700 to-slate-900">
+              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-5xl font-bold text-white shadow-lg">
+                {avatarId.split('.')[1]?.[0] ?? 'I'}
+              </div>
+            </div>
+          ) : (
+            <img
+              id="character-static-image"
+              src={getAvatarImageUrl(avatarId)}
+              alt="Interviewer"
+              onError={() => setImageFailed(true)}
+              style={{
+                position: 'absolute', top: '50%', left: '50%',
+                width: '100%', height: '100%',
+                objectFit: 'cover',
+                transform: 'translate(-50%, -50%)',
+              }}
+            />
+          )}
           {/* 动态视频层（初始隐藏） */}
           <video
             id="character-avatar-video"
@@ -130,7 +144,6 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
           {mode === 'listening' && (
             <div className="absolute inset-0 bg-gradient-to-t from-blue-500/5 via-transparent to-transparent" />
           )}
-        </div>
       </motion.div>
 
       {/* 桌子前景 */}
