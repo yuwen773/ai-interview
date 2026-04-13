@@ -97,7 +97,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const [forceCreateNew, setForceCreateNew] = useState(false);
   const [voiceJustRecognized, setVoiceJustRecognized] = useState(false);
   const { isRecording, startRecording, stopRecording, clearRecording } = useRecording();
-  const { mouthOpen, startAnalyzing, stopAnalyzing } = useLipSync();
+  const { mouthOpen, setAudioContext, _analyzeSource } = useLipSync();
   const lastAutoPlayedQuestionRef = useRef<string | null>(null);
   // 用 ref 做轻量级幂等保护，避免状态更新异步时同一动作被快速连点触发多次。
   const submitInFlightRef = useRef(false);
@@ -114,12 +114,11 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     stopPlayback: stopQuestionAudio
   } = useQuestionVoicePlayer({
     onError: handleQuestionVoiceError,
-    onAudioElement: (audio, isPlaying) => {
-      if (isPlaying) {
-        startAnalyzing(audio);
-      } else {
-        stopAnalyzing();
-      }
+    onAudioContextReady: (audioContext) => {
+      setAudioContext(audioContext);
+    },
+    onPlaybackStart: (source) => {
+      _analyzeSource(source);
     },
   });
   useQuestionVoicePrefetch({

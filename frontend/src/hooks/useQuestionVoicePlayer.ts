@@ -1,10 +1,21 @@
+/**
+ * useQuestionVoicePlayer - 题目语音播报 Hook
+ *
+ * 参考 NavTalk realtime.js 的 Web Audio 架构：
+ * - AudioContext + AudioBufferSourceNode 播放音频
+ * - 支持缓存和中断
+ */
 import { useCallback, useRef, useState } from 'react';
 import { fetchQuestionAudioBlob } from '../utils/interviewVoiceAudio';
 
 interface UseQuestionVoicePlayerOptions {
   onError?: (message: string) => void;
-  /** 音频元素就绪回调，用于对接唇同步等分析工具 */
-  onAudioElement?: (audio: HTMLAudioElement, isPlaying: boolean) => void;
+  /** AudioContext 就绪时回调，传入 ctx 用于建立分析链路 */
+  onAudioContextReady?: (audioContext: AudioContext) => void;
+  /** 播放开始时回调，传入当前 AudioBufferSourceNode 用于唇同步分析 */
+  onPlaybackStart?: (source: AudioBufferSourceNode) => void;
+  /** 播放结束时回调 */
+  onPlaybackEnd?: () => void;
 }
 
 interface PlayQuestionOptions {
@@ -22,80 +33,86 @@ interface UseQuestionVoicePlayerReturn {
 export function useQuestionVoicePlayer(
   options: UseQuestionVoicePlayerOptions = {}
 ): UseQuestionVoicePlayerReturn {
-  const { onError, onAudioElement } = options;
+  const { onError, onAudioContextReady, onPlaybackStart, onPlaybackEnd } = options;
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // AudioContext 和音频源由本 Hook 管理
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const currentSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const objectUrlRef = useRef<string | null>(null);
+  const audioCacheRef = useRef<Map<string, ArrayBuffer>>(new Map());
   const cachedQuestionTextRef = useRef<string | null>(null);
 
-  const cleanupAudio = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = '';
-      audioRef.current = null;
+  const getAudioContext = useCallback((): AudioContext => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      onAudioContextReady?.(audioContextRef.current);
     }
-    if (objectUrlRef.current) {
-      URL.revokeObjectURL(objectUrlRef.current);
-      objectUrlRef.current = null;
+    return audioContextRef.current;
+  }, [onAudioContextReady]);
+
+  const stopCurrentSource = useCallback(() => {
+    if (currentSourceRef.current) {
+      try {
+        currentSourceRef.current.onended = null;
+        currentSourceRef.current.stop();
+      } catch (_) {}
+      currentSourceRef.current = null;
     }
   }, []);
 
-  const playCachedAudio = useCallback(async () => {
-    if (!objectUrlRef.current) {
-      return false;
-    }
-
-    const audio = new Audio(objectUrlRef.current);
-    audioRef.current = audio;
-
-    // 等待 AudioContext 就绪（部分浏览器需要用户交互后才能播放）
-    let audioContextResume = false;
-    audio.onplay = () => {
-      setIsPlaying(true);
-      onAudioElement?.(audio, true);
-      audioContextResume = true;
-    };
-    audio.onended = () => {
-      setIsPlaying(false);
-      onAudioElement?.(audio, false);
-    };
-    audio.onerror = () => {
-      // audio 加载/播放错误，不静默丢弃
-      console.warn('[useQuestionVoicePlayer] audio error', audio.error);
-      setIsPlaying(false);
-      onAudioElement?.(audio, false);
-    };
-
-    try {
-      await audio.play();
-    } catch (err) {
-      // audio.play() 静默失败（AudioContext suspended / autoplay blocked）
-      // 此时 audio.onplay 不会触发，手动处理
-      if (!audioContextResume) {
-        console.warn('[useQuestionVoicePlayer] audio.play() rejected:', err);
-        setIsPlaying(false);
-        onAudioElement?.(audio, false);
-      }
-    }
-    return true;
-  }, [onAudioElement]);
-
   const stopPlayback = useCallback(() => {
-    const audio = audioRef.current;
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
-    if (audio) {
-      audio.pause();
-      audio.currentTime = 0;
-      audio.src = '';
-      onAudioElement?.(audio, false);
-      audioRef.current = null;
-    }
+    stopCurrentSource();
     setIsPlaying(false);
     setIsLoading(false);
-  }, [onAudioElement]);
+    onPlaybackEnd?.();
+  }, [stopCurrentSource, onPlaybackEnd]);
+
+  /**
+   * 播放 ArrayBuffer（NavTalk playPCM 逻辑）
+   * 使用 AudioContext.decodeAudioData + AudioBufferSourceNode
+   */
+  const playAudioBuffer = useCallback((buffer: ArrayBuffer) => {
+    const ctx = getAudioContext();
+
+    // 恢复 AudioContext（防止自动播放策略导致的 suspended 状态）
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+
+    stopCurrentSource();
+
+    ctx.decodeAudioData(
+      buffer,
+      (decoded) => {
+        const source = ctx.createBufferSource();
+        source.buffer = decoded;
+        source.connect(ctx.destination);
+
+        source.onended = () => {
+          currentSourceRef.current = null;
+          setIsPlaying(false);
+          onPlaybackEnd?.();
+        };
+
+        currentSourceRef.current = source;
+        source.start(0);
+
+        setIsPlaying(true);
+        // 通知外部开始分析（传入 source 建立分析链路）
+        onPlaybackStart?.(source);
+      },
+      (err) => {
+        console.error('[useQuestionVoicePlayer] decodeAudioData error:', err);
+        setIsPlaying(false);
+        onPlaybackEnd?.();
+        onError?.('题目语音解码失败');
+      }
+    );
+  }, [getAudioContext, stopCurrentSource, onPlaybackStart, onPlaybackEnd, onError]);
 
   const playQuestion = useCallback(async (text: string, options: PlayQuestionOptions) => {
     const trimmedText = text.trim();
@@ -105,15 +122,16 @@ export function useQuestionVoicePlayer(
     }
 
     const cacheKey = `${options.sessionId}:${options.questionIndex}:${trimmedText}`;
-    if (cachedQuestionTextRef.current === cacheKey && objectUrlRef.current) {
+
+    // 命中缓存：直接播放
+    if (cachedQuestionTextRef.current === cacheKey && audioCacheRef.current.has(cacheKey)) {
       stopPlayback();
-      await playCachedAudio();
+      playAudioBuffer(audioCacheRef.current.get(cacheKey)!);
       return;
     }
 
+    // 中止旧请求，开始新请求
     stopPlayback();
-    cleanupAudio();
-    cachedQuestionTextRef.current = null;
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
     setIsLoading(true);
@@ -124,30 +142,36 @@ export function useQuestionVoicePlayer(
         questionIndex: options.questionIndex,
         text: trimmedText,
       }, abortController.signal);
+
       if (abortController.signal.aborted) {
         return;
       }
-      const objectUrl = URL.createObjectURL(audioBlob);
-      objectUrlRef.current = objectUrl;
+
+      // Blob → ArrayBuffer（解码 MP3 数据）
+      const arrayBuffer = await audioBlob.arrayBuffer();
+
+      if (abortController.signal.aborted) {
+        return;
+      }
+
+      // 缓存并播放
+      audioCacheRef.current.set(cacheKey, arrayBuffer);
       cachedQuestionTextRef.current = cacheKey;
-      await playCachedAudio();
+      playAudioBuffer(arrayBuffer);
+
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
         return;
       }
-      cleanupAudio();
-      cachedQuestionTextRef.current = null;
+      console.error('[useQuestionVoicePlayer] playQuestion error:', error);
       onError?.(error instanceof Error ? error.message : '题目语音播放失败');
     } finally {
       if (abortControllerRef.current === abortController) {
         abortControllerRef.current = null;
       }
       setIsLoading(false);
-      if (!audioRef.current) {
-        setIsPlaying(false);
-      }
     }
-  }, [cleanupAudio, onError, playCachedAudio, stopPlayback]);
+  }, [stopPlayback, playAudioBuffer, onError]);
 
   return {
     isPlaying,
