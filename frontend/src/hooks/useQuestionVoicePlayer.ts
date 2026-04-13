@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { fetchQuestionAudioBlob } from '../utils/interviewVoiceAudio';
 
 interface UseQuestionVoicePlayerOptions {
@@ -49,13 +49,36 @@ export function useQuestionVoicePlayer(
 
     const audio = new Audio(objectUrlRef.current);
     audioRef.current = audio;
+
+    // 等待 AudioContext 就绪（部分浏览器需要用户交互后才能播放）
+    let audioContextResume = false;
+    audio.onplay = () => {
+      setIsPlaying(true);
+      onAudioElement?.(audio, true);
+      audioContextResume = true;
+    };
     audio.onended = () => {
       setIsPlaying(false);
       onAudioElement?.(audio, false);
     };
-    await audio.play();
-    setIsPlaying(true);
-    onAudioElement?.(audio, true);
+    audio.onerror = () => {
+      // audio 加载/播放错误，不静默丢弃
+      console.warn('[useQuestionVoicePlayer] audio error', audio.error);
+      setIsPlaying(false);
+      onAudioElement?.(audio, false);
+    };
+
+    try {
+      await audio.play();
+    } catch (err) {
+      // audio.play() 静默失败（AudioContext suspended / autoplay blocked）
+      // 此时 audio.onplay 不会触发，手动处理
+      if (!audioContextResume) {
+        console.warn('[useQuestionVoicePlayer] audio.play() rejected:', err);
+        setIsPlaying(false);
+        onAudioElement?.(audio, false);
+      }
+    }
     return true;
   }, [onAudioElement]);
 
@@ -125,8 +148,6 @@ export function useQuestionVoicePlayer(
       }
     }
   }, [cleanupAudio, onError, playCachedAudio, stopPlayback]);
-
-  useEffect(() => stopPlayback, [stopPlayback]);
 
   return {
     isPlaying,
