@@ -127,7 +127,7 @@ export default function GrowthCurvePage({ resumeId, onBack }: GrowthCurvePagePro
     return (
       <div className="flex items-center justify-center h-96">
         <motion.div
-          className="w-12 h-12 border-4 border-slate-200 dark:border-slate-600 border-t-primary-500 rounded-full"
+          className="w-12 h-12 border-4 border-[var(--color-surface-raised)] dark:border-[var(--color-border-dark)] border-t-[var(--color-primary)] rounded-full"
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
         />
@@ -139,7 +139,7 @@ export default function GrowthCurvePage({ resumeId, onBack }: GrowthCurvePagePro
     return (
       <div className="text-center py-20">
         <p className="text-red-500 mb-4">成长曲线加载失败，请返回重试</p>
-        <button onClick={onBack} className="px-6 py-2 bg-primary-500 text-white rounded-lg">返回详情</button>
+        <button onClick={onBack} className="px-6 py-2 bg-[var(--color-primary)] text-white rounded-lg">返回详情</button>
       </div>
     );
   }
@@ -150,15 +150,15 @@ export default function GrowthCurvePage({ resumeId, onBack }: GrowthCurvePagePro
         <div className="flex items-center gap-4 min-w-0">
           <motion.button
             onClick={onBack}
-            className="w-10 h-10 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-300 transition-all shadow-sm"
+            className="w-10 h-10 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] hover:text-[var(--color-text)] dark:hover:text-[var(--color-text-dark)] transition-all shadow-sm"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
             <ChevronLeft className="w-5 h-5" />
           </motion.button>
           <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">成长曲线</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <h2 className="text-xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">成长曲线</h2>
+            <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
               {resume?.filename || `简历 #${resumeId}`} · 按岗位查看面试得分趋势
             </p>
           </div>
@@ -166,20 +166,20 @@ export default function GrowthCurvePage({ resumeId, onBack }: GrowthCurvePagePro
       </div>
 
       {growthCurve.byJobRole.length === 0 ? (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-12 text-center">
-          <div className="w-16 h-16 mx-auto mb-6 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
-            <TrendingUp className="w-8 h-8 text-slate-400" />
+        <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-12 text-center">
+          <div className="w-16 h-16 mx-auto mb-6 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] rounded-full flex items-center justify-center">
+            <TrendingUp className="w-8 h-8 text-[var(--color-text-muted)]" />
           </div>
-          <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">暂无可展示的成长曲线</h3>
-          <p className="text-slate-500 dark:text-slate-400">完成至少一场已评分面试后，这里会显示按岗位分组的趋势线。</p>
+          <h3 className="text-xl font-semibold text-[var(--color-text)] dark:text-[var(--color-text-muted-dark)] mb-2">暂无可展示的成长曲线</h3>
+          <p className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">完成至少一场已评分面试后，这里会显示按岗位分组的趋势线。</p>
         </div>
       ) : (
         <>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 space-y-6 min-w-0">
+          <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-6 space-y-6 min-w-0">
             <div className="flex items-center justify-between gap-4 flex-wrap min-w-0">
               <div className="min-w-0">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">岗位得分趋势</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400">可按岗位显示或隐藏曲线</p>
+                <h3 className="text-lg font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">岗位得分趋势</h3>
+                <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">可按岗位显示或隐藏曲线</p>
               </div>
               <div className="flex gap-3 flex-wrap min-w-0">
                 {growthCurve.byJobRole.map(series => {
@@ -191,7 +191,7 @@ export default function GrowthCurvePage({ resumeId, onBack }: GrowthCurvePagePro
                       className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
                         active
                           ? 'border-transparent text-white'
-                          : 'border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900'
+                          : 'border-[var(--color-border)] dark:border-[var(--color-border-dark)] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]'
                       }`}
                       style={active ? { backgroundColor: ROLE_COLORS[series.jobRole] || '#6366f1' } : undefined}
                     >
@@ -205,7 +205,7 @@ export default function GrowthCurvePage({ resumeId, onBack }: GrowthCurvePagePro
             <div ref={chartRef} className="w-full" style={{ height: 320 }}>
               <ResponsiveContainer width={chartDims.width || '100%'} height={320}>
                 <LineChart data={chartData} margin={{ top: 10, right: 24, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:stroke-slate-700" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:stroke-[var(--color-border-dark)]" />
                   <XAxis dataKey="displayDate" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
                   <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
                   <Tooltip
@@ -241,9 +241,9 @@ export default function GrowthCurvePage({ resumeId, onBack }: GrowthCurvePagePro
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {summaryCards.map(card => (
-              <div key={card.jobRole} className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
+              <div key={card.jobRole} className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-base font-semibold text-slate-900 dark:text-white">{card.jobLabel}</span>
+                  <span className="text-base font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{card.jobLabel}</span>
                   <span
                     className="rounded-full px-3 py-1 text-xs font-medium text-white"
                     style={{ backgroundColor: ROLE_COLORS[card.jobRole] || '#6366f1' }}
@@ -252,7 +252,7 @@ export default function GrowthCurvePage({ resumeId, onBack }: GrowthCurvePagePro
                   </span>
                 </div>
                 <div className="flex items-end gap-3 mb-4">
-                  <span className="text-3xl font-bold text-slate-900 dark:text-white">{card.latestScore ?? '-'}</span>
+                  <span className="text-3xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{card.latestScore ?? '-'}</span>
                   <span className={`text-sm font-medium ${card.delta !== null && card.delta >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                     {card.delta === null ? '暂无变化' : `${card.delta >= 0 ? '+' : ''}${card.delta} 分`}
                   </span>
@@ -261,12 +261,12 @@ export default function GrowthCurvePage({ resumeId, onBack }: GrowthCurvePagePro
                   {card.latestCategories.length > 0 ? (
                     card.latestCategories.map((category: { category: string; score: number }) => (
                       <div key={`${card.jobRole}-${category.category}`} className="flex items-center justify-between text-sm">
-                        <span className="text-slate-500 dark:text-slate-400">{category.category}</span>
-                        <span className="font-medium text-slate-800 dark:text-slate-200">{category.score} 分</span>
+                        <span className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">{category.category}</span>
+                        <span className="font-medium text-[var(--color-text)] dark:text-[var(--color-text-muted-dark)]">{category.score} 分</span>
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-slate-500 dark:text-slate-400">最新一场暂无分类分数</p>
+                    <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">最新一场暂无分类分数</p>
                   )}
                 </div>
               </div>

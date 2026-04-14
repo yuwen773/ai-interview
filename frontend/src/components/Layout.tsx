@@ -56,20 +56,20 @@ export default function Layout() {
 
   return (
       <div
-          className="flex min-h-screen bg-[#faf8f5] dark:bg-[#0f1117]">
+          className="flex min-h-screen bg-[var(--color-bg)] dark:bg-[var(--color-bg-dark)]">
       {/* 左侧边栏 */}
           <aside
-              className="w-64 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-700 fixed h-screen left-0 top-0 z-50 flex flex-col">
+              className="w-64 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border-r border-[var(--color-border)] dark:border-[var(--color-border-dark)] fixed h-screen left-0 top-0 z-50 flex flex-col">
         {/* Logo */}
-              <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+              <div className="p-6 border-b border-[var(--color-border)] dark:border-[var(--color-border-dark)] flex items-center justify-between">
           <Link to="/upload" className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary-500 rounded-xl flex items-center justify-center text-white">
+            <div className="w-10 h-10 bg-[var(--color-primary)] rounded-xl flex items-center justify-center text-white">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
                 <span
-                    className="text-lg font-bold text-slate-800 dark:text-white tracking-tight block">AI Interview</span>
-                <span className="text-xs text-slate-400 dark:text-slate-500">智能面试助手</span>
+                    className="text-lg font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)] tracking-tight block">AI Interview</span>
+                <span className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">智能面试助手</span>
             </div>
           </Link>
         </div>
@@ -79,7 +79,7 @@ export default function Layout() {
                   <button
                       onClick={toggleTheme}
                       aria-label={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
-                      className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:outline-none"
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:outline-none"
                   >
                       {theme === 'dark' ? (
                           <>
@@ -102,7 +102,7 @@ export default function Layout() {
               <div key={group.id}>
                 {/* 分组标题 */}
                 <div className="px-3 mb-2">
-                  <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] uppercase tracking-wider">
                     {group.title}
                   </span>
                 </div>
@@ -117,14 +117,14 @@ export default function Layout() {
                         aria-current={active ? 'page' : undefined}
                         className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
                           ${active
-                            ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
-                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                            ? 'bg-[var(--color-primary-subtle)] dark:bg-[var(--color-primary-subtle-dark)] text-[var(--color-primary-hover)] dark:text-[var(--color-primary)]'
+                            : 'text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] hover:text-[var(--color-text)] dark:hover:text-[var(--color-text-dark)]'
                           }`}
                       >
                         <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
                           ${active
-                            ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 group-hover:text-slate-700 dark:group-hover:text-white'
+                            ? 'bg-[var(--color-primary-subtle)] dark:bg-[var(--color-primary-subtle-dark)] text-[var(--color-primary-hover)] dark:text-[var(--color-primary)]'
+                            : 'bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] group-hover:bg-[var(--color-surface-raised)] dark:group-hover:bg-[var(--color-surface-raised-dark)] group-hover:text-[var(--color-text)] dark:group-hover:text-[var(--color-text-dark)]'
                           }`}
                         >
                           <item.icon className="w-5 h-5" />
@@ -134,13 +134,13 @@ export default function Layout() {
                             {item.label}
                           </span>
                           {item.description && (
-                              <span className="text-xs text-slate-400 dark:text-slate-500 truncate block">
+                              <span className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] truncate block">
                               {item.description}
                             </span>
                           )}
                         </div>
                         {active && (
-                          <ChevronRight className="w-4 h-4 text-primary-400" />
+                          <ChevronRight className="w-4 h-4 text-[var(--color-primary)]" />
                         )}
                       </Link>
                     );
@@ -152,11 +152,11 @@ export default function Layout() {
         </nav>
 
         {/* 底部信息 */}
-              <div className="p-4 border-t border-slate-100 dark:border-slate-700">
+              <div className="p-4 border-t border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
                   <div
-                      className="px-3 py-2 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700">
-                      <p className="text-xs text-primary-600 dark:text-primary-400 font-medium">AI 面试助手</p>
-                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">专业面试训练平台</p>
+                      className="px-3 py-2 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] rounded-xl border border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
+                      <p className="text-xs text-[var(--color-primary-hover)] dark:text-[var(--color-primary)] font-medium">AI 面试助手</p>
+                      <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mt-0.5">专业面试训练平台</p>
           </div>
         </div>
       </aside>

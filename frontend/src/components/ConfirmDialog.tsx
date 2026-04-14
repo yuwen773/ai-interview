@@ -31,7 +31,7 @@ export default function ConfirmDialog({
 
   const variantStyles = {
     danger: 'bg-red-500 hover:bg-red-600 text-white',
-    primary: 'bg-primary-500 hover:bg-primary-600 text-white',
+    primary: 'bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white',
     warning: 'bg-amber-500 hover:bg-amber-600 text-white'
   };
 
@@ -45,7 +45,7 @@ export default function ConfirmDialog({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onCancel}
-            className="fixed inset-0 bg-slate-950/60 z-50"
+            className="fixed inset-0 bg-[var(--color-bg-dark)]/60 z-50"
           />
 
           {/* 对话框 */}
@@ -55,15 +55,15 @@ export default function ConfirmDialog({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6"
+              className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl shadow-2xl max-w-md w-full p-6"
             >
               {/* 标题 */}
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
+                <h3 className="text-xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-4">
                 {title}
               </h3>
 
               {/* 内容 */}
-                <div className="text-slate-600 dark:text-slate-300 mb-6">
+                <div className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mb-6">
                 {typeof message === 'string' ? (
                   message && <p className="whitespace-pre-line">{message}</p>
                 ) : (
@@ -78,7 +78,7 @@ export default function ConfirmDialog({
                   <motion.button
                     onClick={onCancel}
                     disabled={loading}
-                    className="px-5 py-2.5 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-5 py-2.5 border border-[var(--color-border)] dark:border-[var(--color-border-dark)] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] rounded-xl font-medium hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -113,4 +113,3 @@ export default function ConfirmDialog({
     </AnimatePresence>
   );
 }
-

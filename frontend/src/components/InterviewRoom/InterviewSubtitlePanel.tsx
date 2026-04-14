@@ -29,6 +29,10 @@ interface InterviewSubtitlePanelProps {
   onStopQuestionAudio: () => void;
 }
 
+/**
+ * InterviewSubtitlePanel — displays question progress, voice controls, and conversation history.
+ * Uses unified semantic tokens from index.css @theme.
+ */
 export function InterviewSubtitlePanel({
   session,
   currentQuestion,
@@ -52,49 +56,53 @@ export function InterviewSubtitlePanel({
   }, [session, currentQuestion]);
 
   return (
-    <div className="flex flex-col h-full bg-slate-800 rounded-xl border border-slate-700/50 overflow-hidden">
-      {/* 顶部控制区 */}
-      <div className="p-4 border-b border-slate-700/30 space-y-4">
-        {/* 进度条 */}
+    <div className="flex flex-col h-full bg-[var(--color-surface-raised)] dark:bg-[var(--color-bg-dark)] rounded-2xl border border-[var(--color-border)] dark:border-[var(--color-border-dark)] overflow-hidden">
+      {/* Header: progress + voice controls */}
+      <div className="px-6 pt-6 pb-5 space-y-5">
+        {/* Progress */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-slate-300">
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-sm font-medium text-[var(--color-text)] dark:text-[var(--color-text-dark)] tracking-tight">
               已答 {currentQuestion ? currentQuestion.questionIndex + 1 : 0} / {session.totalQuestions} 题
             </span>
-            <span className="text-sm text-slate-400">
+            <span className="text-sm font-medium text-[var(--color-primary-hover)] dark:text-[var(--color-primary)]">
               {Math.round(progress)}%
             </span>
           </div>
-          <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
+          <div className="h-0.5 bg-[var(--color-border)] dark:bg-[var(--color-border-dark)] rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-primary-500 rounded-full"
+              className="h-full bg-[var(--color-primary)] rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
+              transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
             />
           </div>
         </div>
 
-        {/* 题目语音播报控制 */}
-        <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-800/40 border border-slate-700/30 px-4 py-3">
-          <div className="flex items-center gap-3">
+        {/* Voice control pill */}
+        <div className="flex items-center justify-between gap-4 rounded-xl bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] px-5 py-4">
+          <div className="flex items-center gap-3.5">
             <button
               type="button"
               onClick={() => onQuestionVoiceEnabledChange(!questionVoiceEnabled)}
               disabled={isBusy}
               aria-label={questionVoiceEnabled ? '关闭题目语音播报' : '开启题目语音播报'}
               aria-pressed={questionVoiceEnabled}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:outline-none ${
-                questionVoiceEnabled ? 'bg-primary-500' : 'bg-slate-600'
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-200 focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:outline-none ${
+                questionVoiceEnabled
+                  ? 'bg-[var(--color-primary)]'
+                  : 'bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)]'
               } disabled:opacity-40 disabled:cursor-not-allowed`}
             >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${
-                questionVoiceEnabled ? 'translate-x-6' : 'translate-x-1'
-              }`} />
+              <motion.span
+                className="inline-block h-5 w-5 transform rounded-full bg-white shadow-sm"
+                animate={{ x: questionVoiceEnabled ? 22 : 2 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+              />
             </button>
             <div>
-              <p className="text-sm font-medium text-slate-300">题目播报</p>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)] tracking-tight">题目播报</p>
+              <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mt-0.5">
                 {isLoadingQuestionAudio
                   ? '生成中...'
                   : isPlayingQuestionAudio
@@ -105,19 +113,17 @@ export function InterviewSubtitlePanel({
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <motion.button
               type="button"
               onClick={onReplayQuestionAudio}
               disabled={isBusy || isLoadingQuestionAudio || !currentQuestion}
-              className="p-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              whileHover={isBusy || isLoadingQuestionAudio ? {} : { scale: 1.05 }}
-              whileTap={isBusy || isLoadingQuestionAudio ? {} : { scale: 0.95 }}
+              className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-[var(--color-border)] dark:border-[var(--color-border-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] hover:text-[var(--color-primary-hover)] dark:hover:text-[var(--color-primary)] hover:border-[var(--color-primary-border)] dark:hover:border-[var(--color-primary-border-dark)] hover:bg-[var(--color-primary-subtle)] dark:hover:bg-[var(--color-primary-subtle-dark)] transition-colors duration-150 disabled:opacity-35 disabled:cursor-not-allowed"
               title="播放题目"
             >
               {isLoadingQuestionAudio ? (
                 <motion.div
-                  className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full"
+                  className="w-4 h-4 border-2 border-[var(--color-border)] dark:border-[var(--color-border-dark)] border-t-[var(--color-primary)] rounded-full"
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                 />
@@ -129,9 +135,7 @@ export function InterviewSubtitlePanel({
               type="button"
               onClick={onStopQuestionAudio}
               disabled={!isPlayingQuestionAudio}
-              className="p-2 bg-slate-700/50 hover:bg-red-500/20 text-white hover:text-red-400 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              whileHover={isPlayingQuestionAudio ? { scale: 1.05 } : {}}
-              whileTap={isPlayingQuestionAudio ? { scale: 0.95 } : {}}
+              className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-[var(--color-border)] dark:border-[var(--color-border-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] hover:text-red-500 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-800 hover:bg-red-50 dark:hover:bg-red-950 transition-colors duration-150 disabled:opacity-35 disabled:cursor-not-allowed"
               title="停止播放"
             >
               <VolumeX className="w-4 h-4" />
@@ -139,27 +143,27 @@ export function InterviewSubtitlePanel({
           </div>
         </div>
 
-        {/* 错误提示 */}
+        {/* Error */}
         {error && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs"
+            className="px-4 py-2.5 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-xs font-medium"
           >
             {error}
           </motion.div>
         )}
       </div>
 
-      {/* 对话历史 */}
-      <div className="flex-1 overflow-hidden">
+      {/* Conversation history */}
+      <div className="flex-1 overflow-hidden border-t border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
         <Virtuoso
           data={messages}
           initialTopMostItemIndex={messages.length - 1}
           followOutput="smooth"
           className="h-full"
           itemContent={(_index, msg) => (
-            <div className="px-4 py-3 first:pt-4">
+            <div className="px-6 py-4">
               <MessageBubble message={msg} />
             </div>
           )}
@@ -173,24 +177,25 @@ function MessageBubble({ message }: { message: Message }) {
   if (message.type === 'interviewer') {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.2 }}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1] }}
         className="flex items-start gap-3"
       >
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
-          <span className="text-sm font-medium text-amber-400">AI</span>
+        {/* Avatar mark */}
+        <div className="w-8 h-8 rounded-lg bg-[var(--color-primary-subtle)] dark:bg-[var(--color-primary-subtle-dark)] border border-[var(--color-primary-border)] dark:border-[var(--color-primary-border-dark)] flex items-center justify-center flex-shrink-0 mt-0.5">
+          <span className="text-xs font-bold text-[var(--color-primary-hover)] dark:text-[var(--color-primary)]">AI</span>
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-xs font-medium text-slate-400">面试官</span>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-semibold text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] tracking-wide uppercase">面试官</span>
             {message.category && (
-              <span className="px-2 py-0.5 bg-amber-500/10 text-amber-400/80 text-xs rounded-full border border-amber-500/20">
+              <span className="px-2 py-0.5 bg-[var(--color-primary-subtle)] dark:bg-[var(--color-primary-subtle-dark)] text-[var(--color-primary-hover)] dark:text-[var(--color-primary)] text-xs font-medium rounded border border-[var(--color-primary-border)] dark:border-[var(--color-primary-border-dark)]">
                 {message.category}
               </span>
             )}
           </div>
-          <div className="bubble-interviewer px-4 py-3 text-slate-200 text-sm leading-relaxed">
+          <div className="text-sm leading-relaxed text-[var(--color-text)] dark:text-[var(--color-text-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-xl rounded-tl-sm px-4 py-3">
             {message.content}
           </div>
         </div>
@@ -200,18 +205,18 @@ function MessageBubble({ message }: { message: Message }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.2 }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1] }}
       className="flex items-start gap-3 justify-end"
     >
-      <div className="flex-1 max-w-[85%] min-w-0">
-        <div className="bubble-user px-4 py-3 text-slate-200 text-sm leading-relaxed">
+      <div className="flex-1 max-w-[82%] min-w-0">
+        <div className="bg-[var(--color-bubble-user)] dark:bg-[var(--color-bubble-user-dark)] text-white rounded-xl rounded-tr-sm px-4 py-3 text-sm leading-relaxed">
           {message.content}
         </div>
       </div>
-      <div className="w-8 h-8 rounded-xl bg-slate-800/60 border border-slate-700/30 flex items-center justify-center flex-shrink-0">
-        <span className="text-sm font-medium text-slate-400">我</span>
+      <div className="w-8 h-8 rounded-lg bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] flex items-center justify-center flex-shrink-0 mt-0.5">
+        <span className="text-xs font-bold text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">我</span>
       </div>
     </motion.div>
   );

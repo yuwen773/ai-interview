@@ -44,7 +44,8 @@ interface InterviewChatPanelProps {
 }
 
 /**
- * 面试聊天面板组件
+ * InterviewChatPanel — 主对话面板，使用统一的 stone/amber 暖色语义 token。
+ * 设计规范：温暖中性 + 琥珀金强调，Calm/precise/confident 品牌调性。
  */
 export default function InterviewChatPanel({
   session,
@@ -78,7 +79,7 @@ export default function InterviewChatPanel({
   error
 }: InterviewChatPanelProps) {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
-  // 把提交、识别、录音统一视为忙碌态，避免多个入口各自漏掉禁用条件。
+  // 把提交、识别、录音统一视为忙碌态
   const isBusy = isSubmitting || isRecognizing || isRecording;
 
   const progress = useMemo(() => {
@@ -88,10 +89,7 @@ export default function InterviewChatPanel({
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      // 快捷键和按钮提交共用同一层防护，避免键盘操作绕过禁用态。
-      if (isBusy) {
-        return;
-      }
+      if (isBusy) return;
       if (candidateInputMode === 'voice' && recognizedText.trim()) {
         onSubmitRecognizedAnswer();
         return;
@@ -102,18 +100,19 @@ export default function InterviewChatPanel({
 
   return (
     <div className="flex flex-col h-[calc(100vh-200px)] max-w-4xl mx-auto">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 mb-4 shadow-sm dark:shadow-slate-900/50 border border-slate-100 dark:border-slate-700">
+      {/* 进度卡片 */}
+      <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-6 mb-4 shadow-sm border border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+          <span className="text-sm font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
             已答 {currentQuestion ? currentQuestion.questionIndex + 1 : 0} / {session.totalQuestions} 题
           </span>
-          <span className="text-sm text-slate-500 dark:text-slate-400">
+          <span className="text-sm text-[var(--color-primary)] dark:text-[var(--color-primary)]">
             {Math.round(progress)}%
           </span>
         </div>
-        <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+        <div className="h-2 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-primary-500 to-primary-600 rounded-full"
+            className="h-full bg-[var(--color-primary)] rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.3 }}
@@ -121,7 +120,8 @@ export default function InterviewChatPanel({
         </div>
       </div>
 
-      <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl shadow-sm dark:shadow-slate-900/50 overflow-hidden flex flex-col min-h-0 border border-slate-100 dark:border-slate-700">
+      {/* 主面板 */}
+      <div className="flex-1 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-0 border border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
         <Virtuoso
           ref={virtuosoRef}
           data={messages}
@@ -135,18 +135,20 @@ export default function InterviewChatPanel({
           )}
         />
 
-        <div className="border-t border-slate-200 dark:border-slate-600 p-4 bg-slate-50 dark:bg-slate-700/50 space-y-4">
+        {/* 输入区域 */}
+        <div className="border-t border-[var(--color-border)] dark:border-[var(--color-border-dark)] p-4 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] space-y-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex gap-3 flex-wrap">
-              <div className="inline-flex rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 p-1">
+              {/* 输入模式切换 */}
+              <div className="inline-flex rounded-xl bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] p-1">
                 <button
                   type="button"
                   onClick={() => onCandidateInputModeChange('text')}
                   disabled={isBusy}
                   className={`px-4 py-2 text-sm rounded-lg transition-colors ${
                     candidateInputMode === 'text'
-                      ? 'bg-primary-500 text-white'
-                      : 'text-slate-600 dark:text-slate-300'
+                      ? 'bg-[var(--color-primary)] text-white'
+                      : 'text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]'
                   }`}
                 >
                   文字回答
@@ -157,14 +159,15 @@ export default function InterviewChatPanel({
                   disabled={isBusy}
                   className={`px-4 py-2 text-sm rounded-lg transition-colors ${
                     candidateInputMode === 'voice'
-                      ? 'bg-primary-500 text-white'
-                      : 'text-slate-600 dark:text-slate-300'
+                      ? 'bg-[var(--color-primary)] text-white'
+                      : 'text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]'
                   }`}
                 >
                   语音回答
                 </button>
               </div>
-              <div className="inline-flex rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 p-1">
+              {/* 题目语音播报开关 */}
+              <div className="inline-flex rounded-xl bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] p-1">
                 <button
                   type="button"
                   role="switch"
@@ -173,12 +176,12 @@ export default function InterviewChatPanel({
                   disabled={isBusy}
                   className={`px-4 py-2 text-sm rounded-lg transition-colors flex items-center gap-2 ${
                     questionVoiceEnabled
-                      ? 'bg-primary-500 text-white'
-                      : 'text-slate-600 dark:text-slate-300'
+                      ? 'bg-[var(--color-primary)] text-white'
+                      : 'text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]'
                   }`}
                 >
                   <span className={`inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                    questionVoiceEnabled ? 'bg-white/30' : 'bg-slate-300 dark:bg-slate-600'
+                    questionVoiceEnabled ? 'bg-white/30' : 'bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)]'
                   }`}>
                     <span className={`h-4 w-4 rounded-full bg-white transition-transform ${
                       questionVoiceEnabled ? 'translate-x-4' : 'translate-x-0.5'
@@ -191,7 +194,7 @@ export default function InterviewChatPanel({
             <motion.button
               onClick={() => onShowCompleteConfirm(true)}
               disabled={isBusy}
-              className="px-6 py-3 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-medium hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              className="px-6 py-3 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] rounded-xl font-medium hover:bg-[var(--color-border)] dark:hover:bg-[var(--color-border-dark)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm border border-[var(--color-border)] dark:border-[var(--color-border-dark)]"
               whileHover={{ scale: isBusy ? 1 : 1.02 }}
               whileTap={{ scale: isBusy ? 1 : 0.98 }}
             >
@@ -199,8 +202,9 @@ export default function InterviewChatPanel({
             </motion.button>
           </div>
 
+          {/* 错误提示 */}
           {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300 space-y-3">
+            <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 px-4 py-3 text-sm text-red-600 dark:text-red-400 space-y-3">
               <p>{error}</p>
               {candidateInputMode === 'voice' && !isRecording && (
                 <div className="flex gap-2 flex-wrap">
@@ -208,7 +212,7 @@ export default function InterviewChatPanel({
                     type="button"
                     onClick={onRetryVoiceAnswer}
                     disabled={isBusy}
-                    className="px-3 py-2 rounded-lg bg-red-100 text-red-700 transition-colors hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-900/40 dark:text-red-200 dark:hover:bg-red-900/60"
+                    className="px-3 py-2 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-200 transition-colors hover:bg-red-200 dark:hover:bg-red-900/60 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     重试语音
                   </button>
@@ -216,7 +220,7 @@ export default function InterviewChatPanel({
                     type="button"
                     onClick={onSwitchToTextMode}
                     disabled={isBusy}
-                    className="px-3 py-2 rounded-lg bg-white text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                    className="px-3 py-2 rounded-lg bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)] transition-colors hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] disabled:opacity-50 disabled:cursor-not-allowed border border-[var(--color-border)] dark:border-[var(--color-border-dark)]"
                   >
                     切回文字作答
                   </button>
@@ -225,10 +229,11 @@ export default function InterviewChatPanel({
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3">
+          {/* 题目语音播报控制 */}
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] dark:border-[var(--color-border-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] px-4 py-3">
             <div>
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">题目语音播报</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-sm font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">题目语音播报</p>
+              <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                 {isLoadingQuestionAudio
                   ? '正在生成题目语音...'
                   : isPlayingQuestionAudio
@@ -243,7 +248,7 @@ export default function InterviewChatPanel({
                 type="button"
                 onClick={onReplayQuestionAudio}
                 disabled={isBusy || isLoadingQuestionAudio}
-                className="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 whileHover={{ scale: isBusy || isLoadingQuestionAudio ? 1 : 1.02 }}
                 whileTap={{ scale: isBusy || isLoadingQuestionAudio ? 1 : 0.98 }}
               >
@@ -254,7 +259,7 @@ export default function InterviewChatPanel({
                 type="button"
                 onClick={onStopQuestionAudio}
                 disabled={!isPlayingQuestionAudio && !isLoadingQuestionAudio}
-                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-4 py-2 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] rounded-lg text-sm font-medium hover:bg-[var(--color-border)] dark:hover:bg-[var(--color-border-dark)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 border border-[var(--color-border)] dark:border-[var(--color-border-dark)]"
                 whileHover={{ scale: !isPlayingQuestionAudio && !isLoadingQuestionAudio ? 1 : 1.02 }}
                 whileTap={{ scale: !isPlayingQuestionAudio && !isLoadingQuestionAudio ? 1 : 0.98 }}
               >
@@ -264,6 +269,7 @@ export default function InterviewChatPanel({
             </div>
           </div>
 
+          {/* 文字回答模式 */}
           {candidateInputMode === 'text' ? (
             <div className="flex gap-3">
               <textarea
@@ -271,14 +277,14 @@ export default function InterviewChatPanel({
                 onChange={(e) => onAnswerChange(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="输入你的回答... (Ctrl/Cmd + Enter 提交)"
-                className="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+                className="flex-1 px-4 py-3 border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-none bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)] placeholder-[var(--color-text-placeholder)] dark:placeholder-[var(--color-text-placeholder-dark)]"
                 rows={3}
                 disabled={isSubmitting || isRecognizing}
               />
               <motion.button
                 onClick={onSubmit}
                 disabled={!answer.trim() || isSubmitting || isRecognizing}
-                className="px-6 py-3 bg-primary-500 text-white rounded-xl font-medium hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 self-start"
+                className="px-6 py-3 bg-[var(--color-primary)] text-white rounded-xl font-medium hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 self-start"
                 whileHover={{ scale: isSubmitting || isRecognizing || !answer.trim() ? 1 : 1.02 }}
                 whileTap={{ scale: isSubmitting || isRecognizing || !answer.trim() ? 1 : 0.98 }}
               >
@@ -300,18 +306,19 @@ export default function InterviewChatPanel({
               </motion.button>
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-500 bg-white/80 dark:bg-slate-800/80 p-4 space-y-4">
+            /* 语音回答模式 */
+            <div className="rounded-2xl border border-dashed border-[var(--color-border)] dark:border-[var(--color-border-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] p-4 space-y-4">
               {!recognizedText ? (
                 <>
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div>
-                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">录音并识别后再提交</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                      <p className="text-sm font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">录音并识别后再提交</p>
+                      <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                         录音结束后会先展示识别文本，你确认或编辑后才会推进下一题。
                       </p>
                     </div>
                     {audioUrl && !isRecording && !isRecognizing && (
-                      <span className="text-xs text-slate-500 dark:text-slate-400">录音已完成，可重新录制</span>
+                      <span className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">录音已完成，可重新录制</span>
                     )}
                   </div>
                   <div className="flex gap-3 flex-wrap">
@@ -329,7 +336,7 @@ export default function InterviewChatPanel({
                       <motion.button
                         onClick={onStartRecording}
                         disabled={isRecognizing || isSubmitting || isLoadingQuestionAudio}
-                        className="px-5 py-3 bg-primary-500 text-white rounded-xl font-medium hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="px-5 py-3 bg-[var(--color-primary)] text-white rounded-xl font-medium hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         whileHover={{ scale: isRecognizing || isSubmitting || isLoadingQuestionAudio ? 1 : 1.02 }}
                         whileTap={{ scale: isRecognizing || isSubmitting || isLoadingQuestionAudio ? 1 : 0.98 }}
                       >
@@ -337,7 +344,7 @@ export default function InterviewChatPanel({
                         开始录音
                       </motion.button>
                     )}
-                    <div className="px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-sm text-slate-600 dark:text-slate-300">
+                    <div className="px-4 py-3 rounded-xl bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
                       {isRecording ? '录音中...' : isRecognizing ? '正在识别语音...' : audioUrl ? '录音已完成，等待识别结果或重新录音' : '尚未录音'}
                     </div>
                   </div>
@@ -345,16 +352,16 @@ export default function InterviewChatPanel({
               ) : (
                 <>
                   <div>
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">识别结果</p>
+                    <p className="text-sm font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-2">识别结果</p>
                     <textarea
                       value={recognizedText}
                       onChange={(e) => onRecognizedTextChange(e.target.value)}
                       onKeyDown={handleKeyPress}
                       rows={4}
                       disabled={isSubmitting}
-                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+                      className="w-full px-4 py-3 border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-none bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)] placeholder-[var(--color-text-placeholder)] dark:placeholder-[var(--color-text-placeholder-dark)]"
                     />
-                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                    <p className="mt-2 text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                       可以直接修改识别文本，确认无误后再提交。
                     </p>
                   </div>
@@ -362,7 +369,7 @@ export default function InterviewChatPanel({
                     <motion.button
                       onClick={onSubmitRecognizedAnswer}
                       disabled={!recognizedText.trim() || isSubmitting}
-                      className="px-5 py-3 bg-primary-500 text-white rounded-xl font-medium hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      className="px-5 py-3 bg-[var(--color-primary)] text-white rounded-xl font-medium hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                       whileHover={{ scale: isSubmitting || !recognizedText.trim() ? 1 : 1.02 }}
                       whileTap={{ scale: isSubmitting || !recognizedText.trim() ? 1 : 0.98 }}
                     >
@@ -372,7 +379,7 @@ export default function InterviewChatPanel({
                     <motion.button
                       onClick={onRetryVoiceAnswer}
                       disabled={isSubmitting || isRecognizing}
-                      className="px-5 py-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-medium hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      className="px-5 py-3 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] rounded-xl font-medium hover:bg-[var(--color-border)] dark:hover:bg-[var(--color-border-dark)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 border border-[var(--color-border)] dark:border-[var(--color-border-dark)]"
                       whileHover={{ scale: isSubmitting || isRecognizing ? 1 : 1.02 }}
                       whileTap={{ scale: isSubmitting || isRecognizing ? 1 : 0.98 }}
                     >
@@ -398,19 +405,20 @@ function MessageBubble({ message }: { message: Message }) {
         animate={{ opacity: 1, x: 0 }}
         className="flex items-start gap-3"
       >
-        <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900/50 rounded-full flex items-center justify-center flex-shrink-0">
-          <User className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+        {/* Avatar */}
+        <div className="w-8 h-8 bg-[var(--color-primary-subtle)] dark:bg-[var(--color-primary-subtle-dark)] rounded-full flex items-center justify-center flex-shrink-0">
+          <User className="w-4 h-4 text-[var(--color-primary-hover)] dark:text-[var(--color-primary)]" />
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">面试官</span>
+            <span className="text-sm font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">面试官</span>
             {message.category && (
-              <span className="px-2 py-0.5 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-xs rounded-full">
+              <span className="px-2 py-0.5 bg-[var(--color-primary-subtle)] dark:bg-[var(--color-primary-subtle-dark)] text-[var(--color-primary-hover)] dark:text-[var(--color-primary)] text-xs rounded-full">
                 {message.category}
               </span>
             )}
           </div>
-          <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl rounded-tl-none p-4 text-slate-800 dark:text-slate-200 leading-relaxed">
+          <div className="bg-[var(--color-bubble-interviewer)] dark:bg-[var(--color-bubble-interviewer-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-2xl rounded-tl-sm p-4 text-[var(--color-text)] dark:text-[var(--color-text-dark)] leading-relaxed">
             {message.content}
           </div>
         </div>
@@ -425,12 +433,13 @@ function MessageBubble({ message }: { message: Message }) {
       className="flex items-start gap-3 justify-end"
     >
       <div className="flex-1 max-w-[80%]">
-        <div className="bg-primary-500 text-white rounded-2xl rounded-tr-none p-4 leading-relaxed">
+        <div className="bg-[var(--color-bubble-user)] dark:bg-[var(--color-bubble-user-dark)] text-white rounded-2xl rounded-tr-sm p-4 leading-relaxed">
           {message.content}
         </div>
       </div>
-      <div className="w-8 h-8 bg-slate-200 dark:bg-slate-600 rounded-full flex items-center justify-center flex-shrink-0">
-        <svg className="w-4 h-4 text-slate-600 dark:text-slate-300" viewBox="0 0 24 24" fill="none">
+      {/* User avatar */}
+      <div className="w-8 h-8 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] rounded-full flex items-center justify-center flex-shrink-0 border border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
+        <svg className="w-4 h-4 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]" viewBox="0 0 24 24" fill="none">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
         </svg>

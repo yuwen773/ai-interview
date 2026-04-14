@@ -58,8 +58,8 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
 
       {/* 头像层 */}
       {imageFailed ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-slate-700 to-slate-900">
-          <div className="w-full h-full rounded-t-3xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-stone-700 to-stone-900">
+          <div className="w-full h-full rounded-t-3xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
             <span className="text-8xl font-bold text-white drop-shadow-lg">{avatarInitial}</span>
           </div>
         </div>
@@ -109,7 +109,7 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
           height: '40px',
         }}
       >
-        {/* 下唇（微微凸起的弧形） - GPU-accelerated with transform */}
+        {/* 下唇（微微凸起的弧形） */}
         <div
           style={{
             position: 'absolute',
@@ -126,7 +126,7 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
           }}
         />
 
-        {/* 口腔开口（深色椭圆形，模拟张嘴） - GPU-accelerated */}
+        {/* 口腔开口（深色椭圆形，模拟张嘴） */}
         <div
           style={{
             position: 'absolute',
@@ -145,7 +145,7 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
           }}
         />
 
-        {/* 上唇（两侧翼 + 唇弓） - GPU-accelerated with transform */}
+        {/* 上唇（两侧翼 + 唇弓） */}
         <div
           style={{
             position: 'absolute',
@@ -182,7 +182,7 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
           }} />
         </div>
 
-        {/* 牙齿（张嘴较大时可见） - GPU-accelerated with transform */}
+        {/* 牙齿（张嘴较大时可见） */}
         {openness > 0.55 && (
           <div
             style={{
@@ -222,7 +222,7 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
           )}
         </AnimatePresence>
 
-        {/* 思考时光效 - 降低透明度范围并延长周期，减少AI感 */}
+        {/* 思考时光效 */}
         {mode === 'thinking' && (
           <motion.div
             className="absolute inset-0 bg-gradient-to-br from-amber-500/8 via-transparent to-transparent"
@@ -238,7 +238,7 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
       </motion.div>
 
       {/* 桌子前景 */}
-      <div className="absolute bottom-0 left-0 right-0 h-[22%] bg-gradient-to-t from-slate-800 via-slate-800/70 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-[22%] bg-gradient-to-t from-stone-800 via-stone-800/70 to-transparent" />
 
       {/* 状态指示器 */}
       <AnimatePresence mode="wait">
@@ -250,15 +250,15 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
           className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20"
         >
           <div className={`px-4 py-2 rounded-full border text-xs font-medium flex items-center gap-1.5 backdrop-blur-sm ${
-            mode === 'speaking'  ? 'bg-green-500/15 text-green-300 border-green-500/35'
-            : mode === 'listening' ? 'bg-blue-500/15 text-blue-300 border-blue-500/35'
+            mode === 'speaking'  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35'
+            : mode === 'listening' ? 'bg-sky-500/15 text-blue-300 border-blue-500/35'
             : mode === 'thinking'  ? 'bg-amber-500/15 text-amber-300 border-amber-500/35'
-            : 'bg-slate-500/15 text-slate-400 border-slate-500/30'
+            : 'bg-stone-500/15 text-stone-400 border-stone-500/30'
           }`}>
             {mode === 'speaking'  && <><SpeakingIndicator />提问中</>}
             {mode === 'listening' && <><ListeningIndicator />倾听中</>}
             {mode === 'thinking'  && <><ThinkingIndicator />思考中</>}
-            {mode === 'idle'      && <><span className="w-1.5 h-1.5 rounded-full bg-slate-500" />待机</>}
+            {mode === 'idle'      && <><span className="w-1.5 h-1.5 rounded-full bg-stone-500" />待机</>}
           </div>
         </motion.div>
       </AnimatePresence>
@@ -270,7 +270,7 @@ function SpeakingIndicator() {
   return (
     <div className="flex items-end gap-0.5 h-3">
       {[0, 1, 2].map(i => (
-        <motion.div key={i} className="w-0.5 bg-green-400 rounded-full"
+        <motion.div key={i} className="w-0.5 bg-emerald-400 rounded-full"
           animate={{ height: ['3px', '10px', '3px'] }}
           transition={{ duration: 0.4, repeat: Infinity, delay: i * 0.12 }}
         />

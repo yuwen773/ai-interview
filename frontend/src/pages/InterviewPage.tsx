@@ -740,8 +740,8 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 flex items-center justify-center gap-3">
-          <div className="w-12 h-12 bg-primary-500 rounded-xl flex items-center justify-center">
+            <h1 className="text-3xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-2 flex items-center justify-center gap-3">
+          <div className="w-12 h-12 bg-[var(--color-primary)] rounded-xl flex items-center justify-center">
             <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -751,7 +751,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
           </div>
           模拟面试
         </h1>
-            <p className="text-slate-500 dark:text-slate-400">{stageSubtitles[stage]}</p>
+            <p className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">{stageSubtitles[stage]}</p>
       </motion.div>
       )}
 

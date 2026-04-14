@@ -94,7 +94,7 @@ export default function AnalysisPanel({
       case '低':
         return 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400';
       default:
-        return 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300';
+        return 'bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] border-[var(--color-border)] dark:border-[var(--color-border-dark)] text-[var(--color-text)] dark:text-[var(--color-text-muted-dark)]';
     }
   };
 
@@ -107,7 +107,7 @@ export default function AnalysisPanel({
       case '低':
         return 'bg-blue-500 text-white';
       default:
-        return 'bg-slate-500 text-white';
+        return 'bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-white';
     }
   };
 
@@ -120,7 +120,7 @@ export default function AnalysisPanel({
       '结构': 'bg-cyan-100 dark:bg-cyan-900/50 text-cyan-700 dark:text-cyan-300',
       '表达': 'bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300'
     };
-    return colors[category] || 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300';
+    return colors[category] || 'bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text)] dark:text-[var(--color-text-muted-dark)]';
   };
 
   // 检测分析结果是否有效
@@ -145,7 +145,7 @@ export default function AnalysisPanel({
   if (isProcessing) {
     const isExplicitProcessing = analyzeStatus === 'PROCESSING';
     return (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-12 text-center">
+        <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-12 text-center">
           <div
               className="w-16 h-16 mx-auto mb-6 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center">
           {isExplicitProcessing ? (
@@ -154,15 +154,15 @@ export default function AnalysisPanel({
               <Clock className="w-8 h-8 text-yellow-500 dark:text-yellow-400"/>
           )}
         </div>
-          <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">
+          <h3 className="text-xl font-semibold text-[var(--color-text)] dark:text-[var(--color-text-muted-dark)] mb-2">
           {isExplicitProcessing ? 'AI 正在分析中...' : '等待分析'}
         </h3>
-          <p className="text-slate-500 dark:text-slate-400 mb-4">
+          <p className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mb-4">
           {isExplicitProcessing
             ? '请稍候，AI 正在对您的简历进行深度分析'
             : '简历已上传成功，即将开始 AI 分析'}
         </p>
-          <p className="text-sm text-slate-400 dark:text-slate-500">页面将自动刷新显示分析结果</p>
+          <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">页面将自动刷新显示分析结果</p>
       </div>
     );
   }
@@ -170,13 +170,13 @@ export default function AnalysisPanel({
   // 处理分析失败状态
   if (analyzeStatus === 'FAILED' || !isAnalysisValid) {
     return (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-12 text-center">
+        <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-12 text-center">
           <div
               className="w-16 h-16 mx-auto mb-6 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center">
             <AlertCircle className="w-8 h-8 text-red-500 dark:text-red-400"/>
         </div>
-          <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">分析失败</h3>
-          <p className="text-slate-500 dark:text-slate-400 mb-4">AI 服务暂时不可用，请稍后重试</p>
+          <h3 className="text-xl font-semibold text-[var(--color-text)] dark:text-[var(--color-text-muted-dark)] mb-2">分析失败</h3>
+          <p className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mb-4">AI 服务暂时不可用，请稍后重试</p>
         {(analyzeError || analysis?.summary) && (
             <div
                 className="mt-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-left mb-4">
@@ -187,7 +187,7 @@ export default function AnalysisPanel({
           <motion.button
             onClick={onReanalyze}
             disabled={reanalyzing}
-            className="px-6 py-2.5 bg-primary-500 text-white rounded-xl font-medium hover:bg-primary-600 transition-colors disabled:opacity-50 flex items-center gap-2 mx-auto"
+            className="px-6 py-2.5 bg-[var(--color-primary)] text-white rounded-xl font-medium hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50 flex items-center gap-2 mx-auto"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -211,20 +211,20 @@ export default function AnalysisPanel({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 核心评价 */}
         <motion.div
-            className="bg-white dark:bg-slate-800 rounded-2xl p-6"
+            className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-2 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
               <TrendingUp className="w-5 h-5" />
               <span className="font-semibold">核心评价</span>
             </div>
             <motion.button
               onClick={onExport}
               disabled={exporting}
-              className="px-4 py-2 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-all disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 border border-[var(--color-border)] dark:border-[var(--color-border-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-raised-dark)] rounded-lg text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] text-sm font-medium hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] transition-all disabled:opacity-50 flex items-center gap-2"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -234,21 +234,21 @@ export default function AnalysisPanel({
           </div>
 
           <div
-              className="bg-gradient-to-br from-emerald-50 dark:from-emerald-900/30 to-green-50 dark:to-slate-800 rounded-xl p-6">
-            <p className="text-lg text-slate-800 dark:text-white leading-relaxed mb-6">
+              className="bg-gradient-to-br from-emerald-50 dark:from-emerald-900/30 to-green-50 dark:to-[var(--color-surface-dark)] rounded-xl p-6">
+            <p className="text-lg text-[var(--color-text)] dark:text-[var(--color-text-dark)] leading-relaxed mb-6">
               {analysis.summary || '候选人具备扎实的技术基础，有大型项目架构经验。'}
             </p>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="bg-white dark:bg-slate-800 rounded-xl p-5">
+              <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl p-5">
                 <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 block mb-2">总分</span>
-                <span className="text-4xl font-bold text-slate-900 dark:text-white">{analysis.overallScore || 0}</span>
-                <span className="text-sm text-slate-500 dark:text-slate-400">/ 100</span>
+                <span className="text-4xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{analysis.overallScore || 0}</span>
+                <span className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">/ 100</span>
               </div>
-              <div className="bg-white dark:bg-slate-800 rounded-xl p-5">
+              <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl p-5">
                 <span
                     className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 block mb-2">分析时间</span>
-                <span className="text-sm text-slate-700 dark:text-slate-300">
+                <span className="text-sm text-[var(--color-text)] dark:text-[var(--color-text-muted-dark)]">
                   {formatDateTime(analysis.analyzedAt)}
                 </span>
               </div>
@@ -256,7 +256,7 @@ export default function AnalysisPanel({
 
             {/* 优势标签 */}
             {analysis.strengths && analysis.strengths.length > 0 && (
-                <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
+                <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl p-4">
                   <span
                       className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 block mb-3">优势亮点</span>
                 <div className="flex flex-wrap gap-2">
@@ -274,12 +274,12 @@ export default function AnalysisPanel({
 
         {/* 多维度评分雷达图 */}
         <motion.div
-            className="bg-white dark:bg-slate-800 rounded-2xl p-6"
+            className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-6">
+          <div className="flex items-center gap-2 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mb-6">
             <Target className="w-5 h-5" />
             <span className="font-semibold">多维度评分</span>
           </div>
@@ -330,15 +330,15 @@ export default function AnalysisPanel({
 
       {/* 改进建议 - 按优先级分类 */}
       <motion.div
-          className="bg-white dark:bg-slate-800 rounded-2xl p-6"
+          className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-6">
+        <div className="flex items-center gap-2 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mb-6">
           <CheckCircle2 className="w-5 h-5" />
           <span className="font-semibold">改进建议</span>
-          <span className="text-sm text-slate-400 dark:text-slate-500">
+          <span className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
             ({analysis.suggestions?.length || 0} 条)
           </span>
         </div>
@@ -381,7 +381,7 @@ export default function AnalysisPanel({
           )}
 
           {analysis.suggestions?.length === 0 && (
-              <div className="text-center py-8 text-slate-500 dark:text-slate-400">暂无改进建议</div>
+              <div className="text-center py-8 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">暂无改进建议</div>
           )}
         </div>
       </motion.div>
@@ -451,8 +451,8 @@ function SuggestionSection({
               </span>
             </div>
             <div className="mb-2">
-              <p className="font-semibold text-slate-900 dark:text-white mb-1">{s.issue || '问题描述'}</p>
-              <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">{s.recommendation || s}</p>
+              <p className="font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-1">{s.issue || '问题描述'}</p>
+              <p className="text-sm leading-relaxed text-[var(--color-text)] dark:text-[var(--color-text-muted-dark)]">{s.recommendation || s}</p>
             </div>
           </motion.div>
         ))}

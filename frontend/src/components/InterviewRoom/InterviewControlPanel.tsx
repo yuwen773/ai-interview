@@ -30,6 +30,10 @@ const prefersReducedMotion =
     ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
     : false;
 
+/**
+ * InterviewControlPanel — 面试控制栏，使用统一的 stone/amber 暖色语义 token。
+ * 深色背景使用 --color-surface-dark，暖色调替代 slate 冷色。
+ */
 export function InterviewControlPanel({
   mode,
   candidateInputMode,
@@ -51,9 +55,9 @@ export function InterviewControlPanel({
   const isIdle = mode === 'idle';
   const isBusy = isSubmitting || isRecognizing || isRecording;
 
-  // 状态配置 - 使用 Lucide 图标，颜色语义化
+  // 状态配置 - 使用语义化状态色（thinking/speaking/listening）
   const statusConfig = {
-    idle: { icon: null, text: '', color: 'text-slate-400', bgColor: '', borderColor: '' },
+    idle: { icon: null, text: '', color: 'text-stone-500', bgColor: '', borderColor: '' },
     thinking: {
       icon: Brain,
       text: '面试官正在思考...',
@@ -82,7 +86,7 @@ export function InterviewControlPanel({
 
   const status = statusConfig[mode] || statusConfig.idle;
 
-  // 动画配置 - 用户偏好减少动画时禁用
+  // 动画配置
   const iconAnimationProps = prefersReducedMotion
     ? {}
     : mode === 'thinking'
@@ -98,9 +102,9 @@ export function InterviewControlPanel({
   return (
     <div className="w-full">
       {/* 主控制栏 */}
-      <div className="relative bg-[#1a1d24] border border-slate-700/50 rounded-2xl p-4">
+      <div className="relative bg-[var(--color-surface-dark)] border border-[var(--color-border-dark)] rounded-2xl p-4">
         <div className="flex items-center justify-between gap-6">
-          {/* 左侧：状态区 — 紧凑单行显示，语义化背景 */}
+          {/* 左侧：状态区 */}
           <div className="flex-shrink-0">
             {mode !== 'idle' && (
               <AnimatePresence mode="wait">
@@ -133,7 +137,7 @@ export function InterviewControlPanel({
               </AnimatePresence>
             )}
             {mode === 'idle' && (
-              <div className="flex items-center gap-2 text-slate-500 text-sm px-3 py-1.5">
+              <div className="flex items-center gap-2 text-stone-500 text-sm px-3 py-1.5">
                 <MicOff className="w-4 h-4" />
                 等待开始面试...
               </div>
@@ -144,13 +148,13 @@ export function InterviewControlPanel({
           <div className="flex-1 max-w-2xl">
             {!isIdle && (
               <div className="flex items-center gap-4">
-                {/* 模式切换 — 安静的单按钮切换 */}
+                {/* 模式切换 */}
                 <button
                   type="button"
                   onClick={() => onCandidateInputModeChange(candidateInputMode === 'text' ? 'voice' : 'text')}
                   disabled={isBusy}
                   aria-label={candidateInputMode === 'text' ? '切换到语音输入' : '切换到文字输入'}
-                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-700/50 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:outline-none text-sm"
+                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-stone-400 hover:text-stone-200 hover:bg-stone-700/50 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:outline-none text-sm"
                 >
                   {candidateInputMode === 'text' ? (
                     <Keyboard className="w-3.5 h-3.5" />
@@ -188,7 +192,7 @@ export function InterviewControlPanel({
                             aria-label="回答内容"
                             disabled={isSubmitting || isRecognizing}
                             rows={1}
-                            className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/30 resize-none transition-all duration-200 disabled:opacity-50"
+                            className="w-full px-4 py-3 bg-[var(--color-surface-dark)] border border-[var(--color-border-dark)] rounded-xl text-[var(--color-text-dark)] placeholder-[var(--color-text-placeholder-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)]/30 resize-none transition-all duration-200 disabled:opacity-50"
                             style={{
                               minHeight: '44px',
                               maxHeight: '120px',
@@ -210,7 +214,7 @@ export function InterviewControlPanel({
                             </div>
                           )}
                           {!voiceJustRecognized && (
-                            <div className="mt-1.5 text-xs text-slate-500 text-center">
+                            <div className="mt-1.5 text-xs text-stone-500 text-center">
                               Tip: Ctrl+Enter 提交
                             </div>
                           )}
@@ -219,7 +223,7 @@ export function InterviewControlPanel({
                           onClick={onSubmit}
                           disabled={!answer.trim() || isSubmitting || isRecognizing}
                           aria-label="提交回答"
-                          className="px-5 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-xl font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                          className="px-5 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-xl font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
                           whileHover={!answer.trim() || isSubmitting || isRecognizing ? {} : { scale: 1.02 }}
                           whileTap={!answer.trim() || isSubmitting || isRecognizing ? {} : { scale: 0.98 }}
                         >
@@ -247,7 +251,7 @@ export function InterviewControlPanel({
                           className={`relative px-6 py-3 rounded-xl font-medium transition-all duration-200 flex items-center gap-2 ${
                             isRecording
                               ? 'bg-red-500 hover:bg-red-600 text-white'
-                              : 'bg-primary-500/20 hover:bg-primary-500/30 text-primary-400 border border-primary-500/30 disabled:opacity-40 disabled:cursor-not-allowed'
+                              : 'bg-[var(--color-primary)]/20 hover:bg-[var(--color-primary)]/30 text-[var(--color-primary)] border border-[var(--color-primary)]/30 disabled:opacity-40 disabled:cursor-not-allowed'
                           }`}
                           whileHover={isRecording ? { scale: 1.02 } : (isBusy || mode === 'thinking' || mode === 'speaking' ? {} : { scale: 1.02 })}
                           whileTap={isRecording ? { scale: 0.98 } : {}}
@@ -283,12 +287,12 @@ export function InterviewControlPanel({
                           {isRecording ? (
                             <VoiceWaveform audioLevel={audioLevel} />
                           ) : isRecognizing ? (
-                            <div className="flex items-center gap-2 text-slate-400 text-sm">
+                            <div className="flex items-center gap-2 text-stone-400 text-sm">
                               <Loader2 className="w-4 h-4 animate-spin" />
                               <span>正在识别...</span>
                             </div>
                           ) : (
-                            <div className="text-slate-500 text-sm">
+                            <div className="text-stone-500 text-sm">
                               点击麦克风开始说话
                             </div>
                           )}
@@ -308,7 +312,7 @@ export function InterviewControlPanel({
                 onClick={onStopInterview}
                 disabled={isSubmitting}
                 aria-label="结束面试"
-                className="px-4 py-2 text-slate-500 hover:text-red-400 rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed text-sm focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:outline-none"
+                className="px-4 py-2 text-stone-500 hover:text-red-400 rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed text-sm focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:outline-none"
                 whileHover={isSubmitting ? {} : { scale: 1.02 }}
                 whileTap={isSubmitting ? {} : { scale: 0.98 }}
               >
@@ -319,7 +323,7 @@ export function InterviewControlPanel({
         </div>
       </div>
 
-      {/* 错误提示 - 错误状态下更醒目的提示 */}
+      {/* 错误提示 */}
       <AnimatePresence>
         {error && (
           <motion.div
@@ -339,16 +343,15 @@ export function InterviewControlPanel({
   );
 }
 
-// 语音波形组件 - 使用确定性振荡替代 Math.random()
+// 语音波形组件
 function VoiceWaveform({ audioLevel }: { audioLevel: number }) {
   const bars = 20;
 
-  // 预计算每条 bar 的稳定高度值（使用 sin 振荡，无随机性）
   const barHeights = useMemo(() => {
     return Array.from({ length: bars }, (_, i) => {
       const normalized = i / bars;
-      const baseOscillation = Math.sin(normalized * Math.PI * 4) * 0.5 + 0.5; // 0~1 振荡
-      return 12 + baseOscillation * 24 + audioLevel * 60; // 12~96px 范围
+      const baseOscillation = Math.sin(normalized * Math.PI * 4) * 0.5 + 0.5;
+      return 12 + baseOscillation * 24 + audioLevel * 60;
     });
   }, [bars, audioLevel]);
 

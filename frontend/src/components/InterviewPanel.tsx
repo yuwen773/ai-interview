@@ -87,16 +87,16 @@ export default function InterviewPanel({
 
   if (interviews.length === 0) {
     return (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-12 text-center">
+        <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-12 text-center">
           <div
-              className="w-16 h-16 mx-auto mb-6 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
-          <Mic className="w-8 h-8 text-slate-400" />
+              className="w-16 h-16 mx-auto mb-6 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] rounded-full flex items-center justify-center">
+          <Mic className="w-8 h-8 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]" />
         </div>
-          <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">暂无面试记录</h3>
-          <p className="text-slate-500 dark:text-slate-400 mb-6">开始模拟面试，获取专业评估</p>
+          <h3 className="text-xl font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-2">暂无面试记录</h3>
+          <p className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mb-6">开始模拟面试，获取专业评估</p>
         <motion.button
           onClick={onStartInterview}
-          className="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-xl font-medium"
+          className="px-6 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-xl font-medium"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -111,38 +111,38 @@ export default function InterviewPanel({
       {/* 面试表现趋势图 */}
       {chartData.length > 0 && (
           <motion.div
-              className="bg-white dark:bg-slate-800 rounded-2xl p-6"
+              className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-primary-500" />
-              <span className="font-semibold text-slate-800 dark:text-white">面试表现趋势</span>
+              <TrendingUp className="w-5 h-5 text-[var(--color-primary)]" />
+              <span className="font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">面试表现趋势</span>
             </div>
-            <span className="text-sm text-slate-500 dark:text-slate-400">共 {chartData.length} 场练习</span>
+            <span className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">共 {chartData.length} 场练习</span>
           </div>
 
           <div ref={chartRef} className="w-full" style={{ height: 192 }}>
             <ResponsiveContainer width={chartDims.width || '100%'} height={192}>
               <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:stroke-slate-700"/>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis
                     dataKey="name"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#94a3b8', fontSize: 12 }}
+                  tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }}
                 />
                 <YAxis
                   domain={[0, 100]}
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#94a3b8', fontSize: 12 }}
+                  tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }}
                 />
                 <Tooltip
                     contentStyle={{
-                      backgroundColor: '#fff',
-                    border: '1px solid #e2e8f0',
+                      backgroundColor: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
                     borderRadius: '12px',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                   }}
@@ -151,10 +151,10 @@ export default function InterviewPanel({
                 <Line
                     type="monotone"
                     dataKey="score"
-                    stroke="#6366f1"
+                    stroke="var(--color-primary)"
                   strokeWidth={3}
-                  dot={{ fill: '#6366f1', strokeWidth: 2, r: 5 }}
-                  activeDot={{ r: 8, fill: '#6366f1' }}
+                  dot={{ fill: 'var(--color-primary)', strokeWidth: 2, r: 5 }}
+                  activeDot={{ r: 8, fill: 'var(--color-primary)' }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -164,13 +164,13 @@ export default function InterviewPanel({
 
       {/* 历史面试场次 */}
       <motion.div
-          className="bg-white dark:bg-slate-800 rounded-2xl p-6"
+          className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
         <div className="flex items-center justify-between mb-6">
-          <span className="font-semibold text-slate-800 dark:text-white">历史面试场次</span>
+          <span className="font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">历史面试场次</span>
         </div>
 
         <div className="space-y-4">
@@ -203,14 +203,14 @@ export default function InterviewPanel({
         />
 
         {loadingInterview && (
-            <div className="fixed inset-0 bg-slate-900/30 dark:bg-slate-950/60 flex items-center justify-center z-50">
-              <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 flex items-center gap-4">
+            <div className="fixed inset-0 bg-[var(--color-bg-dark)]/30 dark:bg-[var(--color-bg-dark)]/60 flex items-center justify-center z-50">
+              <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-6 flex items-center gap-4">
                 <motion.div
-                    className="w-8 h-8 border-3 border-slate-200 dark:border-slate-600 border-t-primary-500 rounded-full"
+                    className="w-8 h-8 border-3 border-[var(--color-border)] dark:border-[var(--color-border-dark)] border-t-[var(--color-primary)] rounded-full"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               />
-                <span className="text-slate-600 dark:text-slate-300">加载面试详情...</span>
+                <span className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">加载面试详情...</span>
             </div>
           </div>
         )}
@@ -245,28 +245,28 @@ function InterviewItemCard({
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.1 }}
       onClick={onView}
-      className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors group"
+      className="flex items-center gap-4 p-4 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] rounded-xl hover:bg-[var(--color-surface-raised)]/80 dark:hover:bg-[var(--color-surface-raised-dark)] cursor-pointer transition-colors group"
     >
       {/* 得分 */}
       <div className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg ${
-        interview.overallScore !== null 
+        interview.overallScore !== null
           ? getScoreColor(interview.overallScore, [85, 70])
-            : 'bg-slate-100 dark:bg-slate-600 text-slate-400'
+            : 'bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]'
       }`}>
         {interview.overallScore ?? '-'}
       </div>
 
       {/* 信息 */}
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-slate-800 dark:text-white truncate">
+        <p className="font-medium text-[var(--color-text)] dark:text-[var(--color-text-dark)] truncate">
           模拟面试 #{total - index}
         </p>
         {interview.jobLabel && (
-          <p className="mt-1 text-xs font-medium text-primary-600 dark:text-primary-400">
+          <p className="mt-1 text-xs font-medium text-[var(--color-primary-hover)] dark:text-[var(--color-primary)]">
             {interview.jobLabel}
           </p>
         )}
-        <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
+        <div className="flex items-center gap-4 text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
           <span className="flex items-center gap-1">
             <Calendar className="w-4 h-4" />
             {formatDateOnly(interview.createdAt)}
@@ -284,7 +284,7 @@ function InterviewItemCard({
       <motion.button
         onClick={(e) => { e.stopPropagation(); onExport(); }}
         disabled={exporting}
-        className="px-3 py-2 text-slate-400 hover:text-primary-500 hover:bg-white dark:hover:bg-slate-600 rounded-lg transition-all"
+        className="px-3 py-2 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] hover:text-[var(--color-primary)] hover:bg-[var(--color-surface)] dark:hover:bg-[var(--color-surface-dark)] rounded-lg transition-all"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
@@ -312,7 +312,7 @@ function InterviewItemCard({
 
       {/* 箭头 */}
       <ChevronRight
-          className="w-5 h-5 text-slate-300 dark:text-slate-600 group-hover:text-primary-500 group-hover:translate-x-1 transition-all flex-shrink-0"/>
+          className="w-5 h-5 text-[var(--color-border)] dark:text-[var(--color-border-dark)] group-hover:text-[var(--color-primary)] group-hover:translate-x-1 transition-all flex-shrink-0"/>
     </motion.div>
   );
 }

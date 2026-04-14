@@ -285,7 +285,7 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
     return (
       <div className="flex items-center justify-center h-96">
           <motion.div
-              className="w-12 h-12 border-4 border-slate-200 dark:border-slate-600 border-t-primary-500 rounded-full"
+              className="w-12 h-12 border-4 border-[var(--color-surface-raised)] dark:border-[var(--color-border-dark)] border-t-[var(--color-primary)] rounded-full"
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         />
@@ -297,7 +297,7 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
     return (
       <div className="text-center py-20">
         <p className="text-red-500 mb-4">加载失败，请返回重试</p>
-        <button onClick={onBack} className="px-6 py-2 bg-primary-500 text-white rounded-lg">返回列表</button>
+        <button onClick={onBack} className="px-6 py-2 bg-[var(--color-primary)] text-white rounded-lg">返回列表</button>
       </div>
     );
   }
@@ -319,17 +319,17 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
         <div className="flex items-center gap-4">
             <motion.button
             onClick={detailView === 'interviewDetail' ? handleBackToInterviewList : onBack}
-            className="w-10 h-10 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-300 transition-all shadow-sm"
+            className="w-10 h-10 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] hover:text-[var(--color-text)] dark:hover:text-[var(--color-text-dark)] transition-all shadow-sm"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
             <ChevronLeft className="w-5 h-5" />
           </motion.button>
           <div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+              <h2 className="text-xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
               {detailView === 'interviewDetail' ? `面试详情 #${selectedInterview?.sessionId?.slice(-6) || ''}` : resume.filename}
             </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] flex items-center gap-1.5">
               <Clock className="w-4 h-4" />
                   {detailView === 'interviewDetail'
                 ? `完成于 ${formatDateOnly(selectedInterview?.completedAt || selectedInterview?.createdAt || '')}`
@@ -337,7 +337,7 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
               }
             </p>
             {detailView === 'interviewDetail' && selectedInterview?.jobLabel && (
-              <p className="mt-2 text-sm font-medium text-primary-600 dark:text-primary-400">
+              <p className="mt-2 text-sm font-medium text-[var(--color-primary-hover)] dark:text-[var(--color-primary)]">
                 岗位：{selectedInterview.jobLabel}
               </p>
             )}
@@ -349,7 +349,7 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
             <>
               <motion.button
                 onClick={() => void handlePreviewOpen()}
-                className="px-5 py-2.5 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-50 transition-all flex items-center gap-2"
+                className="px-5 py-2.5 border border-[var(--color-border)] dark:border-[var(--color-border-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] font-medium hover:bg-[var(--color-surface-raised)] transition-all flex items-center gap-2"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -358,7 +358,7 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
               </motion.button>
               <motion.button
                 onClick={onViewGrowth}
-                className="px-5 py-2.5 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-50 transition-all flex items-center gap-2"
+                className="px-5 py-2.5 border border-[var(--color-border)] dark:border-[var(--color-border-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] font-medium hover:bg-[var(--color-surface-raised)] transition-all flex items-center gap-2"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -371,7 +371,7 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
             <motion.button
               onClick={() => handleExportInterviewPdf(selectedInterview.sessionId)}
               disabled={exporting === selectedInterview.sessionId}
-              className="px-5 py-2.5 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-50 transition-all disabled:opacity-50 flex items-center gap-2"
+              className="px-5 py-2.5 border border-[var(--color-border)] dark:border-[var(--color-border-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] font-medium hover:bg-[var(--color-surface-raised)] transition-all disabled:opacity-50 flex items-center gap-2"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -382,7 +382,7 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
           {detailView !== 'interviewDetail' && (
             <motion.button
               onClick={() => onStartInterview(resume.resumeText, resumeId)}
-              className="px-5 py-2.5 bg-primary-500 hover:bg-primary-600 text-white rounded-xl font-medium transition-all flex items-center gap-2"
+              className="px-5 py-2.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-xl font-medium transition-all flex items-center gap-2"
               whileHover={{ scale: 1.02, y: -1 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -395,20 +395,20 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
 
       {/* 标签页切换 - 仅在非面试详情时显示 */}
       {detailView !== 'interviewDetail' && (
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-2 mb-6 inline-flex gap-1">
+          <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-2 mb-6 inline-flex gap-1">
           {tabs.map((tab) => (
             <motion.button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
               className={`relative px-6 py-3 rounded-xl font-medium flex items-center gap-2 transition-colors
-                ${activeTab === tab.id ? 'text-primary-600 dark:text-primary-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+                ${activeTab === tab.id ? 'text-[var(--color-primary-hover)] dark:text-[var(--color-primary)]' : 'text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] hover:text-[var(--color-text)] dark:hover:text-[var(--color-text-dark)]'}`}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
               {activeTab === tab.id && (
                 <motion.div
                   layoutId="activeTab"
-                  className="absolute inset-0 bg-primary-50 dark:bg-primary-900 rounded-xl"
+                  className="absolute inset-0 bg-[var(--color-primary-subtle)] dark:bg-[var(--color-primary-subtle-dark)] rounded-xl"
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}
@@ -417,7 +417,7 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
                 {tab.label}
                 {tab.count !== undefined && tab.count > 0 && (
                     <span
-                        className="px-2 py-0.5 bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400 text-xs rounded-full">{tab.count}</span>
+                        className="px-2 py-0.5 bg-[var(--color-primary-subtle)] dark:bg-[var(--color-primary-subtle-dark)] text-[var(--color-primary-hover)] dark:text-[var(--color-primary)] text-xs rounded-full">{tab.count}</span>
                 )}
               </span>
             </motion.button>

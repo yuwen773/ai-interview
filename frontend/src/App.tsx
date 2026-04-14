@@ -18,7 +18,7 @@ const KnowledgeBaseManagePage = lazy(() => import('./pages/KnowledgeBaseManagePa
 // Loading component
 const Loading = () => (
   <div className="flex items-center justify-center min-h-[50vh]">
-    <div className="w-10 h-10 border-3 border-slate-200 border-t-primary-500 rounded-full animate-spin" />
+    <div className="w-10 h-10 border-3 border-[var(--color-border)] border-t-[var(--color-primary)] rounded-full animate-spin" />
   </div>
 );
 
@@ -144,8 +144,8 @@ function InterviewWrapper() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="w-10 h-10 border-3 border-slate-200 border-t-primary-500 rounded-full mx-auto mb-4 animate-spin" />
-          <p className="text-slate-500">加载中...</p>
+          <div className="w-10 h-10 border-3 border-[var(--color-border)] border-t-[var(--color-primary)] rounded-full mx-auto mb-4 animate-spin" />
+          <p className="text-[var(--color-text-muted)]">加载中...</p>
         </div>
       </div>
     );

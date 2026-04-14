@@ -70,14 +70,14 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
       <div className="flex justify-between items-start mb-10 flex-wrap gap-6">
         <div>
             <motion.h1
-                className="text-4xl font-bold text-slate-900 dark:text-white mb-2"
+                className="text-4xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-2"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
           >
             简历库
           </motion.h1>
             <motion.p
-                className="text-slate-500 dark:text-slate-400"
+                className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
@@ -87,11 +87,11 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
         </div>
 
           <motion.div
-              className="flex items-center gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 min-w-[280px] focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-100 transition-all"
+              className="flex items-center gap-3 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-xl px-4 py-3 min-w-[280px] focus-within:border-[var(--color-primary)] focus-within:ring-2 focus-within:ring-[var(--color-primary-subtle)] transition-all"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
         >
-          <svg className="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none">
+          <svg className="w-5 h-5 text-[var(--color-text-muted)]" viewBox="0 0 24 24" fill="none">
             <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
             <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
           </svg>
@@ -100,7 +100,7 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
             placeholder="搜索简历..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 outline-none text-slate-700 placeholder:text-slate-400"
+            className="flex-1 outline-none text-[var(--color-text-muted)] placeholder:text-[var(--color-text-placeholder)]"
           />
         </motion.div>
       </div>
@@ -109,23 +109,23 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
       {loading && (
         <div className="text-center py-20">
             <motion.div
-                className="w-10 h-10 border-3 border-slate-200 dark:text-slate-200 border-t-primary-500 rounded-full mx-auto mb-4"
+                className="w-10 h-10 border-3 border-[var(--color-surface-raised)] dark:text-[var(--color-text-dark)] border-t-[var(--color-primary)] rounded-full mx-auto mb-4"
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           />
-            <p className="text-slate-500 dark:text-slate-400">加载中...</p>
+            <p className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">加载中...</p>
         </div>
       )}
 
       {/* 空状态 */}
       {!loading && filteredResumes.length === 0 && (
           <motion.div
-              className="text-center py-20 bg-white dark:bg-slate-800 rounded-2xl"
+              className="text-center py-20 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
         >
           {/* 简历插图 — 简洁几何风格，amber 强调色 */}
-          <svg className="w-16 h-16 mx-auto mb-6 text-slate-300 dark:text-slate-600" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <svg className="w-16 h-16 mx-auto mb-6 text-[var(--color-text-muted)] dark:text-[var(--color-border-dark)]" viewBox="0 0 64 64" fill="none" aria-hidden="true">
             <rect x="16" y="10" width="32" height="44" rx="3" fill="currentColor" opacity="0.5"/>
             <rect x="22" y="10" width="24" height="44" rx="3" fill="currentColor" opacity="0.35"/>
             <rect x="28" y="10" width="18" height="44" rx="3" fill="currentColor" opacity="0.2"/>
@@ -135,28 +135,28 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
             <rect x="22" y="40" width="8" height="2" rx="1" fill="currentColor" opacity="0.45"/>
             <path d="M38 10 L46 10 L46 18" stroke="#f59e0b" strokeWidth="2" strokeLinejoin="round" fill="none" opacity="0.7"/>
           </svg>
-              <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">暂无简历记录</h3>
-              <p className="text-slate-500 dark:text-slate-400">上传简历开始您的第一次 AI 面试分析</p>
+              <h3 className="text-xl font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-2">暂无简历记录</h3>
+              <p className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">上传简历开始您的第一次 AI 面试分析</p>
         </motion.div>
       )}
 
       {/* 表格 */}
       {!loading && filteredResumes.length > 0 && (
           <motion.div
-              className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm overflow-hidden"
+              className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl shadow-sm overflow-hidden"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
           <table className="w-full">
             <thead>
-            <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-600">
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">简历名称</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">上传日期</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">AI
+            <tr className="bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] border-b border-[var(--color-border-subtle)] dark:border-[var(--color-border-dark)]">
+                <th className="text-left px-6 py-4 text-xs font-semibold text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] uppercase tracking-wide">简历名称</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] uppercase tracking-wide">上传日期</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] uppercase tracking-wide">AI
                     评分
                 </th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">面试状态</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] uppercase tracking-wide">面试状态</th>
                 <th className="w-20"></th>
               </tr>
             </thead>
@@ -169,25 +169,25 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
                     onClick={() => onSelectResume(resume.id)}
-                    className="border-b border-slate-100 dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors group"
+                    className="border-b border-[var(--color-border-subtle)] dark:border-[var(--color-border-dark)] last:border-0 hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] cursor-pointer transition-colors group"
                   >
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-4">
                           <div
-                              className="w-10 h-10 bg-primary-50 dark:bg-primary-900/30 rounded-xl flex items-center justify-center text-primary-500 dark:text-primary-400">
+                              className="w-10 h-10 bg-[var(--color-primary-subtle)] dark:bg-[var(--color-primary-subtle-dark)] rounded-xl flex items-center justify-center text-[var(--color-primary)] dark:text-[var(--color-primary)]">
                           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
                             <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                             <polyline points="14,2 14,8 20,8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
                         </div>
-                          <span className="font-medium text-slate-800 dark:text-white">{resume.filename}</span>
+                          <span className="font-medium text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{resume.filename}</span>
                       </div>
                     </td>
-                      <td className="px-6 py-5 text-slate-500 dark:text-slate-400">{formatDateOnly(resume.uploadedAt)}</td>
+                      <td className="px-6 py-5 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">{formatDateOnly(resume.uploadedAt)}</td>
                     <td className="px-6 py-5">
                       {resume.latestScore !== undefined ? (
                         <div className="flex items-center gap-3">
-                            <div className="w-20 h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div className="w-20 h-2 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] rounded-full overflow-hidden">
                                 <motion.div
                               className={`h-full ${getScoreProgressColor(resume.latestScore)} rounded-full`}
                               initial={{ width: 0 }}
@@ -195,10 +195,10 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
                               transition={{ duration: 0.8, delay: index * 0.05 }}
                             />
                           </div>
-                            <span className="font-bold text-slate-800 dark:text-white">{resume.latestScore}</span>
+                            <span className="font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{resume.latestScore}</span>
                         </div>
                       ) : (
-                          <span className="text-slate-400 dark:text-slate-500">-</span>
+                          <span className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">-</span>
                       )}
                     </td>
                     <td className="px-6 py-5">
@@ -213,7 +213,7 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
                         </span>
                       ) : (
                           <span
-                              className="inline-flex px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 rounded-full text-sm">待面试</span>
+                              className="inline-flex px-3 py-1 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text-muted)] dark:text-[var(--color-text-dark)] rounded-full text-sm">待面试</span>
                       )}
                     </td>
                     <td className="px-4">
@@ -238,7 +238,7 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
                           )}
                         </button>
                           <svg
-                              className="w-5 h-5 text-slate-300 dark:text-slate-600 group-hover:text-primary-500 group-hover:translate-x-1 transition-all"
+                              className="w-5 h-5 text-[var(--color-text-muted)] dark:text-[var(--color-border-dark)] group-hover:text-[var(--color-primary)] group-hover:translate-x-1 transition-all"
                               viewBox="0 0 24 24" fill="none">
                           <polyline points="9,18 15,12 9,6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
@@ -264,8 +264,8 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
           deleteConfirm ? (
             <>
               <p className="mb-2">确定要删除简历 <strong>"{deleteConfirm.filename}"</strong> 吗？</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">删除后将同时删除：</p>
-                <ul className="text-sm text-slate-500 dark:text-red-400 list-disc list-inside mb-2">
+                <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mb-2">删除后将同时删除：</p>
+                <ul className="text-sm text-[var(--color-text-muted)] dark:text-red-400 list-disc list-inside mb-2">
                 <li>简历评价记录</li>
                 <li>所有模拟面试记录</li>
               </ul>

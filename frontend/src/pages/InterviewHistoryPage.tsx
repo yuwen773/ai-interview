@@ -57,17 +57,17 @@ function StatCard({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-700"
+      className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl p-6 shadow-sm border border-[var(--color-border-subtle)] dark:border-[var(--color-border-dark)]"
     >
       <div className="flex items-center gap-4">
         <div className={`p-3 rounded-lg ${color}`}>
           <Icon className="w-6 h-6 text-white" />
         </div>
         <div>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
-            <p className="text-2xl font-bold text-slate-800 dark:text-white">
+            <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">{label}</p>
+            <p className="text-2xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
                 {value}{suffix &&
-                <span className="text-base font-normal text-slate-400 dark:text-slate-500 ml-1">{suffix}</span>}
+                <span className="text-base font-normal text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] ml-1">{suffix}</span>}
           </p>
         </div>
       </div>
@@ -298,15 +298,15 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview,
       <div className="flex justify-between items-start mb-8 flex-wrap gap-6">
         <div>
           <motion.h1
-              className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-3"
+              className="text-2xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)] flex items-center gap-3"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <Users className="w-7 h-7 text-primary-500" />
+            <Users className="w-7 h-7 text-[var(--color-primary)]" />
             面试记录
           </motion.h1>
           <motion.p
-              className="text-slate-500 dark:text-slate-400 mt-1"
+              className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mt-1"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
@@ -316,17 +316,17 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview,
         </div>
 
         <motion.div
-            className="flex items-center gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2.5 min-w-[280px] focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-100 dark:focus-within:ring-primary-900/30 transition-all"
+            className="flex items-center gap-3 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-xl px-4 py-2.5 min-w-[280px] focus-within:border-[var(--color-primary)] focus-within:ring-2 focus-within:ring-[var(--color-primary-subtle)] dark:focus-within:ring-[var(--color-primary-subtle-dark)] transition-all"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
         >
-          <Search className="w-5 h-5 text-slate-400" />
+          <Search className="w-5 h-5 text-[var(--color-text-muted)]" />
           <input
             type="text"
             placeholder="搜索简历名称..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 outline-none text-slate-700 dark:text-slate-200 placeholder:text-slate-400 bg-transparent"
+            className="flex-1 outline-none text-[var(--color-text-muted)] dark:text-[var(--color-text-dark)] placeholder:text-[var(--color-text-placeholder)] dark:placeholder:text-[var(--color-text-placeholder-dark)] bg-transparent"
           />
         </motion.div>
       </div>
@@ -338,7 +338,7 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview,
             icon={Users}
             label="面试总数"
             value={stats.totalCount}
-            color="bg-primary-500"
+            color="bg-[var(--color-primary)]"
           />
           <StatCard
             icon={CheckCircle}
@@ -351,7 +351,7 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview,
             label="平均分数"
             value={stats.averageScore}
             suffix="分"
-            color="bg-primary-500"
+            color="bg-[var(--color-primary)]"
           />
         </div>
       )}
@@ -359,19 +359,19 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview,
       {/* 加载状态 */}
       {loading && (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
+          <Loader2 className="w-8 h-8 text-[var(--color-primary)] animate-spin" />
         </div>
       )}
 
       {/* 空状态 */}
       {!loading && filteredInterviews.length === 0 && (
         <motion.div
-            className="text-center py-20 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700"
+            className="text-center py-20 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl shadow-sm border border-[var(--color-border-subtle)] dark:border-[var(--color-border-dark)]"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
         >
             {/* 面试插图 */}
-            <svg className="w-16 h-16 mx-auto mb-6 text-slate-300 dark:text-slate-600" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+            <svg className="w-16 h-16 mx-auto mb-6 text-[var(--color-text-muted)] dark:text-[var(--color-border-dark)]" viewBox="0 0 64 64" fill="none" aria-hidden="true">
               <circle cx="32" cy="32" r="24" fill="currentColor" opacity="0.2"/>
               <circle cx="32" cy="28" r="8" fill="currentColor" opacity="0.6"/>
               <path d="M20 48 C20 40 26 36 32 36 C38 36 44 40 44 48" fill="currentColor" opacity="0.5"/>
@@ -380,12 +380,12 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview,
               <circle cx="44" cy="20" r="5" fill="#f59e0b" opacity="0.8"/>
               <path d="M44 20 L48 16" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
             </svg>
-            <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">暂无面试记录</h3>
-            <p className="text-slate-500 dark:text-slate-400 mb-6">开始一次模拟面试后，记录将显示在这里</p>
+            <h3 className="text-xl font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-2">暂无面试记录</h3>
+            <p className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mb-6">开始一次模拟面试后，记录将显示在这里</p>
             {onStartInterview && (
               <button
                 onClick={onStartInterview}
-                className="px-5 py-2.5 bg-primary-500 hover:bg-primary-600 text-white rounded-xl text-sm font-medium transition-colors"
+                className="px-5 py-2.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-xl text-sm font-medium transition-colors"
               >
                 开始模拟面试
               </button>
@@ -396,20 +396,20 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview,
       {/* 表格 */}
       {!loading && filteredInterviews.length > 0 && (
         <motion.div
-            className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden"
+            className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl shadow-sm border border-[var(--color-border-subtle)] dark:border-[var(--color-border-dark)] overflow-hidden"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
           <table className="w-full">
-              <thead className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-600">
+              <thead className="bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] border-b border-[var(--color-border-subtle)] dark:border-[var(--color-border-dark)]">
               <tr>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-300">关联简历</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-300">题目数</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-300">状态</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-300">得分</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-300">创建时间</th>
-                  <th className="text-right px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-300">操作</th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-[var(--color-text-muted)] dark:text-[var(--color-text-dark)]">关联简历</th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-[var(--color-text-muted)] dark:text-[var(--color-text-dark)]">题目数</th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-[var(--color-text-muted)] dark:text-[var(--color-text-dark)]">状态</th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-[var(--color-text-muted)] dark:text-[var(--color-text-dark)]">得分</th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-[var(--color-text-muted)] dark:text-[var(--color-text-dark)]">创建时间</th>
+                  <th className="text-right px-6 py-4 text-sm font-medium text-[var(--color-text-muted)] dark:text-[var(--color-text-dark)]">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -421,27 +421,27 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview,
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
                     onClick={() => onViewInterview(interview.sessionId, interview.resumeId)}
-                    className="border-b border-slate-50 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors group"
+                    className="border-b border-[var(--color-border-subtle)] dark:border-[var(--color-border-dark)] hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] cursor-pointer transition-colors group"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <FileText className="w-5 h-5 text-slate-400" />
+                        <FileText className="w-5 h-5 text-[var(--color-text-muted)]" />
                         <div>
-                            <p className="font-medium text-slate-800 dark:text-white">{interview.resumeFilename}</p>
-                            <p className="text-xs text-slate-400 dark:text-slate-500">#{interview.sessionId.slice(-8)}</p>
+                            <p className="font-medium text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{interview.resumeFilename}</p>
+                            <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">#{interview.sessionId.slice(-8)}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <span
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-sm">
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text-muted)] dark:text-[var(--color-text-dark)] rounded-lg text-sm">
                         {interview.totalQuestions} 题
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <StatusIcon interview={interview} />
-                          <span className="text-sm text-slate-600 dark:text-slate-300">
+                          <span className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-dark)]">
                           {getStatusText(interview)}
                         </span>
                       </div>
@@ -449,7 +449,7 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview,
                     <td className="px-6 py-4">
                       {isEvaluateCompleted(interview) && interview.overallScore !== null ? (
                         <div className="flex items-center gap-3">
-                            <div className="w-16 h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div className="w-16 h-2 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] rounded-full overflow-hidden">
                             <motion.div
                               className={`h-full ${getScoreColor(interview.overallScore)} rounded-full origin-left`}
                               initial={{ scaleX: 0 }}
@@ -457,7 +457,7 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview,
                               transition={{ duration: 0.8, delay: index * 0.05 }}
                             />
                           </div>
-                            <span className="font-bold text-slate-800 dark:text-white">{interview.overallScore}</span>
+                            <span className="font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{interview.overallScore}</span>
                         </div>
                       ) : isEvaluating(interview) ? (
                           <span className="text-blue-500 dark:text-blue-400 text-sm">生成中...</span>
@@ -465,10 +465,10 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview,
                           <span className="text-red-500 dark:text-red-400 text-sm"
                                 title={interview.evaluateError}>失败</span>
                       ) : (
-                          <span className="text-slate-400 dark:text-slate-500">-</span>
+                          <span className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">-</span>
                       )}
                     </td>
-                      <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
+                      <td className="px-6 py-4 text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                       {formatDate(interview.createdAt)}
                     </td>
                     <td className="px-6 py-4 text-right">
@@ -478,7 +478,7 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview,
                           <button
                             onClick={(e) => handleExport(interview.sessionId, e)}
                             disabled={exporting === interview.sessionId}
-                            className="p-2 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-colors disabled:opacity-50"
+                            className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-subtle)] dark:hover:bg-[var(--color-primary-subtle-dark)] rounded-lg transition-colors disabled:opacity-50"
                             title="导出PDF"
                           >
                             {exporting === interview.sessionId ? (
@@ -498,7 +498,7 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview,
                           <Trash2 className="w-4 h-4" />
                         </button>
                           <ChevronRight
-                              className="w-5 h-5 text-slate-300 dark:text-slate-600 group-hover:text-primary-500 group-hover:translate-x-1 transition-all"/>
+                              className="w-5 h-5 text-[var(--color-text-muted)] dark:text-[var(--color-border-dark)] group-hover:text-[var(--color-primary)] group-hover:translate-x-1 transition-all"/>
                       </div>
                     </td>
                   </motion.tr>

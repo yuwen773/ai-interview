@@ -55,10 +55,10 @@ export default function InterviewConfigPanel({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <div className="rounded-xl border border-slate-100 bg-white p-8 dark:border-slate-700 dark:bg-slate-800">
-        <h2 className="mb-6 flex items-center gap-3 text-2xl font-bold text-slate-900 dark:text-white">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-100 dark:bg-primary-900/50">
-            <svg className="h-5 w-5 text-primary-600 dark:text-primary-400" viewBox="0 0 24 24" fill="none">
+      <div className="rounded-xl border border-[var(--color-border)] dark:border-[var(--color-border-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] p-8">
+        <h2 className="mb-6 flex items-center gap-3 text-2xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-primary-subtle)] dark:bg-[var(--color-primary-subtle-dark)]">
+            <svg className="h-5 w-5 text-[var(--color-primary-hover)] dark:text-[var(--color-primary)]" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
               <circle cx="12" cy="12" r="6" stroke="currentColor" strokeWidth="2"/>
               <circle cx="12" cy="12" r="2" fill="currentColor"/>
@@ -91,7 +91,7 @@ export default function InterviewConfigPanel({
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="mb-6 rounded-xl border-2 border-amber-200 bg-amber-50 p-5 dark:border-amber-800 dark:bg-slate-800"
+              className="mb-6 rounded-xl border-2 border-amber-200 bg-amber-50 p-5 dark:border-amber-800 dark:bg-[var(--color-surface-dark)]"
             >
               <div className="mb-4 flex items-start gap-3">
                 <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/50">
@@ -104,7 +104,7 @@ export default function InterviewConfigPanel({
                 <div className="flex-1">
                   <h3 className="mb-1 font-semibold text-amber-900 dark:text-amber-300">检测到未完成的模拟面试</h3>
                   <p className="text-sm text-amber-700 dark:text-amber-400">
-                    当前简历已有未完成面试，只能继续该岗位或强制开始新面试。当前岗位为“{unfinishedSession.jobLabel}”，
+                    当前简历已有未完成面试，只能继续该岗位或强制开始新面试。当前岗位为"{unfinishedSession.jobLabel}"，
                     已完成 {unfinishedSession.currentQuestionIndex} / {unfinishedSession.totalQuestions} 题。
                   </p>
                 </div>
@@ -120,7 +120,7 @@ export default function InterviewConfigPanel({
                 </motion.button>
                 <motion.button
                   onClick={onStartNew}
-                  className="flex-1 rounded-lg border border-amber-300 bg-white px-4 py-2.5 font-medium text-amber-700 transition-colors hover:bg-amber-50 dark:border-amber-700 dark:bg-slate-700 dark:text-amber-400 dark:hover:bg-amber-900/30"
+                  className="flex-1 rounded-lg border border-amber-300 bg-white px-4 py-2.5 font-medium text-amber-700 transition-colors hover:bg-amber-50 dark:border-amber-700 dark:bg-[var(--color-surface-dark)] dark:text-amber-400 dark:hover:bg-amber-900/30"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -136,12 +136,12 @@ export default function InterviewConfigPanel({
           {configStep === 1 && (
             <div className="mb-4">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-primary-600 dark:text-primary-400">步骤 1 / 2</span>
-                <span className="text-slate-500 dark:text-slate-400">选择目标岗位</span>
+                <span className="font-medium text-[var(--color-primary-hover)] dark:text-[var(--color-primary)]">步骤 1 / 2</span>
+                <span className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">选择目标岗位</span>
               </div>
-              <div className="mt-2 h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700">
+              <div className="mt-2 h-1.5 w-full rounded-full bg-[var(--color-border)] dark:bg-[var(--color-border-dark)]">
                 <motion.div
-                  className="h-full rounded-full bg-primary-500"
+                  className="h-full rounded-full bg-[var(--color-primary)]"
                   initial={{ width: '0%' }}
                   animate={{ width: '50%' }}
                   transition={{ duration: 0.3 }}
@@ -153,12 +153,12 @@ export default function InterviewConfigPanel({
           {configStep === 2 && (
             <div className="mb-4">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-primary-600 dark:text-primary-400">步骤 2 / 2</span>
-                <span className="text-slate-500 dark:text-slate-400">选择面试套餐</span>
+                <span className="font-medium text-[var(--color-primary-hover)] dark:text-[var(--color-primary)]">步骤 2 / 2</span>
+                <span className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">选择面试套餐</span>
               </div>
-              <div className="mt-2 h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700">
+              <div className="mt-2 h-1.5 w-full rounded-full bg-[var(--color-border)] dark:bg-[var(--color-border-dark)]">
                 <motion.div
-                  className="h-full rounded-full bg-primary-500"
+                  className="h-full rounded-full bg-[var(--color-primary)]"
                   initial={{ width: '50%' }}
                   animate={{ width: '100%' }}
                   transition={{ duration: 0.3 }}
@@ -170,11 +170,11 @@ export default function InterviewConfigPanel({
           {/* Step 1: Job Role Selection */}
           {configStep === 1 && (
             <div>
-              <label className="mb-3 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+              <label className="mb-3 block text-sm font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
                 目标岗位
               </label>
               {loadingRoles ? (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400">
+                <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] dark:border-[var(--color-border-dark)] dark:bg-[var(--color-surface-raised-dark)] p-4 text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                   正在加载岗位列表...
                 </div>
               ) : (
@@ -190,7 +190,7 @@ export default function InterviewConfigPanel({
           {/* Step 2: Package Selection */}
           {configStep === 2 && (
             <div>
-              <label className="mb-3 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+              <label className="mb-3 block text-sm font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
                 面试套餐
               </label>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -200,8 +200,8 @@ export default function InterviewConfigPanel({
                     onClick={() => onPackageChange(item.id)}
                     className={`rounded-2xl border px-4 py-4 text-left transition-all ${
                       selectedPackageId === item.id
-                        ? 'border-primary-600 bg-primary-600 text-white'
-                        : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700'
+                        ? 'border-[var(--color-primary-hover)] bg-[var(--color-primary-hover)] text-white'
+                        : 'border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text)] dark:border-[var(--color-border-dark)] dark:bg-[var(--color-surface-dark)] dark:text-[var(--color-text-dark)] hover:border-[var(--color-border-dark)] hover:bg-[var(--color-surface-raised-dark)] dark:hover:border-[var(--color-border)] dark:hover:bg-[var(--color-surface-raised-dark)]'
                     }`}
                     whileHover={{ scale: 1.02, y: -1 }}
                     whileTap={{ scale: 0.95 }}
@@ -220,10 +220,10 @@ export default function InterviewConfigPanel({
                             </span>
                           )}
                         </div>
-                        <div className={`text-sm ${selectedPackageId === item.id ? 'text-white/80' : 'text-slate-500 dark:text-slate-400'}`}>
+                        <div className={`text-sm ${selectedPackageId === item.id ? 'text-white/80' : 'text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]'}`}>
                           共 {item.totalQuestions} 题（含追问）
                         </div>
-                        <div className={`text-xs mt-1 ${selectedPackageId === item.id ? 'text-white/60' : 'text-slate-400 dark:text-slate-500'}`}>
+                        <div className={`text-xs mt-1 ${selectedPackageId === item.id ? 'text-white/60' : 'text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]'}`}>
                           {item.id === 'warmup' && '首次体验 / 时间紧张'}
                           {item.id === 'standard' && '日常练习'}
                           {item.id === 'deep' && '查漏补缺'}
@@ -233,19 +233,19 @@ export default function InterviewConfigPanel({
                       <div className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                         selectedPackageId === item.id
                           ? 'bg-white/15 text-white'
-                          : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                          : 'bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]'
                       }`}>
                         {item.estimatedDuration}
                       </div>
                     </div>
-                    <div className={`text-sm leading-6 ${selectedPackageId === item.id ? 'text-white/90' : 'text-slate-600 dark:text-slate-300'}`}>
+                    <div className={`text-sm leading-6 ${selectedPackageId === item.id ? 'text-white/90' : 'text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]'}`}>
                       {item.description}
                     </div>
                   </motion.button>
                 ))}
               </div>
               {selectedPackage && (
-                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                <p className="mt-3 text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                   当前套餐包含 {selectedPackage.mainQuestionCount} 道主问题，每道主问题带 1 道追问，预计完成 {selectedPackage.estimatedDuration}。
                 </p>
               )}
@@ -253,22 +253,22 @@ export default function InterviewConfigPanel({
           )}
 
           <div className="mb-6">
-            <label className="mb-3 block text-sm font-semibold text-slate-600 dark:text-slate-400">
+            <label className="mb-3 block text-sm font-semibold text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
               简历摘要（用于生成面试题）
             </label>
             <textarea
               value={resumeText.substring(0, 500) + (resumeText.length > 500 ? '\n\n[...其余内容已截断]' : '')}
               readOnly
-              className="h-32 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-400"
+              className="h-32 w-full resize-none rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] p-4 text-sm text-[var(--color-text-muted)] dark:border-[var(--color-border-dark)] dark:bg-[var(--color-surface-raised-dark)] dark:text-[var(--color-text-muted-dark)]"
             />
             {resumeText.length > 500 && (
-              <p className="mt-1.5 text-xs text-slate-400">
+              <p className="mt-1.5 text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                 共 {resumeText.length} 字，此处展示前 500 字作为摘要
               </p>
             )}
           </div>
 
-          <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mb-6 text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
             {jobDistributionText}
           </p>
 
@@ -289,7 +289,7 @@ export default function InterviewConfigPanel({
             {configStep === 2 && (
               <motion.button
                 onClick={() => onStepChange(1)}
-                className="rounded-xl border border-slate-200 px-6 py-3 font-medium text-slate-600 transition-all hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                className="rounded-xl border border-[var(--color-border)] px-6 py-3 font-medium text-[var(--color-text-muted)] transition-all hover:bg-[var(--color-surface-raised)] dark:border-[var(--color-border-dark)] dark:text-[var(--color-text-muted-dark)] dark:hover:bg-[var(--color-surface-raised-dark)]"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -300,7 +300,7 @@ export default function InterviewConfigPanel({
               <>
                 <motion.button
                   onClick={onBack}
-                  className="rounded-xl border border-slate-200 px-6 py-3 font-medium text-slate-600 transition-all hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                  className="rounded-xl border border-[var(--color-border)] px-6 py-3 font-medium text-[var(--color-text-muted)] transition-all hover:bg-[var(--color-surface-raised)] dark:border-[var(--color-border-dark)] dark:text-[var(--color-text-muted-dark)] dark:hover:bg-[var(--color-surface-raised-dark)]"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -309,7 +309,7 @@ export default function InterviewConfigPanel({
                 <motion.button
                   onClick={() => onStepChange(2)}
                   disabled={!canProceedToStep2}
-                  className="flex items-center gap-2 rounded-xl bg-primary-500 px-8 py-3 font-semibold text-white transition-all hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-8 py-3 font-semibold text-white transition-all hover:bg-[var(--color-primary-hover)] disabled:cursor-not-allowed disabled:opacity-60"
                   whileHover={{ scale: canProceedToStep2 ? 1.02 : 1, y: canProceedToStep2 ? -1 : 0 }}
                   whileTap={{ scale: canProceedToStep2 ? 0.98 : 1 }}
                 >
@@ -321,7 +321,7 @@ export default function InterviewConfigPanel({
               <motion.button
                 onClick={onStart}
                 disabled={!canStart}
-                className="flex items-center gap-2 rounded-xl bg-primary-500 px-8 py-3 font-semibold text-white transition-all hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-8 py-3 font-semibold text-white transition-all hover:bg-[var(--color-primary-hover)] disabled:cursor-not-allowed disabled:opacity-60"
                 whileHover={{ scale: canStart ? 1.02 : 1, y: canStart ? -1 : 0 }}
                 whileTap={{ scale: canStart ? 0.98 : 1 }}
               >

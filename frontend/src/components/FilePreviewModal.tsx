@@ -31,17 +31,17 @@ function FileTypeBadge({ contentType }: { contentType: string }) {
   const isPdf = contentType.includes('pdf');
 
   let label = '文件';
-  let color = 'bg-slate-100 text-slate-600';
+  let color = 'bg-[var(--color-surface-raised)] text-[var(--color-text-muted)]';
 
   if (isMd) {
     label = 'Markdown';
-    color = 'bg-emerald-50 text-emerald-600';
+    color = 'bg-[var(--color-success-subtle)] text-[var(--color-success)]';
   } else if (isPdf) {
     label = 'PDF';
-    color = 'bg-red-50 text-red-600';
+    color = 'bg-[var(--color-error-subtle)] text-[var(--color-error)]';
   } else if (isTxt) {
     label = '文本';
-    color = 'bg-amber-50 text-amber-600';
+    color = 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]';
   }
 
   return (
@@ -80,7 +80,7 @@ function PdfViewer({
 
   if (!previewUrl) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+      <div className="flex flex-col items-center justify-center py-16 text-[var(--color-text-muted)]">
         <AlertCircle className="w-10 h-10 mb-3" />
         <p>预览地址无效</p>
       </div>
@@ -88,16 +88,16 @@ function PdfViewer({
   }
 
   return (
-    <div ref={containerRef} className="rounded-xl bg-slate-100 p-4 space-y-4">
+    <div ref={containerRef} className="rounded-xl bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] p-4 space-y-4">
       <Document
         file={previewUrl}
         loading={
           <div className="flex items-center justify-center py-24">
-            <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+            <Loader2 className="w-8 h-8 animate-spin text-[var(--color-primary)]" />
           </div>
         }
         error={
-          <div className="flex flex-col items-center justify-center py-16 text-red-500">
+          <div className="flex flex-col items-center justify-center py-16 text-[var(--color-error)]">
             <AlertCircle className="w-10 h-10 mb-3" />
             <p>{pdfError ?? 'PDF 加载失败'}</p>
           </div>
@@ -106,7 +106,7 @@ function PdfViewer({
         onLoadError={(err) => onLoadError(err instanceof Error ? err.message : 'PDF 加载失败')}
       >
         {Array.from({ length: numPages }, (_, i) => i + 1).map(pageNum => (
-          <div key={pageNum} className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div key={pageNum} className="overflow-hidden rounded-lg border border-[var(--color-border)] dark:border-[var(--color-border-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] shadow-sm">
             <Page
               pageNumber={pageNum}
               width={Math.min(containerWidth - 2, 780)}
@@ -114,7 +114,7 @@ function PdfViewer({
               renderTextLayer={false}
               loading={
                 <div className="flex items-center justify-center h-48">
-                  <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                  <Loader2 className="w-5 h-5 animate-spin text-[var(--color-text-muted)]" />
                 </div>
               }
             />
@@ -128,20 +128,20 @@ function PdfViewer({
 function MarkdownViewer({ content }: { content: string }) {
   return (
     <div className="prose prose-slate dark:prose-invert max-w-none
-      prose-headings:font-semibold prose-headings:text-slate-800 dark:prose-headings:text-white
+      prose-headings:font-semibold prose-headings:text-[var(--color-text)] dark:prose-headings:text-[var(--color-text-dark)]
       prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg
-      prose-p:text-slate-600 dark:prose-p:text-slate-300 prose-p:leading-relaxed
-      prose-a:text-primary-500 prose-a:no-underline hover:prose-a:underline
-      prose-code:bg-slate-100 dark:prose-code:bg-slate-700 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
-      prose-pre:bg-slate-900 dark:prose-pre:bg-slate-950 prose-pre:rounded-xl
-      prose-blockquote:border-l-primary-500 prose-blockquote:text-slate-500 dark:prose-blockquote:text-slate-400
-      prose-ul:text-slate-600 dark:prose-ul:text-slate-300
-      prose-ol:text-slate-600 dark:prose-ol:text-slate-300
-      prose-li:marker:text-slate-400
+      prose-p:text-[var(--color-text-muted)] dark:prose-p:text-[var(--color-text-muted-dark)] prose-p:leading-relaxed
+      prose-a:text-[var(--color-primary)] prose-a:no-underline hover:prose-a:underline
+      prose-code:bg-[var(--color-surface-raised)] dark:prose-code:bg-[var(--color-surface-raised-dark)] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+      prose-pre:bg-[var(--color-bg-dark)] dark:prose-pre:bg-[var(--color-bg-dark)] prose-pre:rounded-xl
+      prose-blockquote:border-l-[var(--color-primary)] prose-blockquote:text-[var(--color-text-muted)] dark:prose-blockquote:text-[var(--color-text-muted-dark)]
+      prose-ul:text-[var(--color-text-muted)] dark:prose-ul:text-[var(--color-text-muted-dark)]
+      prose-ol:text-[var(--color-text-muted)] dark:prose-ol:text-[var(--color-text-muted-dark)]
+      prose-li:marker:text-[var(--color-text-muted)]
       prose-table:text-sm
-      prose-th:bg-slate-50 dark:prose-th:bg-slate-800 prose-th:text-slate-700 dark:prose-th:text-slate-300
-      prose-td:text-slate-600 dark:prose-td:text-slate-400
-      prose-hr:border-slate-200 dark:prose-hr:border-slate-700
+      prose-th:bg-[var(--color-surface-raised)] dark:prose-th:bg-[var(--color-surface-raised-dark)] prose-th:text-[var(--color-text-muted)] dark:prose-th:text-[var(--color-text-muted-dark)]
+      prose-td:text-[var(--color-text-muted)] dark:prose-td:text-[var(--color-text-muted-dark)]
+      prose-hr:border-[var(--color-border)] dark:prose-hr:border-[var(--color-border-dark)]
       prose-img:rounded-xl prose-img:shadow-sm
     ">
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
@@ -151,9 +151,9 @@ function MarkdownViewer({ content }: { content: string }) {
 
 function TextViewer({ content }: { content: string }) {
   return (
-    <pre className="text-sm leading-6 text-slate-200 whitespace-pre-wrap break-words overflow-auto
-      bg-slate-950 rounded-xl p-5 font-mono
-      border border-slate-800
+    <pre className="text-sm leading-6 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] whitespace-pre-wrap break-words overflow-auto
+      bg-[var(--color-bg-dark)] rounded-xl p-5 font-mono
+      border border-[var(--color-border-dark)]
       shadow-inner
     ">
       {content}
@@ -163,8 +163,8 @@ function TextViewer({ content }: { content: string }) {
 
 function LoadingState() {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-      <Loader2 className="w-10 h-10 animate-spin text-primary-500 mb-4" />
+    <div className="flex flex-col items-center justify-center py-20 text-[var(--color-text-muted)]">
+      <Loader2 className="w-10 h-10 animate-spin text-[var(--color-primary)] mb-4" />
       <span className="text-base">预览加载中...</span>
     </div>
   );
@@ -173,16 +173,16 @@ function LoadingState() {
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="flex items-center justify-center w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/20 mb-4">
-        <AlertCircle className="w-8 h-8 text-red-500" />
+      <div className="flex items-center justify-center w-16 h-16 rounded-full bg-[var(--color-error-subtle)] dark:bg-[var(--color-error-subtle-dark)] mb-4">
+        <AlertCircle className="w-8 h-8 text-[var(--color-error)]" />
       </div>
-      <p className="text-slate-700 dark:text-slate-300 font-medium mb-1">预览加载失败</p>
-      <p className="text-sm text-slate-500 mb-4 max-w-xs">{message}</p>
+      <p className="text-[var(--color-text)] dark:text-[var(--color-text-dark)] font-medium mb-1">预览加载失败</p>
+      <p className="text-sm text-[var(--color-text-muted)] mb-4 max-w-xs">{message}</p>
       <button
         onClick={onRetry}
-        className="px-4 py-2 text-sm font-medium text-primary-500 hover:text-primary-600
-          border border-primary-200 dark:border-primary-700 rounded-lg
-          hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
+        className="px-4 py-2 text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]
+          border border-[var(--color-primary)] dark:border-[var(--color-primary)] rounded-lg
+          hover:bg-[var(--color-primary-subtle)] dark:hover:bg-[var(--color-primary-subtle-dark)] transition-colors"
       >
         重试
       </button>
@@ -193,11 +193,11 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
 function UnsupportedState({ message }: { message: string | null }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="flex items-center justify-center w-16 h-16 rounded-full bg-amber-50 dark:bg-amber-900/20 mb-4">
-        <FileText className="w-8 h-8 text-amber-500" />
+      <div className="flex items-center justify-center w-16 h-16 rounded-full bg-[var(--color-warning)]/10 dark:bg-[var(--color-warning)]/10 mb-4">
+        <FileText className="w-8 h-8 text-[var(--color-warning)]" />
       </div>
-      <p className="text-slate-700 dark:text-slate-300 font-medium mb-1">暂不支持在线预览</p>
-      <p className="text-sm text-slate-500 max-w-xs">{message ?? '请下载文件后查看。'}</p>
+      <p className="text-[var(--color-text)] dark:text-[var(--color-text-dark)] font-medium mb-1">暂不支持在线预览</p>
+      <p className="text-sm text-[var(--color-text-muted)] max-w-xs">{message ?? '请下载文件后查看。'}</p>
     </div>
   );
 }
@@ -304,7 +304,7 @@ export default function FilePreviewModal({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-[var(--color-bg-dark)]/70 backdrop-blur-sm z-50"
           />
 
           {/* Modal */}
@@ -315,27 +315,27 @@ export default function FilePreviewModal({
               exit={{ opacity: 0, scale: 0.96, y: 16 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               onClick={e => e.stopPropagation()}
-              className="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-slate-800
+              className="relative w-full max-w-4xl max-h-[90vh] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]
                 rounded-2xl shadow-2xl overflow-hidden flex flex-col
-                border border-slate-200 dark:border-slate-700
+                border border-[var(--color-border)] dark:border-[var(--color-border-dark)]
                 pointer-events-auto"
             >
               {/* Header */}
               <div className="flex items-center justify-between gap-4 px-6 py-4
-                border-b border-slate-100 dark:border-slate-700
-                bg-slate-50 dark:bg-slate-800
+                border-b border-[var(--color-border)] dark:border-[var(--color-border-dark)]
+                bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-dark)]
                 shrink-0"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="flex flex-col min-w-0">
                     <div className="flex items-center gap-2">
-                      <h2 className="text-lg font-semibold text-slate-800 dark:text-white truncate">
+                      <h2 className="text-lg font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)] truncate">
                         {meta?.filename ?? '文件预览'}
                       </h2>
                       {meta && <FileTypeBadge contentType={meta.contentType} />}
                     </div>
                     {meta?.contentType && (
-                      <p className="text-xs text-slate-400 mt-0.5 truncate">
+                      <p className="text-xs text-[var(--color-text-muted)] mt-0.5 truncate">
                         {meta.contentType}
                       </p>
                     )}
@@ -348,8 +348,8 @@ export default function FilePreviewModal({
                     type="button"
                     onClick={onReload}
                     disabled={loading}
-                    className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300
-                      hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg
+                    className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] dark:hover:text-[var(--color-text-muted-dark)]
+                      hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] rounded-lg
                       transition-colors disabled:opacity-50"
                     title="刷新"
                   >
@@ -362,7 +362,7 @@ export default function FilePreviewModal({
                     onClick={onDownload}
                     disabled={!meta?.downloadUrl}
                     className="inline-flex items-center gap-2 px-4 py-2
-                      bg-primary-500 hover:bg-primary-600
+                      bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)]
                       text-white text-sm font-medium rounded-lg
                       transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -374,8 +374,8 @@ export default function FilePreviewModal({
                   <button
                     type="button"
                     onClick={onClose}
-                    className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300
-                      hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg
+                    className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] dark:hover:text-[var(--color-text-muted-dark)]
+                      hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] rounded-lg
                       transition-colors"
                     title="关闭"
                   >
@@ -403,7 +403,7 @@ export default function FilePreviewModal({
                       onClick={() => contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
                       className="fixed bottom-8 right-8 z-10
                         flex items-center justify-center w-12 h-12 rounded-full
-                        bg-primary-500 hover:bg-primary-600
+                        bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)]
                         text-white
                         transition-all active:scale-95"
                       title="回到顶部"

@@ -83,15 +83,15 @@ function StatCard({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-700"
+      className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl p-6 shadow-sm border border-[var(--color-border)] dark:border-[var(--color-border-dark)]"
     >
       <div className="flex items-center gap-4">
         <div className={`p-3 rounded-lg ${color}`}>
           <Icon className="w-6 h-6 text-white" />
         </div>
         <div>
-          <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
-          <p className="text-2xl font-bold text-slate-800 dark:text-white">{value.toLocaleString()}</p>
+          <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">{label}</p>
+          <p className="text-2xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{value.toLocaleString()}</p>
         </div>
       </div>
     </motion.div>
@@ -344,23 +344,23 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
     <div className="max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-3">
-            <Database className="w-7 h-7 text-primary-500" />
+          <h1 className="text-2xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)] flex items-center gap-3">
+            <Database className="w-7 h-7 text-[var(--color-primary)]" />
             知识库管理
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">管理您的知识库文件，查看使用统计</p>
+          <p className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mt-1">管理您的知识库文件，查看使用统计</p>
         </div>
         <div className="flex gap-3">
           <button
             onClick={onUpload}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors"
           >
             <Upload className="w-4 h-4" />
             上传知识库
           </button>
           <button
             onClick={onChat}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)] rounded-lg hover:bg-[var(--color-surface-raised-dark)] dark:hover:bg-[var(--color-border-dark)] transition-colors"
           >
             <MessageSquare className="w-4 h-4" />
             问答助手
@@ -370,23 +370,23 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
 
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <StatCard icon={Database} label="知识库总数" value={stats.totalCount} color="bg-primary-500" />
-          <StatCard icon={MessageSquare} label="总提问次数" value={stats.totalQuestionCount} color="bg-primary-500" />
+          <StatCard icon={Database} label="知识库总数" value={stats.totalCount} color="bg-[var(--color-primary)]" />
+          <StatCard icon={MessageSquare} label="总提问次数" value={stats.totalQuestionCount} color="bg-[var(--color-primary)]" />
           <StatCard icon={Eye} label="总访问次数" value={stats.totalAccessCount} color="bg-emerald-500" />
         </div>
       )}
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-100 dark:border-slate-700 mb-6">
+      <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl p-4 shadow-sm border border-[var(--color-border)] dark:border-[var(--color-border-dark)] mb-6">
         <div className="flex flex-wrap items-center gap-4">
           <form onSubmit={handleSearch} className="flex-1 min-w-[200px]">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
               <input
                 type="text"
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 placeholder="搜索知识库名称..."
-                className="w-full pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                className="w-full pl-10 pr-4 py-2 border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-surface)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)]"
               />
             </div>
           </form>
@@ -399,14 +399,14 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
                 setSearchKeyword('');
                 setSelectedCategory(null);
               }}
-              className="appearance-none pl-4 pr-10 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white cursor-pointer"
+              className="appearance-none pl-4 pr-10 py-2 border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)] cursor-pointer"
             >
               <option value="time">按时间排序</option>
               <option value="size">按大小排序</option>
               <option value="access">按访问排序</option>
               <option value="question">按提问排序</option>
             </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none" />
           </div>
 
           <div className="relative">
@@ -416,7 +416,7 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
                 setSelectedCategory(e.target.value || null);
                 setSearchKeyword('');
               }}
-              className="appearance-none pl-4 pr-10 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white cursor-pointer"
+              className="appearance-none pl-4 pr-10 py-2 border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)] cursor-pointer"
             >
               <option value="">全部分类</option>
               {categories.map((cat) => (
@@ -425,26 +425,26 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
                 </option>
               ))}
             </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none" />
           </div>
         </div>
       </div>
 
       <div className="flex flex-col gap-6">
         <div
-          className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden min-w-0"
+          className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl shadow-sm border border-[var(--color-border)] dark:border-[var(--color-border-dark)] overflow-hidden min-w-0"
         >
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
+              <Loader2 className="w-8 h-8 text-[var(--color-primary)] animate-spin" />
             </div>
           ) : knowledgeBases.length === 0 ? (
             <div className="text-center py-20">
-              <HardDrive className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-500 dark:text-slate-400">暂无知识库</p>
+              <HardDrive className="w-16 h-16 text-[var(--color-text-muted)] mx-auto mb-4" />
+              <p className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">暂无知识库</p>
               <button
                 onClick={onUpload}
-                className="mt-4 text-primary-500 hover:text-primary-600"
+                className="mt-4 text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]"
               >
                 上传第一个知识库
               </button>
@@ -452,27 +452,27 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-slate-50 dark:bg-slate-700 border-b border-slate-100 dark:border-slate-600">
+                <thead className="bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] border-b border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
                   <tr>
-                    <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    <th className="text-left px-6 py-4 text-sm font-medium text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                       名称
                     </th>
-                    <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    <th className="text-left px-6 py-4 text-sm font-medium text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                       分类
                     </th>
-                    <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    <th className="text-left px-6 py-4 text-sm font-medium text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                       大小
                     </th>
-                    <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    <th className="text-left px-6 py-4 text-sm font-medium text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                       状态
                     </th>
-                    <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    <th className="text-left px-6 py-4 text-sm font-medium text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                       提问
                     </th>
-                    <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    <th className="text-left px-6 py-4 text-sm font-medium text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                       上传时间
                     </th>
-                    <th className="text-right px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    <th className="text-right px-6 py-4 text-sm font-medium text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                       操作
                     </th>
                   </tr>
@@ -484,14 +484,14 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      className="border-b border-slate-50 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                      className="border-b border-[var(--color-border-subtle)] dark:border-[var(--color-border-subtle-dark)] hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)]/50 transition-colors"
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <FileText className="w-5 h-5 text-slate-400" />
+                          <FileText className="w-5 h-5 text-[var(--color-text-muted)]" />
                           <div>
-                            <p className="font-medium text-slate-800 dark:text-white">{kb.name}</p>
-                            <p className="text-xs text-slate-400 dark:text-slate-500">{kb.originalFilename}</p>
+                            <p className="font-medium text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{kb.name}</p>
+                            <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">{kb.originalFilename}</p>
                           </div>
                         </div>
                       </td>
@@ -513,7 +513,7 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
                                 onKeyDown={(e) => handleCategoryKeyDown(e, kb.id)}
                                 placeholder="输入分类名称"
                                 list="category-suggestions"
-                                className="w-24 px-2 py-1 text-sm border border-primary-300 dark:border-primary-600 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                className="w-24 px-2 py-1 text-sm border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)]"
                                 disabled={savingCategory}
                               />
                               <datalist id="category-suggestions">
@@ -536,7 +536,7 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
                               <button
                                 onClick={handleCancelEditCategory}
                                 disabled={savingCategory}
-                                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 rounded transition-colors disabled:opacity-50"
+                                className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)] dark:hover:text-[var(--color-text-dark)] hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] rounded transition-colors disabled:opacity-50"
                                 title="取消"
                               >
                                 <X className="w-4 h-4" />
@@ -551,15 +551,15 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
                               className="flex items-center gap-2 group/category"
                             >
                               {kb.category ? (
-                                <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded text-sm">
+                                <span className="px-2 py-1 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] rounded text-sm">
                                   {kb.category}
                                 </span>
                               ) : (
-                                <span className="text-slate-400 dark:text-slate-500 text-sm">未分类</span>
+                                <span className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] text-sm">未分类</span>
                               )}
                               <button
                                 onClick={() => handleStartEditCategory(kb)}
-                                className="p-1 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded opacity-0 group-hover/category:opacity-100 transition-all"
+                                className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-subtle)] dark:hover:bg-[var(--color-primary-subtle-dark)] rounded opacity-0 group-hover/category:opacity-100 transition-all"
                                 title="编辑分类"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
@@ -568,35 +568,35 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
                           )}
                         </AnimatePresence>
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+                      <td className="px-6 py-4 text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                         {formatFileSize(kb.fileSize)}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <StatusIcon status={kb.vectorStatus} />
-                          <span className="text-sm text-slate-600 dark:text-slate-300">
+                          <span className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                             {getStatusText(kb.vectorStatus)}
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+                      <td className="px-6 py-4 text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                         {kb.questionCount}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
+                      <td className="px-6 py-4 text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                         {formatDateTime(kb.uploadedAt)}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => handleDownload(kb)}
-                            className="p-2 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-colors"
+                            className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-subtle)] dark:hover:bg-[var(--color-primary-subtle-dark)] rounded-lg transition-colors"
                             title="下载"
                           >
                             <Download className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => void handlePreviewOpen(kb)}
-                            className="p-2 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-colors"
+                            className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-subtle)] dark:hover:bg-[var(--color-primary-subtle-dark)] rounded-lg transition-colors"
                             title="预览"
                           >
                             <Eye className="w-4 h-4" />
@@ -605,7 +605,7 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
                             <button
                               onClick={() => handleRevectorize(kb.id)}
                               disabled={revectorizing === kb.id}
-                              className="p-2 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-colors disabled:opacity-50"
+                              className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-subtle)] dark:hover:bg-[var(--color-primary-subtle-dark)] rounded-lg transition-colors disabled:opacity-50"
                               title="重新向量化"
                             >
                               <RefreshCw className={`w-4 h-4 ${revectorizing === kb.id ? 'animate-spin' : ''}`} />

@@ -28,19 +28,19 @@ export default function JobRoleSelector({
             aria-pressed={selected}
             className={`rounded-2xl border p-4 text-left transition-all ${
               selected
-                ? 'border-primary-500 bg-primary-50 dark:border-primary-400 dark:bg-primary-900/40'
-                : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white dark:border-slate-700 dark:bg-slate-900/40 dark:hover:border-slate-600 dark:hover:bg-slate-800'
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary-subtle)] dark:border-[var(--color-primary)] dark:bg-[var(--color-primary-subtle-dark)]'
+                : 'border-[var(--color-border)] bg-[var(--color-surface-raised)] hover:border-[var(--color-border)] hover:bg-[var(--color-surface)] dark:border-[var(--color-border-dark)] dark:bg-[var(--color-surface-raised-dark)] dark:hover:border-[var(--color-border-dark)] dark:hover:bg-[var(--color-surface-dark)]'
             } disabled:cursor-not-allowed disabled:opacity-60`}
             whileHover={{ scale: disabled ? 1 : 1.01 }}
             whileTap={{ scale: disabled ? 1 : 0.99 }}
           >
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
-                <p className="font-semibold text-slate-900 dark:text-white">{role.label}</p>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{role.description}</p>
+                <p className="font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{role.label}</p>
+                <p className="mt-1 text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">{role.description}</p>
               </div>
               {selected && (
-                <span className="rounded-full bg-primary-500 px-2.5 py-1 text-xs font-semibold text-white">
+                <span className="rounded-full bg-[var(--color-primary)] px-2.5 py-1 text-xs font-semibold text-white">
                   已选择
                 </span>
               )}
@@ -49,7 +49,7 @@ export default function JobRoleSelector({
               {role.techKeywords.map((keyword) => (
                 <span
                   key={keyword}
-                  className="rounded-full bg-white px-2.5 py-1 text-xs text-slate-500 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700"
+                  className="rounded-full bg-[var(--color-surface)] px-2.5 py-1 text-xs text-[var(--color-text-muted)] ring-1 ring-[var(--color-border)] dark:bg-[var(--color-surface-dark)] dark:text-[var(--color-text-muted-dark)] dark:ring-[var(--color-border-dark)]"
                 >
                   {keyword}
                 </span>
