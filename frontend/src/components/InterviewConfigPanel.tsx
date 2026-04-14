@@ -214,7 +214,7 @@ export default function InterviewConfigPanel({
                             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                               selectedPackageId === item.id
                                 ? 'bg-white/20 text-white'
-                                : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                             }`}>
                               推荐
                             </span>

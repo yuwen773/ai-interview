@@ -51,26 +51,32 @@ export function InterviewControlPanel({
   const isIdle = mode === 'idle';
   const isBusy = isSubmitting || isRecognizing || isRecording;
 
-  // 状态配置 - 使用 Lucide 图标
+  // 状态配置 - 使用 Lucide 图标，颜色语义化
   const statusConfig = {
-    idle: { icon: null, text: '', color: 'text-slate-400' },
+    idle: { icon: null, text: '', color: 'text-slate-400', bgColor: '', borderColor: '' },
     thinking: {
       icon: Brain,
       text: '面试官正在思考...',
       color: 'text-amber-400',
       iconColor: 'text-amber-400',
+      bgColor: 'bg-amber-500/10',
+      borderColor: 'border-amber-500/20',
     },
     speaking: {
       icon: MessageCircle,
       text: '面试官正在提问...',
       color: 'text-emerald-400',
       iconColor: 'text-emerald-400',
+      bgColor: 'bg-emerald-500/10',
+      borderColor: 'border-emerald-500/20',
     },
     listening: {
       icon: Mic,
       text: '请回答问题',
-      color: 'text-blue-400',
-      iconColor: 'text-blue-400',
+      color: 'text-sky-400',
+      iconColor: 'text-sky-400',
+      bgColor: 'bg-sky-500/10',
+      borderColor: 'border-sky-500/20',
     },
   };
 
@@ -94,7 +100,7 @@ export function InterviewControlPanel({
       {/* 主控制栏 */}
       <div className="relative bg-[#1a1d24] border border-slate-700/50 rounded-2xl p-4">
         <div className="flex items-center justify-between gap-6">
-          {/* 左侧：状态区 — 紧凑单行显示 */}
+          {/* 左侧：状态区 — 紧凑单行显示，语义化背景 */}
           <div className="flex-shrink-0">
             {mode !== 'idle' && (
               <AnimatePresence mode="wait">
@@ -103,12 +109,12 @@ export function InterviewControlPanel({
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -8 }}
-                  className="flex items-center gap-2"
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${status.bgColor} ${status.borderColor}`}
                 >
                   {isRecording ? (
                     <>
                       <Mic className={`w-4 h-4 ${prefersReducedMotion ? '' : 'animate-pulse'} text-red-400`} />
-                      <span className="text-sm text-red-400">录音中</span>
+                      <span className="text-sm text-red-400 font-medium">录音中</span>
                     </>
                   ) : status.icon ? (
                     <>
@@ -127,7 +133,7 @@ export function InterviewControlPanel({
               </AnimatePresence>
             )}
             {mode === 'idle' && (
-              <div className="flex items-center gap-2 text-slate-500 text-sm">
+              <div className="flex items-center gap-2 text-slate-500 text-sm px-3 py-1.5">
                 <MicOff className="w-4 h-4" />
                 等待开始面试...
               </div>
@@ -313,14 +319,14 @@ export function InterviewControlPanel({
         </div>
       </div>
 
-      {/* 错误提示 - 移出主面板，减少视觉干扰 */}
+      {/* 错误提示 - 错误状态下更醒目的提示 */}
       <AnimatePresence>
         {error && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="mt-2 px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm"
+            className="mt-2 px-4 py-2.5 bg-red-500/15 border border-red-500/30 rounded-lg text-red-300 text-sm font-medium"
           >
             {error}
           </motion.div>

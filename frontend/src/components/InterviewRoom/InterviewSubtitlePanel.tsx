@@ -67,7 +67,7 @@ export function InterviewSubtitlePanel({
           </div>
           <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-primary-500 to-primary-400 rounded-full"
+              className="h-full bg-primary-500 rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -178,19 +178,19 @@ function MessageBubble({ message }: { message: Message }) {
         transition={{ duration: 0.2 }}
         className="flex items-start gap-3"
       >
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500/20 to-primary-600/10 border border-primary-500/20 flex items-center justify-center flex-shrink-0">
-          <span className="text-sm font-medium text-primary-400">AI</span>
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
+          <span className="text-sm font-medium text-amber-400">AI</span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5">
             <span className="text-xs font-medium text-slate-400">面试官</span>
             {message.category && (
-              <span className="px-2 py-0.5 bg-primary-500/10 text-primary-400/80 text-xs rounded-full border border-primary-500/20">
+              <span className="px-2 py-0.5 bg-amber-500/10 text-amber-400/80 text-xs rounded-full border border-amber-500/20">
                 {message.category}
               </span>
             )}
           </div>
-          <div className="bg-slate-800/60 border border-slate-700/30 rounded-2xl rounded-tl-none px-4 py-3 text-slate-200 text-sm leading-relaxed">
+          <div className="bubble-interviewer px-4 py-3 text-slate-200 text-sm leading-relaxed">
             {message.content}
           </div>
         </div>
@@ -206,7 +206,7 @@ function MessageBubble({ message }: { message: Message }) {
       className="flex items-start gap-3 justify-end"
     >
       <div className="flex-1 max-w-[85%] min-w-0">
-        <div className="bg-gradient-to-r from-primary-500/20 to-primary-600/10 border border-primary-500/20 rounded-2xl rounded-tr-none px-4 py-3 text-slate-200 text-sm leading-relaxed">
+        <div className="bubble-user px-4 py-3 text-slate-200 text-sm leading-relaxed">
           {message.content}
         </div>
       </div>

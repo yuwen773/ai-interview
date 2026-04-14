@@ -109,56 +109,58 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
           height: '40px',
         }}
       >
-        {/* 下唇（微微凸起的弧形） */}
+        {/* 下唇（微微凸起的弧形） - GPU-accelerated with transform */}
         <div
           style={{
             position: 'absolute',
             bottom: '2px',
             left: '50%',
-            transform: 'translateX(-50%)',
-            width: `${28 + openness * 14}px`,
-            height: `${4 + openness * 8}px`,
+            transform: `translateX(-50%) scaleX(${1 + openness * 0.5}) scaleY(${1 + openness * 2})`,
+            width: '28px',
+            height: '4px',
             background: openness < 0.05
               ? 'rgba(160,80,60,0.3)'
               : `linear-gradient(to bottom, rgba(180,90,70,0.7) 0%, rgba(140,60,50,0.85) 50%, rgba(100,40,35,0.9) 100%)`,
             borderRadius: '50%',
-            transition: 'width 50ms ease, height 50ms ease, background 50ms ease',
+            transition: 'background 50ms ease',
           }}
         />
 
-        {/* 口腔开口（深色椭圆形，模拟张嘴） */}
+        {/* 口腔开口（深色椭圆形，模拟张嘴） - GPU-accelerated */}
         <div
           style={{
             position: 'absolute',
-            top: `${8 + (1 - openness) * 4}px`,
+            top: '8px',
             left: '50%',
-            transform: 'translateX(-50%)',
-            width: `${18 + openness * 20}px`,
-            height: `${openness * 26}px`,
+            transform: `translateX(-50%) scaleX(${1 + openness * 1.11}) scaleY(${Math.max(openness, 0.06) * 1})`,
+            transformOrigin: 'center top',
+            width: '18px',
+            height: '26px',
             background: openness < 0.06
               ? 'rgba(20,5,5,0)'
               : `radial-gradient(ellipse at 50% 30%, rgba(25,5,5,0.95) 0%, rgba(60,10,10,0.8) 60%, rgba(40,8,8,0.6) 100%)`,
             borderRadius: '50%',
             opacity: openness < 0.06 ? 0 : 1,
-            transition: 'width 45ms ease, height 45ms ease, opacity 45ms ease, top 45ms ease',
+            transition: 'opacity 45ms ease, background 45ms ease',
           }}
         />
 
-        {/* 上唇（两侧翼 + 唇弓） */}
+        {/* 上唇（两侧翼 + 唇弓） - GPU-accelerated with transform */}
         <div
           style={{
             position: 'absolute',
-            top: `${6 + (1 - openness) * 5}px`,
+            top: '6px',
             left: '50%',
-            transform: 'translateX(-50%)',
-            width: `${22 + openness * 16}px`,
-            height: `${3 + openness * 6}px`,
+            transform: `translateX(-50%) scaleX(${1 + openness * 0.727}) scaleY(${1 + openness * 2})`,
+            transformOrigin: 'center bottom',
+            width: '22px',
+            height: '3px',
             background: openness < 0.05
               ? 'rgba(170,85,65,0.25)'
               : `linear-gradient(to bottom, rgba(190,95,70,0.8) 0%, rgba(170,80,60,0.9) 100%)`,
             borderRadius: openness < 0.1 ? '50%' : `${50 + (1 - openness) * 50}%`,
             clipPath: openness < 0.1 ? 'none' : 'inset(0 15% 40% 15% round 50%)',
-            transition: 'width 50ms ease, height 50ms ease, background 50ms ease, border-radius 50ms ease',
+            transition: 'background 50ms ease',
           }}
         />
 
@@ -180,20 +182,21 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
           }} />
         </div>
 
-        {/* 牙齿（张嘴较大时可见） */}
+        {/* 牙齿（张嘴较大时可见） - GPU-accelerated with transform */}
         {openness > 0.55 && (
           <div
             style={{
               position: 'absolute',
-              top: `${10 + (1 - openness) * 3}px`,
+              top: '10px',
               left: '50%',
-              transform: 'translateX(-50%)',
-              width: `${12 + openness * 10}px`,
-              height: `${Math.min((openness - 0.55) * 30, 10)}px`,
+              transform: `translateX(-50%) scaleX(${0.8 + openness * 0.73}) scaleY(${openness})`,
+              transformOrigin: 'center top',
+              width: '12px',
+              height: '10px',
               background: 'linear-gradient(to bottom, rgba(245,240,235,0.95) 0%, rgba(230,225,220,0.9) 100%)',
               borderRadius: '2px 2px 1px 1px',
               opacity: 0.85,
-              transition: 'height 40ms ease, width 40ms ease',
+              transition: 'opacity 40ms ease, background 40ms ease',
             }}
           />
         )}
@@ -219,18 +222,18 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
           )}
         </AnimatePresence>
 
-        {/* 思考时光效 */}
+        {/* 思考时光效 - 降低透明度范围并延长周期，减少AI感 */}
         {mode === 'thinking' && (
           <motion.div
-            className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-transparent"
-            animate={{ opacity: [0.3, 0.6, 0.3] }}
-            transition={{ duration: 2, repeat: Infinity }}
+            className="absolute inset-0 bg-gradient-to-br from-amber-500/8 via-transparent to-transparent"
+            animate={{ opacity: [0.1, 0.25, 0.1] }}
+            transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
           />
         )}
 
         {/* 倾听时光效 */}
         {mode === 'listening' && (
-          <div className="absolute inset-0 bg-gradient-to-t from-blue-500/8 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-sky-500/6 via-transparent to-transparent" />
         )}
       </motion.div>
 
