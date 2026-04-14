@@ -23,6 +23,14 @@ public class XunfeiAvatarController {
     private final XunfeiAvatarProperties properties;
 
     /**
+     * 检查讯飞虚拟人是否启用
+     */
+    @GetMapping("/enabled")
+    public Result<Boolean> isEnabled() {
+        return Result.success(properties.isEnabled());
+    }
+
+    /**
      * 创建会话，获取视频流地址
      */
     @PostMapping("/session")

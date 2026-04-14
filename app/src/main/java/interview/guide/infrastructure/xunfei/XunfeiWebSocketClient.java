@@ -21,12 +21,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 public class XunfeiWebSocketClient {
 
-    private static final AtomicBoolean isConnected = new AtomicBoolean(false);
+    private static final OkHttpClient SHARED_CLIENT = new OkHttpClient.Builder().build();
+
+    private final AtomicBoolean isConnected = new AtomicBoolean(false);
 
     private WebSocket webSocket;
     private CountDownLatch connectLatch;
     private String sessionId;
     private String streamUrl;
+    private String streamCid;
     private JSONObject streamExtend;
 
     // 回调接口
@@ -49,10 +52,9 @@ public class XunfeiWebSocketClient {
      */
     public void connect(String requestUrl) {
         Request request = new Request.Builder().url(requestUrl).build();
-        OkHttpClient client = new OkHttpClient.Builder().build();
 
         connectLatch = new CountDownLatch(1);
-        this.webSocket = client.newWebSocket(request, buildListener());
+        this.webSocket = SHARED_CLIENT.newWebSocket(request, buildListener());
     }
 
     /**
@@ -278,6 +280,7 @@ public class XunfeiWebSocketClient {
 
                 if ("stream_info".equals(eventType)) {
                     this.streamUrl = avatar.getString("stream_url");
+                    this.streamCid = avatar.getString("cid");
                     this.streamExtend = avatar.getJSONObject("stream_extend");
                     log.info("[XunfeiWebSocket] Stream info received: url={}", streamUrl);
                     if (handler != null) {
@@ -315,6 +318,7 @@ public class XunfeiWebSocketClient {
     // Getter
     public String getSessionId() { return sessionId; }
     public String getStreamUrl() { return streamUrl; }
+    public String getStreamCid() { return streamCid; }
     public JSONObject getStreamExtend() { return streamExtend; }
     public boolean isConnected() { return isConnected.get(); }
 }

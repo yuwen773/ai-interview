@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PreDestroy;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -25,6 +26,12 @@ public class XunfeiAvatarServiceImpl implements XunfeiAvatarService {
 
     // 多会话管理：interviewSessionId -> 会话上下文
     private final Map<String, SessionContext> sessions = new ConcurrentHashMap<>();
+
+    @PreDestroy
+    public void shutdown() {
+        scheduler.shutdown();
+        sessions.keySet().forEach(this::destroySession);
+    }
 
     private static class SessionContext {
         XunfeiWebSocketClient client;
@@ -88,6 +95,9 @@ public class XunfeiAvatarServiceImpl implements XunfeiAvatarService {
         params.setVcn(properties.getVcn());
         params.setProtocol(properties.getProtocol());
         params.setWidth(properties.getWidth());
+        if ("xrtc".equals(properties.getProtocol())) {
+            params.setAlpha(1);
+        }
         params.setHeight(properties.getHeight());
         params.setSpeed(properties.getSpeed());
         params.setPitch(properties.getPitch());
@@ -110,7 +120,7 @@ public class XunfeiAvatarServiceImpl implements XunfeiAvatarService {
             }, 5, 5, TimeUnit.SECONDS);
 
             log.info("[XunfeiAvatar] Session ready: {}", interviewSessionId);
-            return new XunfeiStreamInfo(ctx.streamUrl, ctx.streamExtend);
+            return new XunfeiStreamInfo(ctx.streamUrl, ctx.streamExtend, ctx.client.getStreamCid());
 
         } catch (Exception e) {
             destroySession(interviewSessionId);

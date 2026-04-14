@@ -8,7 +8,7 @@ public interface XunfeiAvatarService {
     /**
      * 流信息封装
      */
-    record XunfeiStreamInfo(String streamUrl, String streamExtend) {}
+    record XunfeiStreamInfo(String streamUrl, String streamExtend, String cid) {}
 
     /**
      * 为指定面试会话创建数字人会话
