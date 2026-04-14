@@ -81,7 +81,6 @@ function ScoreCard({
   score,
   feedback,
   jobLabel,
-  // scorePercent, // 暂时未使用
   circumference,
   strokeDashoffset
 }: {
@@ -93,7 +92,7 @@ function ScoreCard({
   strokeDashoffset: number;
 }) {
   return (
-    <div className="bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 rounded-2xl p-8 text-white">
+    <div className="bg-gradient-to-br from-amber-600 via-amber-500 to-amber-600 rounded-2xl p-8 text-white">
       <div className="flex flex-col items-center text-center">
         {jobLabel && (
           <span className="mb-4 inline-flex rounded-full bg-white/15 px-3 py-1 text-sm font-medium text-white/90 ring-1 ring-white/20">
@@ -258,10 +257,12 @@ function QuestionCard({
       transition={{ delay: 0.1 + index * 0.05 }}
     >
       {/* 问题头部 */}
-        <div
-            className="px-5 py-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
-        onClick={onToggle}
-      >
+        <button
+            type="button"
+            aria-expanded={isExpanded}
+            className="w-full px-5 py-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:outline-none"
+          onClick={onToggle}
+        >
         <div className="flex items-center gap-3">
           <span
               className="w-8 h-8 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg flex items-center justify-center text-sm font-semibold">
@@ -284,7 +285,7 @@ function QuestionCard({
         >
           <polyline points="6,9 12,15 18,9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         </motion.svg>
-      </div>
+      </button>
 
       {/* 问题内容 */}
       <div className="px-5 pb-2">
@@ -304,7 +305,7 @@ function QuestionCard({
             <div className="px-5 pb-5 space-y-4">
               {/* 你的回答 */}
               <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1">
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-1">
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
                     <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>

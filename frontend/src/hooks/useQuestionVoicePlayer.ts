@@ -85,8 +85,9 @@ export function useQuestionVoicePlayer(
 
     stopCurrentSource();
 
+    // decodeAudioData 会 transfer（detach）传入的 ArrayBuffer，必须先复制
     ctx.decodeAudioData(
-      buffer,
+      buffer.slice(0),
       (decoded) => {
         const source = ctx.createBufferSource();
         source.buffer = decoded;

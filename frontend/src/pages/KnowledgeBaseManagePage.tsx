@@ -371,7 +371,7 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <StatCard icon={Database} label="知识库总数" value={stats.totalCount} color="bg-primary-500" />
-          <StatCard icon={MessageSquare} label="总提问次数" value={stats.totalQuestionCount} color="bg-indigo-500" />
+          <StatCard icon={MessageSquare} label="总提问次数" value={stats.totalQuestionCount} color="bg-primary-500" />
           <StatCard icon={Eye} label="总访问次数" value={stats.totalAccessCount} color="bg-emerald-500" />
         </div>
       )}
@@ -613,7 +613,7 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
                           )}
                           <button
                             onClick={() => setDeleteItem(kb)}
-                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                            className="p-2 text-red-700 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                             title="删除"
                           >
                             <Trash2 className="w-4 h-4" />

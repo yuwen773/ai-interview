@@ -23,6 +23,7 @@ import {
 interface InterviewHistoryPageProps {
   onBack: () => void;
   onViewInterview: (sessionId: string, resumeId?: number) => void;
+  onStartInterview?: () => void;
 }
 
 interface InterviewWithResume extends InterviewItem {
@@ -156,7 +157,7 @@ function getScoreColor(score: number): string {
   return 'bg-red-500';
 }
 
-export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview }: InterviewHistoryPageProps) {
+export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview, onStartInterview }: InterviewHistoryPageProps) {
   const [interviews, setInterviews] = useState<InterviewWithResume[]>([]);
   const [stats, setStats] = useState<InterviewStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -350,7 +351,7 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview 
             label="平均分数"
             value={stats.averageScore}
             suffix="分"
-            color="bg-indigo-500"
+            color="bg-primary-500"
           />
         </div>
       )}
@@ -369,9 +370,26 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
         >
-            <Users className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4"/>
+            {/* 面试插图 */}
+            <svg className="w-16 h-16 mx-auto mb-6 text-slate-300 dark:text-slate-600" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+              <circle cx="32" cy="32" r="24" fill="currentColor" opacity="0.2"/>
+              <circle cx="32" cy="28" r="8" fill="currentColor" opacity="0.6"/>
+              <path d="M20 48 C20 40 26 36 32 36 C38 36 44 40 44 48" fill="currentColor" opacity="0.5"/>
+              <circle cx="32" cy="28" r="8" fill="currentColor" opacity="0.6"/>
+              <path d="M20 48 C20 40 26 36 32 36 C38 36 44 40 44 48" fill="currentColor" opacity="0.5"/>
+              <circle cx="44" cy="20" r="5" fill="#f59e0b" opacity="0.8"/>
+              <path d="M44 20 L48 16" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
+            </svg>
             <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">暂无面试记录</h3>
-            <p className="text-slate-500 dark:text-slate-400">开始一次模拟面试后，记录将显示在这里</p>
+            <p className="text-slate-500 dark:text-slate-400 mb-6">开始一次模拟面试后，记录将显示在这里</p>
+            {onStartInterview && (
+              <button
+                onClick={onStartInterview}
+                className="px-5 py-2.5 bg-primary-500 hover:bg-primary-600 text-white rounded-xl text-sm font-medium transition-colors"
+              >
+                开始模拟面试
+              </button>
+            )}
         </motion.div>
       )}
 
@@ -433,9 +451,9 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview 
                         <div className="flex items-center gap-3">
                             <div className="w-16 h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                             <motion.div
-                              className={`h-full ${getScoreColor(interview.overallScore)} rounded-full`}
-                              initial={{ width: 0 }}
-                              animate={{ width: `${interview.overallScore}%` }}
+                              className={`h-full ${getScoreColor(interview.overallScore)} rounded-full origin-left`}
+                              initial={{ scaleX: 0 }}
+                              animate={{ scaleX: interview.overallScore / 100 }}
                               transition={{ duration: 0.8, delay: index * 0.05 }}
                             />
                           </div>
@@ -474,7 +492,7 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview 
                         <button
                           onClick={(e) => handleDeleteClick(interview, e)}
                           disabled={deletingSessionId === interview.sessionId}
-                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50"
+                          className="p-2 text-red-700 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50"
                           title="删除"
                         >
                           <Trash2 className="w-4 h-4" />

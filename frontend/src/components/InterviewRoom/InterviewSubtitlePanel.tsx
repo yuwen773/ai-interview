@@ -52,7 +52,7 @@ export function InterviewSubtitlePanel({
   }, [session, currentQuestion]);
 
   return (
-    <div className="flex flex-col h-full bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-slate-700/30 overflow-hidden">
+    <div className="flex flex-col h-full bg-slate-800 rounded-xl border border-slate-700/50 overflow-hidden">
       {/* 顶部控制区 */}
       <div className="p-4 border-b border-slate-700/30 space-y-4">
         {/* 进度条 */}
@@ -65,7 +65,7 @@ export function InterviewSubtitlePanel({
               {Math.round(progress)}%
             </span>
           </div>
-          <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+          <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
             <motion.div
               className="h-full bg-gradient-to-r from-primary-500 to-primary-400 rounded-full"
               initial={{ width: 0 }}
@@ -82,7 +82,9 @@ export function InterviewSubtitlePanel({
               type="button"
               onClick={() => onQuestionVoiceEnabledChange(!questionVoiceEnabled)}
               disabled={isBusy}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
+              aria-label={questionVoiceEnabled ? '关闭题目语音播报' : '开启题目语音播报'}
+              aria-pressed={questionVoiceEnabled}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:outline-none ${
                 questionVoiceEnabled ? 'bg-primary-500' : 'bg-slate-600'
               } disabled:opacity-40 disabled:cursor-not-allowed`}
             >
@@ -127,7 +129,7 @@ export function InterviewSubtitlePanel({
               type="button"
               onClick={onStopQuestionAudio}
               disabled={!isPlayingQuestionAudio}
-              className="p-2 bg-slate-700/50 hover:bg-red-500/20 text-slate-300 hover:text-red-400 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="p-2 bg-slate-700/50 hover:bg-red-500/20 text-white hover:text-red-400 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               whileHover={isPlayingQuestionAudio ? { scale: 1.05 } : {}}
               whileTap={isPlayingQuestionAudio ? { scale: 0.95 } : {}}
               title="停止播放"

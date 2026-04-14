@@ -261,6 +261,7 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
           <Search className="w-5 h-5 text-slate-400" />
           <input
             type="text"
+            aria-label="搜索简历"
             placeholder="搜索简历..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -282,7 +283,7 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
             icon={MessageSquare}
             label="面试总数"
             value={stats.totalInterviewCount}
-            color="bg-indigo-500"
+            color="bg-primary-500"
           />
           <StatCard
             icon={Eye}
@@ -307,7 +308,16 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
         >
-          <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+          <svg className="w-16 h-16 mx-auto mb-6 text-slate-300 dark:text-slate-600" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+            <rect x="16" y="10" width="32" height="44" rx="3" fill="currentColor" opacity="0.5"/>
+            <rect x="22" y="10" width="24" height="44" rx="3" fill="currentColor" opacity="0.35"/>
+            <rect x="28" y="10" width="18" height="44" rx="3" fill="currentColor" opacity="0.2"/>
+            <rect x="22" y="22" width="14" height="2" rx="1" fill="#f59e0b" opacity="0.9"/>
+            <rect x="22" y="28" width="10" height="2" rx="1" fill="currentColor" opacity="0.8"/>
+            <rect x="22" y="34" width="12" height="2" rx="1" fill="currentColor" opacity="0.6"/>
+            <rect x="22" y="40" width="8" height="2" rx="1" fill="currentColor" opacity="0.45"/>
+            <path d="M38 10 L46 10 L46 18" stroke="#f59e0b" strokeWidth="2" strokeLinejoin="round" fill="none" opacity="0.7"/>
+          </svg>
           <h3 className="text-xl font-semibold text-slate-700 mb-2">暂无简历记录</h3>
           <p className="text-slate-500">上传简历开始您的第一次 AI 面试分析</p>
         </motion.div>
@@ -421,7 +431,7 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
                         <button
                           onClick={(e) => handleDeleteClick(resume, e)}
                           disabled={deletingId === resume.id}
-                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                          className="p-2 text-red-700 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                           title="删除"
                         >
                           <Trash2 className="w-4 h-4" />

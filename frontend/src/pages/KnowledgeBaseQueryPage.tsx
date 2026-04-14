@@ -414,9 +414,17 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                   />
                 </div>
               ) : sessions.length === 0 ? (
-                  <div className="text-center py-6 text-slate-400 dark:text-slate-500 text-sm">
-                  暂无对话历史
-                </div>
+                  <div className="text-center py-6">
+                    <svg className="w-10 h-10 mx-auto mb-3 text-slate-300 dark:text-slate-600" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+                      <rect x="4" y="8" width="24" height="28" rx="3" fill="currentColor" opacity="0.4"/>
+                      <rect x="8" y="8" width="24" height="28" rx="3" fill="currentColor" opacity="0.25"/>
+                      <rect x="12" y="8" width="24" height="28" rx="3" fill="currentColor" opacity="0.15"/>
+                      <rect x="14" y="15" width="10" height="2" rx="1" fill="#f59e0b" opacity="0.7"/>
+                      <rect x="14" y="21" width="8" height="2" rx="1" fill="currentColor" opacity="0.6"/>
+                      <rect x="14" y="27" width="6" height="2" rx="1" fill="currentColor" opacity="0.45"/>
+                    </svg>
+                    <p className="text-slate-400 dark:text-slate-500 text-sm">暂无对话历史</p>
+                  </div>
               ) : (
                 <div className="space-y-2">
                   {sessions.map((session) => (
@@ -426,7 +434,7 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                       className={`p-3 rounded-lg cursor-pointer transition-all group ${currentSessionId === session.id
                           ? 'bg-primary-50 dark:bg-primary-900/30 border border-primary-500'
                           : 'bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 border border-transparent'
-                        } ${session.isPinned ? 'border-l-4 border-l-primary-500' : ''}`}
+                        }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
@@ -794,7 +802,7 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                 setEditingSessionTitle(null);
                 setNewSessionTitle('');
               }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50"
             />
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
               <motion.div

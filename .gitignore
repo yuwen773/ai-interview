@@ -50,3 +50,5 @@ docs/
 /_bmad-output/
 /.worktrees/
 .claude/
+.impeccable.md
+/.zread/

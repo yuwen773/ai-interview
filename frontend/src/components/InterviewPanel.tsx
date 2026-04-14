@@ -96,7 +96,7 @@ export default function InterviewPanel({
           <p className="text-slate-500 dark:text-slate-400 mb-6">开始模拟面试，获取专业评估</p>
         <motion.button
           onClick={onStartInterview}
-          className="px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl font-medium shadow-lg shadow-primary-500/30"
+          className="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-xl font-medium"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -203,7 +203,7 @@ export default function InterviewPanel({
         />
 
         {loadingInterview && (
-            <div className="fixed inset-0 bg-black/20 dark:bg-black/50 flex items-center justify-center z-50">
+            <div className="fixed inset-0 bg-slate-900/30 dark:bg-slate-950/60 flex items-center justify-center z-50">
               <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 flex items-center gap-4">
                 <motion.div
                     className="w-8 h-8 border-3 border-slate-200 dark:border-slate-600 border-t-primary-500 rounded-full"
@@ -295,7 +295,7 @@ function InterviewItemCard({
         <button
           onClick={onDelete}
           disabled={deleting}
-          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2 text-red-700 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           title="删除面试记录"
         >
           {deleting ? (

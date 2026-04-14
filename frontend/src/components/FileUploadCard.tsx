@@ -89,6 +89,13 @@ export default function FileUploadCard({
     onUpload(selectedFile, name.trim() || undefined);
   };
 
+  const handleDropZoneKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      document.getElementById('file-upload-input')?.click();
+    }
+  }, []);
+
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
@@ -126,21 +133,23 @@ export default function FileUploadCard({
       <motion.div
           className={`relative bg-white dark:bg-slate-800 rounded-2xl p-12 cursor-pointer transition-all duration-300
           ${dragOver ? 'scale-[1.02] shadow-xl' : 'shadow-lg hover:shadow-xl dark:shadow-slate-900/50'}`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={() => document.getElementById('file-upload-input')?.click()}
+          role="button"
+          tabIndex={0}
+          aria-label="点击或拖拽文件至此处上传"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => document.getElementById('file-upload-input')?.click()}
+          onKeyDown={handleDropZoneKeyDown}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        {/* 渐变边框效果 */}
+        {/* 简洁边框 */}
         <div
-          className={`absolute inset-0 rounded-2xl p-[2px] bg-gradient-to-r from-indigo-200 via-purple-200 to-indigo-200 -z-10
-            ${dragOver ? 'from-indigo-400 via-purple-400 to-indigo-400' : ''}`}
-        >
-          <div className="w-full h-full bg-white dark:bg-slate-800 rounded-2xl"/>
-        </div>
+          className={`absolute inset-0 rounded-2xl border-2 -z-10 transition-colors duration-200
+            ${dragOver ? 'border-primary-400 bg-primary-50/50 dark:bg-primary-900/20' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'}`}
+        />
 
         <input
           type="file"
@@ -149,6 +158,7 @@ export default function FileUploadCard({
           accept={accept}
           onChange={handleFileChange}
           disabled={uploading}
+          aria-label="选择简历文件"
         />
 
         <div className="text-center">
@@ -172,11 +182,12 @@ export default function FileUploadCard({
                     <p className="text-sm text-slate-500 dark:text-slate-400">{formatFileSize(selectedFile.size)}</p>
                   </div>
                   <button
-                      className="w-8 h-8 bg-red-100 dark:bg-red-900/50 text-red-500 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/70 transition-colors flex items-center justify-center"
+                      className="w-8 h-8 bg-red-100 dark:bg-red-900/50 text-red-500 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/70 transition-colors flex items-center justify-center focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:outline-none"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedFile(null);
                     }}
+                    aria-label="移除已选择的文件"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -204,7 +215,7 @@ export default function FileUploadCard({
                   </p>
                 </div>
                 <motion.button
-                  className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-8 py-3.5 rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all"
+                  className="bg-primary-500 hover:bg-primary-600 text-white px-8 py-3.5 rounded-xl font-semibold transition-all focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:outline-none"
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={(e) => {
@@ -223,7 +234,7 @@ export default function FileUploadCard({
       {/* 名称输入框 */}
       {showNameInput && selectedFile && (
         <motion.div
-            className="mt-6 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg dark:shadow-slate-900/50"
+            className="mt-6 bg-white dark:bg-slate-800 rounded-2xl p-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
@@ -260,7 +271,7 @@ export default function FileUploadCard({
         {onBack && (
           <motion.button
             onClick={onBack}
-            className="px-6 py-3 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
+            className="px-6 py-3 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-all focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:outline-none"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -271,7 +282,7 @@ export default function FileUploadCard({
           <motion.button
             onClick={handleUpload}
             disabled={uploading}
-            className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-semibold shadow-lg shadow-emerald-500/30 hover:shadow-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-8 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-xl font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:outline-none"
             whileHover={{ scale: uploading ? 1 : 1.02 }}
             whileTap={{ scale: uploading ? 1 : 0.98 }}
           >

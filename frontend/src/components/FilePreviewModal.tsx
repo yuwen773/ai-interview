@@ -304,7 +304,7 @@ export default function FilePreviewModal({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50"
           />
 
           {/* Modal */}
@@ -323,7 +323,7 @@ export default function FilePreviewModal({
               {/* Header */}
               <div className="flex items-center justify-between gap-4 px-6 py-4
                 border-b border-slate-100 dark:border-slate-700
-                bg-gradient-to-r from-slate-50 to-white dark:from-slate-800 dark:to-slate-800
+                bg-slate-50 dark:bg-slate-800
                 shrink-0"
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -362,10 +362,9 @@ export default function FilePreviewModal({
                     onClick={onDownload}
                     disabled={!meta?.downloadUrl}
                     className="inline-flex items-center gap-2 px-4 py-2
-                      bg-gradient-to-r from-primary-500 to-primary-600
-                      hover:from-primary-600 hover:to-primary-700
+                      bg-primary-500 hover:bg-primary-600
                       text-white text-sm font-medium rounded-lg
-                      shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Download className="w-4 h-4" />
                     下载
@@ -405,9 +404,8 @@ export default function FilePreviewModal({
                       className="fixed bottom-8 right-8 z-10
                         flex items-center justify-center w-12 h-12 rounded-full
                         bg-primary-500 hover:bg-primary-600
-                        text-white shadow-lg shadow-primary-500/30
-                        transition-all hover:shadow-xl hover:shadow-primary-500/40
-                        active:scale-95"
+                        text-white
+                        transition-all active:scale-95"
                       title="回到顶部"
                     >
                       <ChevronUp className="w-5 h-5" />

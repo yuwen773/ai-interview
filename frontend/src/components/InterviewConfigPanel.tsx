@@ -20,6 +20,8 @@ interface InterviewConfigPanelProps {
   resumeText: string;
   onBack: () => void;
   error?: string;
+  configStep: 1 | 2;
+  onStepChange: (step: 1 | 2) => void;
 }
 
 export default function InterviewConfigPanel({
@@ -39,10 +41,13 @@ export default function InterviewConfigPanel({
   onStartNew,
   resumeText,
   onBack,
-  error
+  error,
+  configStep,
+  onStepChange
 }: InterviewConfigPanelProps) {
   const canStart = !isCreating && !loadingRoles && !!selectedJobRole;
   const selectedPackage = packages.find((item) => item.id === selectedPackageId) ?? packages[0];
+  const canProceedToStep2 = !!selectedJobRole && !loadingRoles;
 
   return (
     <motion.div
@@ -50,7 +55,7 @@ export default function InterviewConfigPanel({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <div className="rounded-2xl border border-slate-100 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:shadow-slate-900/50">
+      <div className="rounded-xl border border-slate-100 bg-white p-8 dark:border-slate-700 dark:bg-slate-800">
         <h2 className="mb-6 flex items-center gap-3 text-2xl font-bold text-slate-900 dark:text-white">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-100 dark:bg-primary-900/50">
             <svg className="h-5 w-5 text-primary-600 dark:text-primary-400" viewBox="0 0 24 24" fill="none">
@@ -86,7 +91,7 @@ export default function InterviewConfigPanel({
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="mb-6 rounded-xl border-2 border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-5 dark:border-amber-800 dark:from-amber-900/30 dark:to-orange-900/30"
+              className="mb-6 rounded-xl border-2 border-amber-200 bg-amber-50 p-5 dark:border-amber-800 dark:bg-slate-800"
             >
               <div className="mb-4 flex items-start gap-3">
                 <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/50">
@@ -127,77 +132,140 @@ export default function InterviewConfigPanel({
         </AnimatePresence>
 
         <div className="space-y-6">
-          <div>
-            <label className="mb-3 block text-sm font-semibold text-slate-700 dark:text-slate-300">
-              目标岗位
-            </label>
-            {loadingRoles ? (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400">
-                正在加载岗位列表...
+          {/* Step indicator */}
+          {configStep === 1 && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium text-primary-600 dark:text-primary-400">步骤 1 / 2</span>
+                <span className="text-slate-500 dark:text-slate-400">选择目标岗位</span>
               </div>
-            ) : (
-              <JobRoleSelector
-                roles={roles}
-                selectedRole={selectedJobRole}
-                onSelect={onJobRoleChange}
-              />
-            )}
-          </div>
+              <div className="mt-2 h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700">
+                <motion.div
+                  className="h-full rounded-full bg-primary-500"
+                  initial={{ width: '0%' }}
+                  animate={{ width: '50%' }}
+                  transition={{ duration: 0.3 }}
+                />
+              </div>
+            </div>
+          )}
 
-          <div>
-            <label className="mb-3 block text-sm font-semibold text-slate-700 dark:text-slate-300">
-              面试套餐
-            </label>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {packages.map((item) => (
-                <motion.button
-                  key={item.id}
-                  onClick={() => onPackageChange(item.id)}
-                  className={`rounded-2xl border px-4 py-4 text-left transition-all ${
-                    selectedPackageId === item.id
-                      ? 'border-primary-500 bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-                      : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700'
-                  }`}
-                  whileHover={{ scale: 1.02, y: -1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <div className="mb-2 flex items-start justify-between gap-3">
-                    <div>
-                      <div className="text-base font-semibold">{item.name}</div>
-                      <div className={`text-sm ${selectedPackageId === item.id ? 'text-white/80' : 'text-slate-500 dark:text-slate-400'}`}>
-                        共 {item.totalQuestions} 题（含追问）
+          {configStep === 2 && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium text-primary-600 dark:text-primary-400">步骤 2 / 2</span>
+                <span className="text-slate-500 dark:text-slate-400">选择面试套餐</span>
+              </div>
+              <div className="mt-2 h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700">
+                <motion.div
+                  className="h-full rounded-full bg-primary-500"
+                  initial={{ width: '50%' }}
+                  animate={{ width: '100%' }}
+                  transition={{ duration: 0.3 }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Step 1: Job Role Selection */}
+          {configStep === 1 && (
+            <div>
+              <label className="mb-3 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                目标岗位
+              </label>
+              {loadingRoles ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400">
+                  正在加载岗位列表...
+                </div>
+              ) : (
+                <JobRoleSelector
+                  roles={roles}
+                  selectedRole={selectedJobRole}
+                  onSelect={onJobRoleChange}
+                />
+              )}
+            </div>
+          )}
+
+          {/* Step 2: Package Selection */}
+          {configStep === 2 && (
+            <div>
+              <label className="mb-3 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                面试套餐
+              </label>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {packages.map((item) => (
+                  <motion.button
+                    key={item.id}
+                    onClick={() => onPackageChange(item.id)}
+                    className={`rounded-2xl border px-4 py-4 text-left transition-all ${
+                      selectedPackageId === item.id
+                        ? 'border-primary-600 bg-primary-600 text-white'
+                        : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700'
+                    }`}
+                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <div className="mb-2 flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-base font-semibold">{item.name}</div>
+                          {item.id === 'standard' && (
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                              selectedPackageId === item.id
+                                ? 'bg-white/20 text-white'
+                                : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            }`}>
+                              推荐
+                            </span>
+                          )}
+                        </div>
+                        <div className={`text-sm ${selectedPackageId === item.id ? 'text-white/80' : 'text-slate-500 dark:text-slate-400'}`}>
+                          共 {item.totalQuestions} 题（含追问）
+                        </div>
+                        <div className={`text-xs mt-1 ${selectedPackageId === item.id ? 'text-white/60' : 'text-slate-400 dark:text-slate-500'}`}>
+                          {item.id === 'warmup' && '首次体验 / 时间紧张'}
+                          {item.id === 'standard' && '日常练习'}
+                          {item.id === 'deep' && '查漏补缺'}
+                          {item.id === 'challenge' && '面试前压测'}
+                        </div>
+                      </div>
+                      <div className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                        selectedPackageId === item.id
+                          ? 'bg-white/15 text-white'
+                          : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                      }`}>
+                        {item.estimatedDuration}
                       </div>
                     </div>
-                    <div className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                      selectedPackageId === item.id
-                        ? 'bg-white/15 text-white'
-                        : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
-                    }`}>
-                      {item.estimatedDuration}
+                    <div className={`text-sm leading-6 ${selectedPackageId === item.id ? 'text-white/90' : 'text-slate-600 dark:text-slate-300'}`}>
+                      {item.description}
                     </div>
-                  </div>
-                  <div className={`text-sm leading-6 ${selectedPackageId === item.id ? 'text-white/90' : 'text-slate-600 dark:text-slate-300'}`}>
-                    {item.description}
-                  </div>
-                </motion.button>
-              ))}
+                  </motion.button>
+                ))}
+              </div>
+              {selectedPackage && (
+                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                  当前套餐包含 {selectedPackage.mainQuestionCount} 道主问题，每道主问题带 1 道追问，预计完成 {selectedPackage.estimatedDuration}。
+                </p>
+              )}
             </div>
-            {selectedPackage && (
-              <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-                当前套餐包含 {selectedPackage.mainQuestionCount} 道主问题，每道主问题带 1 道追问，预计完成 {selectedPackage.estimatedDuration}。
-              </p>
-            )}
-          </div>
+          )}
 
           <div className="mb-6">
             <label className="mb-3 block text-sm font-semibold text-slate-600 dark:text-slate-400">
-              简历预览（前 500 字）
+              简历摘要（用于生成面试题）
             </label>
             <textarea
-              value={resumeText.substring(0, 500) + (resumeText.length > 500 ? '...' : '')}
+              value={resumeText.substring(0, 500) + (resumeText.length > 500 ? '\n\n[...其余内容已截断]' : '')}
               readOnly
               className="h-32 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-400"
             />
+            {resumeText.length > 500 && (
+              <p className="mt-1.5 text-xs text-slate-400">
+                共 {resumeText.length} 字，此处展示前 500 字作为摘要
+              </p>
+            )}
           </div>
 
           <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
@@ -218,34 +286,59 @@ export default function InterviewConfigPanel({
           </AnimatePresence>
 
           <div className="flex justify-center gap-4">
-            <motion.button
-              onClick={onBack}
-              className="rounded-xl border border-slate-200 px-6 py-3 font-medium text-slate-600 transition-all hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              返回
-            </motion.button>
-            <motion.button
-              onClick={onStart}
-              disabled={!canStart}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 px-8 py-3 font-semibold text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
-              whileHover={{ scale: canStart ? 1.02 : 1, y: canStart ? -1 : 0 }}
-              whileTap={{ scale: canStart ? 0.98 : 1 }}
-            >
-              {isCreating ? (
-                <>
-                  <motion.span
-                    className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                  />
-                  正在生成题目...
-                </>
-              ) : (
-                <>{selectedJobRole ? '开始面试' : '请选择岗位'}</>
-              )}
-            </motion.button>
+            {configStep === 2 && (
+              <motion.button
+                onClick={() => onStepChange(1)}
+                className="rounded-xl border border-slate-200 px-6 py-3 font-medium text-slate-600 transition-all hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                返回
+              </motion.button>
+            )}
+            {configStep === 1 && (
+              <>
+                <motion.button
+                  onClick={onBack}
+                  className="rounded-xl border border-slate-200 px-6 py-3 font-medium text-slate-600 transition-all hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  返回
+                </motion.button>
+                <motion.button
+                  onClick={() => onStepChange(2)}
+                  disabled={!canProceedToStep2}
+                  className="flex items-center gap-2 rounded-xl bg-primary-500 px-8 py-3 font-semibold text-white transition-all hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  whileHover={{ scale: canProceedToStep2 ? 1.02 : 1, y: canProceedToStep2 ? -1 : 0 }}
+                  whileTap={{ scale: canProceedToStep2 ? 0.98 : 1 }}
+                >
+                  下一步
+                </motion.button>
+              </>
+            )}
+            {configStep === 2 && (
+              <motion.button
+                onClick={onStart}
+                disabled={!canStart}
+                className="flex items-center gap-2 rounded-xl bg-primary-500 px-8 py-3 font-semibold text-white transition-all hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                whileHover={{ scale: canStart ? 1.02 : 1, y: canStart ? -1 : 0 }}
+                whileTap={{ scale: canStart ? 0.98 : 1 }}
+              >
+                {isCreating ? (
+                  <>
+                    <motion.span
+                      className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                    />
+                    正在生成题目...
+                  </>
+                ) : (
+                  <>开始面试</>
+                )}
+              </motion.button>
+            )}
           </div>
         </div>
       </div>

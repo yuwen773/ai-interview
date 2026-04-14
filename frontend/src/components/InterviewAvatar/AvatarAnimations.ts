@@ -25,7 +25,8 @@ export class AvatarAnimations {
       // 执行眨眼
       this.performBlink();
       this.blinkTimer = 0;
-      this.nextBlinkTime = 2 + Math.random() * 3; // 2-5秒后下一次眨眼
+      // 确定性振荡：使用 clock.elapsedTime 产生有规律的 2-5 秒眨眼间隔
+      this.nextBlinkTime = 2 + (Math.sin(this.clock.elapsedTime * 0.5) * 0.5 + 0.5) * 3;
     }
   }
 

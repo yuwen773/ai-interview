@@ -230,7 +230,11 @@ function InterviewHistoryWrapper() {
     }
   };
 
-  return <InterviewHistoryPage onBack={handleBack} onViewInterview={handleViewInterview} />;
+  const handleStartInterview = () => {
+    navigate('/interview');
+  };
+
+  return <InterviewHistoryPage onBack={handleBack} onViewInterview={handleViewInterview} onStartInterview={handleStartInterview} />;
 }
 
 // 知识库管理页面包装器

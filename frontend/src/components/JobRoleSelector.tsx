@@ -25,9 +25,10 @@ export default function JobRoleSelector({
             type="button"
             onClick={() => onSelect(role.code)}
             disabled={disabled}
+            aria-pressed={selected}
             className={`rounded-2xl border p-4 text-left transition-all ${
               selected
-                ? 'border-primary-500 bg-primary-50 shadow-lg shadow-primary-500/10 dark:border-primary-400 dark:bg-primary-900/20'
+                ? 'border-primary-500 bg-primary-50 dark:border-primary-400 dark:bg-primary-900/40'
                 : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white dark:border-slate-700 dark:bg-slate-900/40 dark:hover:border-slate-600 dark:hover:bg-slate-800'
             } disabled:cursor-not-allowed disabled:opacity-60`}
             whileHover={{ scale: disabled ? 1 : 1.01 }}
