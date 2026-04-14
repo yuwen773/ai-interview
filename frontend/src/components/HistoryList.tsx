@@ -3,7 +3,7 @@ import {AnimatePresence, motion} from 'framer-motion';
 import {AnalyzeStatus, historyApi, ResumeListItem, ResumeStats} from '../api/history';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 import {getScoreColor} from '../utils/score';
-import {formatDate} from '../utils/date';
+import {formatDate, formatFileSize} from '../utils/date';
 import {
   AlertCircle,
   CheckCircle,
@@ -23,14 +23,6 @@ import {
 
 interface HistoryListProps {
   onSelectResume: (id: number) => void;
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
 function StatusIcon({ status, hasScore }: { status?: AnalyzeStatus; hasScore: boolean }) {

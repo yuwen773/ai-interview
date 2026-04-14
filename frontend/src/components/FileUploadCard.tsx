@@ -1,5 +1,6 @@
 import {ChangeEvent, DragEvent, useCallback, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
+import {formatFileSize} from '../utils/date';
 import {AlertCircle, FileText, Loader2, Upload, X} from 'lucide-react';
 
 export interface FileUploadCardProps {
@@ -95,12 +96,6 @@ export default function FileUploadCard({
       document.getElementById('file-upload-input')?.click();
     }
   }, []);
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-  };
 
   return (
     <motion.div

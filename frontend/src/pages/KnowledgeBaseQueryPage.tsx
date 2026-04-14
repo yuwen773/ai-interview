@@ -5,10 +5,10 @@ import remarkGfm from 'remark-gfm';
 import {Virtuoso, type VirtuosoHandle} from 'react-virtuoso';
 import {knowledgeBaseApi, type KnowledgeBaseItem, type SortOption} from '../api/knowledgebase';
 import {ragChatApi, type RagChatSessionListItem} from '../api/ragChat';
-import {formatDateOnly} from '../utils/date';
+import {formatDateOnly, formatFileSize} from '../utils/date';
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
 import CodeBlock from '../components/CodeBlock';
-import {ChevronLeft, ChevronRight, Edit, MessageSquare, Pin, Plus, Trash2,} from 'lucide-react';
+import {ChevronLeft, ChevronDown, ChevronRight, Edit, MessageSquare, Pin, Plus, Search, Trash2,} from 'lucide-react';
 
 interface KnowledgeBaseQueryPageProps {
   onBack: () => void;
@@ -20,6 +20,7 @@ interface Message {
   type: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  isStreaming?: boolean;
 }
 
 interface CategoryGroup {
@@ -72,6 +73,15 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
       loadKnowledgeBases();
     }
   }, [sortBy]);
+
+  // Cleanup RAF on unmount to prevent state updates on unmounted component
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, []);
 
   const loadKnowledgeBases = async () => {
     setLoadingList(true);
@@ -286,21 +296,18 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
       type: 'assistant',
       content: '',
       timestamp: new Date(),
+      isStreaming: true,
     };
     setMessages(prev => [...prev, assistantMessage]);
 
     let fullContent = '';
-    const updateAssistantMessage = (content: string) => {
+    const updateAssistantMessage = (content: string, done = false) => {
       setMessages(prev => {
-        const newMessages = [...prev];
-        const lastIndex = newMessages.length - 1;
-        if (lastIndex >= 0 && newMessages[lastIndex].type === 'assistant') {
-          newMessages[lastIndex] = {
-            ...newMessages[lastIndex],
-            content: content,
-          };
-        }
-        return newMessages;
+        if (prev.length === 0) return prev;
+        const lastIndex = prev.length - 1;
+        const last = prev[lastIndex];
+        if (last.type !== 'assistant') return prev;
+        return [...prev.slice(0, -1), { ...last, content, isStreaming: !done }];
       });
     };
 
@@ -320,26 +327,21 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
           });
         },
         () => {
+          updateAssistantMessage(fullContent, true);
           setLoading(false);
           loadSessions();
         },
         (error: Error) => {
           console.error('流式查询失败:', error);
-          updateAssistantMessage(fullContent || error.message || '回答失败，请重试');
+          updateAssistantMessage(fullContent || error.message || '回答失败，请重试', true);
           setLoading(false);
         }
       );
     } catch (err) {
       console.error('发起流式查询失败:', err);
-      updateAssistantMessage(err instanceof Error ? err.message : '回答失败，请重试');
+      updateAssistantMessage(err instanceof Error ? err.message : '回答失败，请重试', true);
       setLoading(false);
     }
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
   const formatTimeAgo = (dateStr: string): string => {
@@ -358,12 +360,21 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
   };
 
   return (
-    <div className="max-w-7xl mx-auto pt-8 pb-10 px-4">
-      {/* 头部 */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-1">问答助手</h1>
-          <p className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] text-sm">选择知识库，向 AI 提问</p>
+    <div className="max-w-7xl mx-auto pb-12 px-6">
+      {/* 头部 - 充足的上方空间形成视觉呼吸 */}
+      <motion.div
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+        className="flex items-center justify-between mb-8"
+      >
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)] tracking-tight">问答助手</h1>
+            <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mt-1.5">选择知识库，向 AI 提问</p>
+          </div>
+          {/* 装饰性琥珀色竖条 */}
+          <div className="w-1 h-10 bg-gradient-to-b from-[var(--color-primary)] to-[var(--color-primary-hover)] rounded-full opacity-60" />
         </div>
         <div className="flex gap-3">
           <motion.button
@@ -383,15 +394,20 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
             返回
           </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       <div className="flex gap-4 h-[calc(100vh-10rem)]">
-        {/* 左侧：对话历史 */}
-        <div className="w-64 flex-shrink-0">
+        {/* 左侧：对话历史 - 与中间聊天区保持视觉区隔 */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+          className="w-64 flex-shrink-0"
+        >
           <div
-              className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-4 shadow-sm h-full flex flex-col border border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
+              className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-5 shadow-sm h-full flex flex-col border border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">对话历史</h2>
+              <h2 className="text-xs font-semibold text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] uppercase tracking-wider">对话历史</h2>
               <motion.button
                 onClick={handleNewSession}
                 disabled={selectedKbIds.size === 0}
@@ -414,8 +430,8 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                   />
                 </div>
               ) : sessions.length === 0 ? (
-                  <div className="text-center py-6">
-                    <svg className="w-10 h-10 mx-auto mb-3 text-[var(--color-text-muted)] dark:text-[var(--color-border-dark)]" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+                  <div className="text-center py-8">
+                    <svg className="w-12 h-12 mx-auto mb-3 text-[var(--color-text-muted)] dark:text-[var(--color-border-dark)] opacity-50" viewBox="0 0 40 40" fill="none" aria-hidden="true">
                       <rect x="4" y="8" width="24" height="28" rx="3" fill="currentColor" opacity="0.4"/>
                       <rect x="8" y="8" width="24" height="28" rx="3" fill="currentColor" opacity="0.25"/>
                       <rect x="12" y="8" width="24" height="28" rx="3" fill="currentColor" opacity="0.15"/>
@@ -423,15 +439,18 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                       <rect x="14" y="21" width="8" height="2" rx="1" fill="currentColor" opacity="0.6"/>
                       <rect x="14" y="27" width="6" height="2" rx="1" fill="currentColor" opacity="0.45"/>
                     </svg>
-                    <p className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] text-sm">暂无对话历史</p>
+                    <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">暂无对话历史</p>
+                    <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mt-1 opacity-70">开始对话后将显示在这里</p>
                   </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {sessions.map((session) => (
-                    <div
+                    <motion.div
                       key={session.id}
                       onClick={() => handleLoadSession(session.id)}
-                      className={`p-3 rounded-lg cursor-pointer transition-all group ${currentSessionId === session.id
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                      className={`p-3.5 rounded-xl cursor-pointer transition-all group ${currentSessionId === session.id
                           ? 'bg-[var(--color-primary-subtle)] dark:bg-[var(--color-primary-subtle-dark)] border border-[var(--color-primary)]'
                           : 'bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)]/50 hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] border border-transparent'
                         }`}
@@ -481,26 +500,31 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                           </button>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               )}
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* 中间：聊天区域 */}
-        <div className="flex-1 min-w-0">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+          className="flex-1 min-w-0"
+        >
           <div
               className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl shadow-sm flex flex-col h-full border border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
             {selectedKbIds.size > 0 ? (
               <>
-                {/* 会话信息 */}
-                <div className="p-4 border-b border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
+                {/* 会话信息 - 紧凑但有呼吸感 */}
+                <div className="px-5 py-4 border-b border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
                   <h2 className="text-base font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
                     {currentSessionTitle || (selectedKbIds.size === 1
                       ? knowledgeBases.find(kb => kb.id === Array.from(selectedKbIds)[0])?.name || '新对话'
-                      : `${selectedKbIds.size} 个知识库 - 新对话`)}
+                      : `${selectedKbIds.size} 个知识库`)}
                   </h2>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {Array.from(selectedKbIds).map(kbId => {
@@ -518,11 +542,21 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                 {/* 消息列表 */}
                 <div className="flex-1 min-h-0 relative dark:bg-[var(--color-surface-dark)]">
                   {messages.length === 0 ? (
-                      <div
-                          className="absolute inset-0 flex flex-col items-center justify-center text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
-                      <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                      <p className="text-sm">开始提问吧！</p>
-                    </div>
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                        className="absolute inset-0 flex flex-col items-center justify-center"
+                      >
+                      <motion.div
+                        animate={{ y: [0, -4, 0] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                      >
+                        <MessageSquare className="w-12 h-12 text-[var(--color-text-muted)] dark:text-[var(--color-border-dark)] opacity-30" />
+                      </motion.div>
+                      <p className="mt-3 text-base text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">开始提问吧！</p>
+                      <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] opacity-60 mt-1">AI 正在聆听...</p>
+                    </motion.div>
                   ) : (
                     <Virtuoso
                       ref={virtuosoRef}
@@ -531,22 +565,31 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                       followOutput="smooth"
                       className="h-full w-full"
                       itemContent={(index, msg) => (
-                          <div className="pb-4 px-4 first:pt-4 dark:bg-[var(--color-surface-dark)]">
+                          <div className="pb-5 px-5 first:pt-5 last:pb-5 dark:bg-[var(--color-surface-dark)]">
                           <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
+                            initial={{ opacity: 0, y: 16, scale: 0.96 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 280,
+                              damping: 24,
+                              mass: 0.8,
+                            }}
                             className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
                           >
-                            <div
-                              className={`max-w-[85%] rounded-2xl p-4 shadow-sm ${msg.type === 'user'
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: 0.05, duration: 0.15 }}
+                              className={`max-w-2xl rounded-2xl p-5 shadow-sm ${msg.type === 'user'
                                 ? 'bg-[var(--color-primary-hover)] text-white'
                                   : 'bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] text-[var(--color-text)] dark:text-[var(--color-text-muted-dark)]'
                               }`}
                             >
                               {msg.type === 'user' ? (
-                                <p className="whitespace-pre-wrap leading-relaxed text-sm">{msg.content}</p>
+                                <p className="whitespace-pre-wrap leading-relaxed text-base">{msg.content}</p>
                               ) : (
-                                  <div className="prose prose-slate dark:prose-invert prose-sm max-w-none">
+                                  <div className="prose prose-stone dark:prose-invert max-w-none text-base leading-relaxed">
                                   <ReactMarkdown
                                     remarkPlugins={[remarkGfm]}
                                     components={{
@@ -558,7 +601,7 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                                         if (isInline) {
                                           return (
                                               <code
-                                                  className="bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-primary-hover)] dark:text-[var(--color-primary)] px-1.5 py-0.5 rounded-md text-sm font-normal">
+                                                  className="bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-primary-hover)] dark:text-[var(--color-primary)] px-1.5 py-0.5 rounded text-xs font-mono">
                                               {children}
                                             </code>
                                           );
@@ -577,12 +620,19 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                                   >
                                     {formatMarkdown(msg.content)}
                                   </ReactMarkdown>
-                                  {loading && index === messages.length - 1 && (
-                                    <span className="inline-block w-0.5 h-5 bg-[var(--color-primary)] ml-1 animate-pulse" />
+                                  {/* 流式打字光标 - 带琥珀色光晕 */}
+                                  {msg.isStreaming && (
+                                    <motion.span
+                                      className="inline-flex items-center ml-1"
+                                      animate={{ opacity: [1, 0.4, 1] }}
+                                      transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
+                                    >
+                                      <span className="w-0.5 h-5 bg-[var(--color-primary)] rounded-full shadow-[0_0_8px_var(--color-primary),0_0_16px_var(--color-primary)]" />
+                                    </motion.span>
                                   )}
                                 </div>
                               )}
-                            </div>
+                            </motion.div>
                           </motion.div>
                         </div>
                       )}
@@ -590,8 +640,8 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                   )}
                 </div>
 
-                {/* 输入区域 */}
-                <div className="p-4 border-t border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
+                {/* 输入区域 - 与消息区形成明显区隔 */}
+                <div className="p-5 border-t border-[var(--color-border)] dark:border-[var(--color-border-dark)] bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)]">
                   <div className="flex gap-3">
                     <input
                       type="text"
@@ -605,42 +655,65 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                     <motion.button
                       onClick={handleSubmitQuestion}
                       disabled={!question.trim() || selectedKbIds.size === 0 || loading}
-                      className="px-5 py-2.5 bg-[var(--color-primary)] text-white rounded-xl font-medium hover:bg-[var(--color-primary-hover)] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                      whileHover={{ scale: loading ? 1 : 1.02 }}
+                      className="px-5 py-2.5 bg-[var(--color-primary)] text-white rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm shadow-sm hover:shadow-md"
+                      whileHover={loading ? {} : { scale: 1.02, boxShadow: "0 4px 12px rgba(245, 158, 11, 0.35)" }}
                       whileTap={{ scale: loading ? 1 : 0.98 }}
                     >
-                      发送
+                      {loading ? (
+                        <motion.span
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          className="inline-block"
+                        >
+                          ◌
+                        </motion.span>
+                      ) : '发送'}
                     </motion.button>
                   </div>
                 </div>
               </>
             ) : (
-                <div className="flex-1 flex items-center justify-center text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
-                <div className="text-center">
-                  <svg className="w-12 h-12 mx-auto mb-3 opacity-50" viewBox="0 0 24 24" fill="none">
-                    <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <p className="text-sm">请先在右侧选择知识库</p>
-                </div>
+                <div className="flex-1 flex items-center justify-center">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-center"
+                >
+                  <div className="relative w-14 h-14 mx-auto mb-4">
+                    {/* 背景圆环 */}
+                    <motion.div
+                      className="absolute inset-0 rounded-full border-2 border-[var(--color-border)] dark:border-[var(--color-border-dark)]"
+                      animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0.2, 0.5] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    {/* 中心图标 */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <MessageSquare className="w-7 h-7 text-[var(--color-text-muted)] dark:text-[var(--color-border-dark)]" />
+                    </div>
+                  </div>
+                  <p className="text-base text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mb-1">等待选择知识库</p>
+                  <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] opacity-70">从右侧面板选择要查询的知识库</p>
+                </motion.div>
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
 
         {/* 右侧：知识库选择（简化版） */}
         <AnimatePresence>
           {rightPanelOpen && (
             <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 280, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="flex-shrink-0 overflow-hidden"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.3, delay: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
+              className="flex-shrink-0 w-[280px]"
             >
               <div
-                  className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-4 shadow-sm h-full flex flex-col w-[280px] border border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
+                  className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-4 shadow-sm h-full flex flex-col border border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-base font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">选择知识库</h2>
+                  <h2 className="text-xs font-semibold text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] uppercase tracking-wider">选择知识库</h2>
                   <button
                     onClick={() => setRightPanelOpen(false)}
                     className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)] dark:hover:text-[var(--color-text-dark)] rounded"
@@ -650,42 +723,40 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                 </div>
 
                 {/* 搜索框 */}
-                <div className="flex gap-2 mb-3">
-                  <input
-                    type="text"
-                    value={searchKeyword}
-                    onChange={(e) => setSearchKeyword(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    placeholder="搜索..."
-                    className="flex-1 px-3 py-1.5 text-sm border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)] placeholder-[var(--color-text-placeholder)]"
-                  />
-                  <button
-                    onClick={handleSearch}
-                    className="px-3 py-1.5 text-sm bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)]"
-                  >
-                    搜索
-                  </button>
+                <div className="flex gap-2 mb-4">
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      value={searchKeyword}
+                      onChange={(e) => setSearchKeyword(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                      placeholder="搜索知识库..."
+                      className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)] placeholder-[var(--color-text-placeholder)]"
+                    />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none" />
+                  </div>
                 </div>
 
                 {/* 排序 */}
-                <div className="mb-3">
+                <div className="mb-4 relative">
                   <select
                     value={sortBy}
                     onChange={(e) => {
                       setSortBy(e.target.value as SortOption);
                       setSearchKeyword('');
                     }}
-                    className="w-full px-2 py-1 text-xs border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text)] dark:text-[var(--color-text-muted-dark)]"
+                    className="w-full appearance-none pl-4 pr-10 py-2 border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)] cursor-pointer"
                   >
                     <option value="time">时间排序</option>
                     <option value="size">大小排序</option>
                     <option value="access">访问排序</option>
                     <option value="question">提问排序</option>
                   </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none" />
                 </div>
 
                 {/* 知识库列表 */}
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto py-1">
                   {loadingList ? (
                     <div className="text-center py-6">
                       <motion.div
@@ -695,7 +766,7 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                       />
                     </div>
                   ) : knowledgeBases.length === 0 ? (
-                      <div className="text-center py-6 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
+                      <div className="text-center py-8 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                       <p className="mb-2 text-sm">{searchKeyword ? '未找到' : '暂无知识库'}</p>
                       {!searchKeyword && (
                         <button onClick={onUpload} className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] font-medium text-sm">
@@ -704,17 +775,17 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                       )}
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {groupedKnowledgeBases.map((group) => (
                           <div key={group.name}
-                               className="border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-lg overflow-hidden">
+                               className="border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-xl overflow-hidden">
                           <button
                             onClick={() => toggleCategory(group.name)}
-                            className="w-full flex items-center justify-between px-3 py-2 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)]/50 hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] transition-colors"
+                            className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)]/50 hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] transition-colors"
                           >
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2.5">
                               <ChevronRight
-                                className={`w-3.5 h-3.5 text-[var(--color-text-muted)] transition-transform ${group.isExpanded ? 'rotate-90' : ''}`}
+                                className={`w-3.5 h-3.5 text-[var(--color-text-muted)] transition-transform duration-200 ${group.isExpanded ? 'rotate-90' : ''}`}
                               />
                               <span
                                   className="font-medium text-[var(--color-text)] dark:text-[var(--color-text-muted-dark)] text-sm">{group.name}</span>
@@ -731,12 +802,14 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                                 transition={{ duration: 0.2 }}
                                 className="overflow-hidden"
                               >
-                                <div className="p-2 space-y-1">
+                                <div className="p-2.5 space-y-1.5">
                                   {group.items.map((kb) => (
-                                    <div
+                                    <motion.div
                                       key={kb.id}
                                       onClick={() => handleToggleKb(kb.id)}
-                                      className={`p-2 rounded-lg cursor-pointer transition-all ${selectedKbIds.has(kb.id)
+                                      whileHover={{ scale: 1.01 }}
+                                      whileTap={{ scale: 0.99 }}
+                                      className={`p-2.5 rounded-lg cursor-pointer transition-all ${selectedKbIds.has(kb.id)
                                           ? 'bg-[var(--color-primary-subtle)] dark:bg-[var(--color-primary-subtle-dark)] border border-[var(--color-primary)]'
                                           : 'bg-[var(--color-surface)] dark:bg-[var(--color-surface-raised-dark)]/50 hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] border border-transparent'
                                         }`}
@@ -753,7 +826,7 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                                             className="font-medium text-[var(--color-text)] dark:text-[var(--color-text-dark)] text-xs truncate flex-1">{kb.name}</span>
                                       </div>
                                       <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mt-0.5 ml-5">{formatFileSize(kb.fileSize)}</p>
-                                    </div>
+                                    </motion.div>
                                   ))}
                                 </div>
                               </motion.div>
@@ -812,14 +885,14 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                 onClick={(e) => e.stopPropagation()}
                 className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl shadow-2xl max-w-md w-full p-6 border border-[var(--color-border)] dark:border-[var(--color-border-dark)]"
               >
-                <h3 className="text-xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-4">编辑标题</h3>
+                <h3 className="text-lg font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-5">编辑标题</h3>
                 <input
                   type="text"
                   value={newSessionTitle}
                   onChange={(e) => setNewSessionTitle(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSaveSessionTitle()}
                   placeholder="请输入新标题"
-                  className="w-full px-4 py-3 text-sm border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] mb-4 bg-[var(--color-surface)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)] placeholder-[var(--color-text-placeholder)]"
+                  className="w-full px-4 py-3 text-base border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] mb-6 bg-[var(--color-surface)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)] placeholder-[var(--color-text-placeholder)]"
                   autoFocus
                 />
                 <div className="flex justify-end gap-3">

@@ -23,19 +23,11 @@ import {
 import {knowledgeBaseApi, KnowledgeBaseItem, KnowledgeBaseStats, PreviewMeta, SortOption, TextPreview, VectorStatus} from '../api/knowledgebase';
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
 import FilePreviewModal from '../components/FilePreviewModal';
-import {formatDateTime} from '../utils/date';
+import {formatDateTime, formatFileSize} from '../utils/date';
 
 interface KnowledgeBaseManagePageProps {
   onUpload: () => void;
   onChat: () => void;
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
 function StatusIcon({ status }: { status: VectorStatus }) {
