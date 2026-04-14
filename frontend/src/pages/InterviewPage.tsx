@@ -1,8 +1,10 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import {interviewApi} from '../api/interview';
+import {xunfeiApi} from '../api/xunfei';
 import {getErrorMessage} from '../api/request';
 import ConfirmDialog from '../components/ConfirmDialog';
+import {XunfeiAvatarPlayer} from '../components/XunfeiAvatarPlayer';
 import InterviewConfigPanel from '../components/InterviewConfigPanel';
 import {useRecording} from '../hooks/useRecording';
 import {useQuestionVoicePrefetch} from '../hooks/useQuestionVoicePrefetch';
@@ -87,6 +89,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const [answer, setAnswer] = useState('');
   const [candidateInputMode, setCandidateInputMode] = useState<CandidateInputMode>('text');
   const [questionVoiceEnabled, setQuestionVoiceEnabled] = useState(false);
+  const [xunfeiEnabled, setXunfeiEnabled] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [error, setError] = useState('');
@@ -312,6 +315,29 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     }
   }, [selectedJobRole, selectedPackage, resumeText, resumeId, forceCreateNew, stopQuestionAudio, resetVoiceAnswer, restoreSession]);
 
+  // 检查讯飞数字人是否可用
+  useEffect(() => {
+    if (stage !== 'interview' || !session?.sessionId) return;
+
+    const checkXunfei = async () => {
+      try {
+        await xunfeiApi.createSession(session.sessionId);
+        setXunfeiEnabled(true);
+      } catch {
+        setXunfeiEnabled(false);
+      }
+    };
+
+    checkXunfei();
+
+    return () => {
+      if (session?.sessionId && xunfeiEnabled) {
+        xunfeiApi.destroySession(session.sessionId).catch(console.error);
+        setXunfeiEnabled(false);
+      }
+    };
+  }, [stage, session?.sessionId]);
+
   const handleSubmitAnswer = async () => {
     await submitAnswerText(answer);
   };
@@ -445,10 +471,17 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const handleReplayQuestionAudio = async () => {
     if (!currentQuestion || !session) return;
     setError('');
-    await playQuestion(currentQuestion.question, {
-      sessionId: session.sessionId,
-      questionIndex: currentQuestion.questionIndex,
-    });
+
+    if (xunfeiEnabled) {
+      // 使用讯飞数字人播报
+      await xunfeiApi.sendQuestion(session.sessionId, currentQuestion.question);
+    } else {
+      // 使用原有 TTS 播报
+      await playQuestion(currentQuestion.question, {
+        sessionId: session.sessionId,
+        questionIndex: currentQuestion.questionIndex,
+      });
+    }
   };
 
   useEffect(() => {
@@ -535,6 +568,40 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       <div className="flex gap-6 h-[calc(100vh-100px)]">
         {/* 左侧：场景区域 */}
         <div className="flex-1 relative rounded-xl overflow-hidden">
+          {xunfeiEnabled && session ? (
+            <XunfeiAvatarPlayer interviewSessionId={session.sessionId} className="w-full h-full">
+              <InterviewControlPanel
+                mode={interviewerMode}
+                candidateInputMode={candidateInputMode}
+                isRecording={isRecording}
+                isRecognizing={isRecognizing}
+                isSubmitting={isSubmitting}
+                audioLevel={0}
+                answer={answer}
+                onAnswerChange={(text) => {
+                  setAnswer(text);
+                  if (voiceJustRecognized && text !== answer) {
+                    setVoiceJustRecognized(false);
+                  }
+                }}
+                onSubmit={handleSubmitAnswer}
+                onStartRecording={handleStartRecording}
+                onStopRecording={handleStopRecording}
+                onStopInterview={handleCompleteEarly}
+                onCandidateInputModeChange={(mode) => {
+                  setCandidateInputMode(mode);
+                  if (mode === 'voice') setVoiceJustRecognized(false);
+                }}
+                onReRecordVoice={() => {
+                  setAnswer('');
+                  setVoiceJustRecognized(false);
+                  setCandidateInputMode('voice');
+                }}
+                voiceJustRecognized={voiceJustRecognized}
+                error={error}
+              />
+            </XunfeiAvatarPlayer>
+          ) : (
           <InterviewRoomScene avatarId={selectedJobRole ? (JOB_AVATAR_MAP[selectedJobRole] ?? 'navtalk.Ethan') : 'navtalk.Ethan'} mode={interviewerMode} mouthOpen={mouthOpen}>
             {/* 底部控制栏作为 children */}
             <InterviewControlPanel
@@ -569,6 +636,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
               error={error}
             />
           </InterviewRoomScene>
+          )}
         </div>
 
         {/* 右侧：对话侧边栏 */}
