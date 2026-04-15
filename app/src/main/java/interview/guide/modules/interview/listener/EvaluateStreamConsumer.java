@@ -13,6 +13,7 @@ import interview.guide.modules.interview.model.InterviewSessionDTO.SessionStatus
 import interview.guide.modules.interview.repository.InterviewSessionRepository;
 import interview.guide.modules.interview.service.AnswerEvaluationService;
 import interview.guide.modules.interview.service.InterviewPersistenceService;
+import interview.guide.modules.profile.listener.ProfileUpdateStreamProducer;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.stream.StreamMessageId;
 import org.springframework.stereotype.Component;
@@ -36,6 +37,10 @@ public class EvaluateStreamConsumer extends AbstractStreamConsumer<EvaluateStrea
     private final InterviewPersistenceService persistenceService;
     private final InterviewSessionCache sessionCache;
     private final ObjectMapper objectMapper;
+    private final ProfileUpdateStreamProducer profileUpdateProducer;
+
+    /** Default user identifier for MVP (no auth module yet) */
+    private static final String DEFAULT_USER_ID = "default";
 
     public EvaluateStreamConsumer(
         RedisService redisService,
@@ -43,7 +48,8 @@ public class EvaluateStreamConsumer extends AbstractStreamConsumer<EvaluateStrea
         AnswerEvaluationService evaluationService,
         InterviewPersistenceService persistenceService,
         InterviewSessionCache sessionCache,
-        ObjectMapper objectMapper
+        ObjectMapper objectMapper,
+        ProfileUpdateStreamProducer profileUpdateProducer
     ) {
         super(redisService);
         this.sessionRepository = sessionRepository;
@@ -51,6 +57,7 @@ public class EvaluateStreamConsumer extends AbstractStreamConsumer<EvaluateStrea
         this.persistenceService = persistenceService;
         this.sessionCache = sessionCache;
         this.objectMapper = objectMapper;
+        this.profileUpdateProducer = profileUpdateProducer;
     }
 
     record EvaluatePayload(String sessionId) {}
@@ -134,6 +141,13 @@ public class EvaluateStreamConsumer extends AbstractStreamConsumer<EvaluateStrea
         InterviewReportDTO report = evaluationService.evaluateInterview(sessionId, resumeText, questions);
         persistenceService.saveReport(sessionId, report);
         sessionCache.updateSessionStatus(sessionId, SessionStatus.EVALUATED);
+
+        // Trigger Mem0-style profile update after evaluation
+        try {
+            profileUpdateProducer.sendProfileUpdateTask(sessionId, DEFAULT_USER_ID);
+        } catch (Exception e) {
+            log.warn("触发画像更新失败(不影响评估结果): sessionId={}, error={}", sessionId, e.getMessage());
+        }
     }
 
     @Override
