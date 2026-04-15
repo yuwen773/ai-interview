@@ -95,7 +95,7 @@ public class InterviewQuestionService {
     }
 
     /**
-     * 生成专项训练问题，注入用户历史弱项上下文
+     * 生成专项训练问题，注入用户历史弱项上下文和时间衰减掌握度
      */
     public List<InterviewQuestionDTO> generateTargetedQuestions(
         JobRole jobRole,
@@ -107,17 +107,16 @@ public class InterviewQuestionService {
         log.info("开始生成专项训练问题，岗位: {}, 主题: {}, 简历长度: {}, 问题数量: {}",
             jobRole, topic, resumeText.length(), questionCount);
 
-        // 获取到期弱项
         List<UserWeakPointEntity> dueReviews = profileService.getDueReviews(userId, topic);
-        String weakContext = "";
+        StringBuilder contextBuilder = new StringBuilder();
+
+        // 注入到期弱项
         if (dueReviews != null && !dueReviews.isEmpty()) {
-            weakContext = dueReviews.stream()
+            String weakContext = dueReviews.stream()
                 .map(wp -> {
                     Map<String, Object> sr = wp.getSrState();
-                    double ef = 2.5;
-                    if (sr != null && sr.get("ease_factor") instanceof Number) {
-                        ef = ((Number) sr.get("ease_factor")).doubleValue();
-                    }
+                    double ef = sr != null && sr.get("ease_factor") instanceof Number n
+                        ? n.doubleValue() : 2.5;
                     String topicStr = wp.getTopic() != null ? sanitizeForPrompt(wp.getTopic()) : "未知";
                     String questionStr = wp.getQuestionText() != null ? sanitizeForPrompt(wp.getQuestionText()) : "";
                     return String.format("- [%s] %s (暴露%d次, EF=%.1f)",
@@ -126,10 +125,35 @@ public class InterviewQuestionService {
                         ef);
                 })
                 .collect(Collectors.joining("\n"));
+            contextBuilder.append("\n历史弱项（优先考察）：\n").append(weakContext);
             log.info("注入 {} 条历史弱项到专项训练题目生成", dueReviews.size());
         }
 
-        // 调用原有生成逻辑，但注入弱项上下文
+        // 注入时间衰减后的掌握度
+        if (topic != null && !topic.isBlank()) {
+            double masteryScore = profileService.getDecayedMasteryScore(userId, topic);
+            String level;
+            if (masteryScore >= 80) level = "精通";
+            else if (masteryScore >= 60) level = "熟悉";
+            else if (masteryScore >= 40) level = "薄弱";
+            else level = "欠缺";
+            contextBuilder.append(String.format(
+                "\n当前主题掌握度: %.1f/100 (%s)，请据此调整题目难度", masteryScore, level));
+        }
+
+        return generateQuestionsWithWeakContext(jobRole, resumeText, questionCount, null, contextBuilder.toString());
+    }
+
+    /**
+     * 带用户画像上下文生成面试问题（用于常规面试，自动注入全部弱项和掌握度）
+     */
+    public List<InterviewQuestionDTO> generateQuestionsWithProfile(
+        JobRole jobRole,
+        String resumeText,
+        int questionCount,
+        String userId
+    ) {
+        String weakContext = buildFullProfileContext(userId);
         return generateQuestionsWithWeakContext(jobRole, resumeText, questionCount, null, weakContext);
     }
 
@@ -364,5 +388,30 @@ public class InterviewQuestionService {
             sanitized = sanitized.substring(0, 500) + "...";
         }
         return sanitized;
+    }
+
+    /**
+     * 构建完整的用户画像上下文（弱项 + 掌握度），用于常规面试出题。
+     */
+    private String buildFullProfileContext(String userId) {
+        if (userId == null || userId.isBlank()) return "";
+
+        StringBuilder sb = new StringBuilder();
+
+        // 全部到期弱项
+        List<UserWeakPointEntity> allDue = profileService.getAllDueReviews(userId);
+        if (!allDue.isEmpty()) {
+            String weakLines = allDue.stream()
+                .limit(10)  // 限制数量避免 prompt 过长
+                .map(wp -> {
+                    String t = wp.getTopic() != null ? sanitizeForPrompt(wp.getTopic()) : "未知";
+                    String q = wp.getQuestionText() != null ? sanitizeForPrompt(wp.getQuestionText()) : "";
+                    return String.format("- [%s] %s", t, q);
+                })
+                .collect(Collectors.joining("\n"));
+            sb.append("\n用户历史弱项（优先考察这些知识点）：\n").append(weakLines);
+        }
+
+        return sb.toString();
     }
 }

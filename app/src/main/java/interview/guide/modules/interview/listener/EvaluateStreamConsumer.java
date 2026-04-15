@@ -14,6 +14,8 @@ import interview.guide.modules.interview.repository.InterviewSessionRepository;
 import interview.guide.modules.interview.service.AnswerEvaluationService;
 import interview.guide.modules.interview.service.InterviewPersistenceService;
 import interview.guide.modules.profile.listener.ProfileUpdateStreamProducer;
+import interview.guide.modules.profile.model.dto.EvaluationMatch;
+import interview.guide.modules.profile.service.UserProfileService;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.stream.StreamMessageId;
 import org.springframework.stereotype.Component;
@@ -38,6 +40,7 @@ public class EvaluateStreamConsumer extends AbstractStreamConsumer<EvaluateStrea
     private final InterviewSessionCache sessionCache;
     private final ObjectMapper objectMapper;
     private final ProfileUpdateStreamProducer profileUpdateProducer;
+    private final UserProfileService userProfileService;
 
     /** Default user identifier for MVP (no auth module yet) */
     private static final String DEFAULT_USER_ID = "default";
@@ -49,7 +52,8 @@ public class EvaluateStreamConsumer extends AbstractStreamConsumer<EvaluateStrea
         InterviewPersistenceService persistenceService,
         InterviewSessionCache sessionCache,
         ObjectMapper objectMapper,
-        ProfileUpdateStreamProducer profileUpdateProducer
+        ProfileUpdateStreamProducer profileUpdateProducer,
+        UserProfileService userProfileService
     ) {
         super(redisService);
         this.sessionRepository = sessionRepository;
@@ -58,6 +62,7 @@ public class EvaluateStreamConsumer extends AbstractStreamConsumer<EvaluateStrea
         this.sessionCache = sessionCache;
         this.objectMapper = objectMapper;
         this.profileUpdateProducer = profileUpdateProducer;
+        this.userProfileService = userProfileService;
     }
 
     record EvaluatePayload(String sessionId) {}
@@ -147,6 +152,24 @@ public class EvaluateStreamConsumer extends AbstractStreamConsumer<EvaluateStrea
             profileUpdateProducer.sendProfileUpdateTask(sessionId, DEFAULT_USER_ID);
         } catch (Exception e) {
             log.warn("触发画像更新失败(不影响评估结果): sessionId={}, error={}", sessionId, e.getMessage());
+        }
+
+        // Auto SR update: match evaluated questions to existing weak points and update SR state
+        try {
+            List<EvaluationMatch> evalMatches = report.questionDetails().stream()
+                .filter(qd -> qd.question() != null && !qd.question().isBlank())
+                .map(qd -> new EvaluationMatch(
+                    qd.question(),
+                    qd.category() != null ? qd.category() : "",
+                    qd.score() / 10.0  // convert 0-100 to 0-10
+                ))
+                .toList();
+            int updated = userProfileService.autoUpdateSrFromEvaluation(DEFAULT_USER_ID, evalMatches);
+            if (updated > 0) {
+                log.info("Auto SR update: {} weak points matched and updated for session: {}", updated, sessionId);
+            }
+        } catch (Exception e) {
+            log.warn("自动SR更新失败(不影响评估结果): sessionId={}, error={}", sessionId, e.getMessage());
         }
     }
 
