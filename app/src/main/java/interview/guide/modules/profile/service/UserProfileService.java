@@ -23,31 +23,32 @@ public class UserProfileService {
 
     @Transactional
     public int enrollWeakPoints(String userId, List<WeakPointEnrollItem> items) {
-        int count = 0;
-        for (WeakPointEnrollItem item : items) {
-            if (weakPointRepo.existsByUserIdAndQuestionText(userId, item.questionText())) {
-                continue; // 防止重复录入
-            }
-            UserWeakPointEntity entity = new UserWeakPointEntity();
-            entity.setUserId(userId);
-            entity.setTopic(item.topic());
-            entity.setQuestionText(item.questionText());
-            entity.setAnswerSummary(item.answerSummary());
-            entity.setScore(BigDecimal.valueOf(item.score()));
-            entity.setSource(item.source());
-            entity.setSessionId(item.sessionId());
-            Map<String, Object> srState = new HashMap<>();
-            srState.put("interval_days", 1);
-            srState.put("ease_factor", 2.5);
-            srState.put("repetitions", 0);
-            srState.put("next_review", LocalDate.now().plusDays(1).toString());
-            srState.put("last_score", item.score());
-            entity.setSrState(srState);
-            entity.setTimesSeen(1);
-            weakPointRepo.save(entity);
-            count++;
-        }
-        return count;
+        if (items == null || items.isEmpty()) return 0;
+        // 过滤已存在的，避免重复录入
+        List<UserWeakPointEntity> toSave = items.stream()
+            .filter(item -> !weakPointRepo.existsByUserIdAndQuestionText(userId, item.questionText()))
+            .map(item -> {
+                UserWeakPointEntity entity = new UserWeakPointEntity();
+                entity.setUserId(userId);
+                entity.setTopic(item.topic());
+                entity.setQuestionText(item.questionText());
+                entity.setAnswerSummary(item.answerSummary());
+                entity.setScore(BigDecimal.valueOf(item.score()));
+                entity.setSource(item.source());
+                entity.setSessionId(item.sessionId());
+                Map<String, Object> srState = new HashMap<>();
+                srState.put("interval_days", 1);
+                srState.put("ease_factor", 2.5);
+                srState.put("repetitions", 0);
+                srState.put("next_review", LocalDate.now().plusDays(1).toString());
+                srState.put("last_score", item.score());
+                entity.setSrState(srState);
+                entity.setTimesSeen(1);
+                return entity;
+            })
+            .toList();
+        weakPointRepo.saveAll(toSave);
+        return toSave.size();
     }
 
     public List<UserWeakPointEntity> getDueReviews(String userId, String topic) {
