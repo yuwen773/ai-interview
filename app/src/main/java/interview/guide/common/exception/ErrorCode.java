@@ -65,7 +65,9 @@ public enum ErrorCode {
 
     // ========== 画像模块错误 9xxx ==========
     PROFILE_EXTRACTION_FAILED(9001, "画像提取失败"),
-    PROFILE_SESSION_NOT_FOUND(9002, "画像会话不存在");
+    PROFILE_SESSION_NOT_FOUND(9002, "画像会话不存在"),
+    PROFILE_UPDATE_FAILED(9003, "画像更新失败"),
+    PROFILE_UPDATE_PARSE_FAILED(9004, "画像更新解析失败");
 
     private final Integer code;
     private final String message;

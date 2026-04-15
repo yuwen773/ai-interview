@@ -109,4 +109,11 @@ public final class AsyncTaskStreamConstants {
      * 面试会话ID字段
      */
     public static final String FIELD_SESSION_ID = "sessionId";
+
+    // ========== 画像更新 Stream 配置 ==========
+
+    public static final String PROFILE_UPDATE_STREAM_KEY = "profile:update:stream";
+    public static final String PROFILE_UPDATE_GROUP_NAME = "profile-update-group";
+    public static final String PROFILE_UPDATE_CONSUMER_PREFIX = "profile-update-consumer-";
+    public static final String FIELD_USER_ID = "userId";
 }

@@ -7,8 +7,11 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.Type;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Entity
@@ -46,9 +49,13 @@ public class UserWeakPointEntity {
         "interval_days", 1,
         "ease_factor", 2.5,
         "repetitions", 0,
-        "next_review", LocalDateTime.now().plusDays(1).toString(),
+        "next_review", LocalDate.now().plusDays(1).toString(),
         "last_score", null
     ));
+
+    @Type(JsonType.class)
+    @Column(name = "history", columnDefinition = "jsonb")
+    private List<Map<String, String>> history = new ArrayList<>();
 
     @Column(name = "is_improved")
     private Boolean isImproved = false;
@@ -191,4 +198,7 @@ public class UserWeakPointEntity {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
+    public List<Map<String, String>> getHistory() { return history; }
+    public void setHistory(List<Map<String, String>> history) { this.history = history; }
 }
