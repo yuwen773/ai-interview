@@ -5,6 +5,7 @@ import interview.guide.modules.profile.model.Sm2Result;
 import interview.guide.modules.profile.model.dto.*;
 import interview.guide.modules.profile.service.UserProfileService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/review")
 @RequiredArgsConstructor
+@Validated
 public class ReviewController {
 
     private final UserProfileService profileService;
