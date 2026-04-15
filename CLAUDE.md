@@ -2,150 +2,80 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## Tech Stack
 
-AI Interview Platform is a full-stack intelligent mock interview system featuring AI-powered virtual interviewers with 3D avatars, voice interaction, and resume analysis. It consists of three main parts:
+- **Backend**: Spring Boot 3.5 + Java 21 + Spring AI 1.1 (Alibaba DashScope/Qwen)
+- **Frontend**: React 18 + Vite 5 + TailwindCSS 4 + Three.js (VRM 3D avatars)
+- **MiniApp**: Taro 3 (WeChat/Alipay/H5)
+- **Infra**: PostgreSQL 16 (pgvector) + Redis 7 (Redisson) + MinIO (S3)
 
-- **Backend** (`app/`): Spring Boot 4 + Java 21 API
-- **Frontend** (`frontend/`): React 18 + Vite web app
-- **MiniApp** (`uniapp-interview/`): Taro 3 multi-platform app (WeChat/Alipay/H5)
-
-## Common Commands
-
-### Backend (Spring Boot)
+## Commands
 
 ```bash
-cd app
+# Backend
+cd app && mvn spring-boot:run                           # Run (localhost:8080)
+mvn spring-boot:run -Dspring-boot.run.profiles=local    # Run with profile
+mvn test                                                 # Tests
+mvn package -DskipTests                                  # Build JAR
 
-# Run with Maven
-mvn spring-boot:run
+# Frontend
+cd frontend && pnpm install && pnpm dev                  # Dev (localhost:5173)
+pnpm tsc --noEmit                                        # Type check
+pnpm build                                               # Production build
 
-# Run with specific profile
-mvn spring-boot:run -Dspring-boot.run.profiles=local
+# MiniApp
+cd uniapp-interview && pnpm dev:weapp                    # WeChat dev
 
-# Build
-mvn package -DskipTests
-
-# Run tests
-mvn test
+# Infrastructure
+docker-compose up -d postgres redis minio createbuckets  # Start services
 ```
 
-### Frontend (React)
-
-```bash
-cd frontend
-
-# Install dependencies
-pnpm install
-
-# Development server (http://localhost:5173)
-pnpm dev
-
-# Type checking
-pnpm tsc --noEmit
-
-# Production build
-pnpm build
-```
-
-### MiniApp (Taro)
-
-```bash
-cd uniapp-interview
-
-pnpm dev:weapp    # WeChat Mini Program
-pnpm dev:h5        # H5
-pnpm build:weapp   # Build for WeChat
-```
-
-### Infrastructure
-
-```bash
-# Start PostgreSQL, Redis, MinIO
-docker-compose up -d postgres redis minio createbuckets
-
-# View backend logs
-docker-compose logs -f app
-```
-
-### Environment Setup
-
-Copy `.env.example` to `.env` and configure:
-- `AI_BAILIAN_API_KEY` - Alibaba DashScope API key for AI (Qwen model)
-- `AI_MODEL` - Model name (default: qwen-plus)
+Environment: copy `.env.example` to `.env`, set `AI_BAILIAN_API_KEY` and `AI_MODEL` (default: qwen-plus).
 
 ## Architecture
 
-### Backend Architecture
+### Backend (`app/src/main/java/interview/guide/`)
 
-The backend follows a layered architecture:
+Layered: `Controller → Service → Repository → Infrastructure`
 
-```
-Controller → Service → Repository → Infrastructure
-```
-
-Key modules under `app/src/main/java/interview/guide/`:
+6 feature modules under `modules/`:
 
 | Module | Purpose |
 |--------|---------|
-| `modules/resume/` | Resume upload, parsing, analysis |
-| `modules/interview/` | Interview session management, question generation |
-| `modules/knowledgebase/` | RAG-based document Q&A |
-| `modules/audio/` | ASR (speech-to-text) and TTS (text-to-speech) |
-| `common/` | Shared: exception handling, result封装, AOP |
-| `infrastructure/` | Redis, file storage, PDF export |
+| `resume` | Upload, parsing (Tika), AI analysis, history |
+| `interview` | Session management, question generation, answer evaluation, job strategies, Xunfei avatar |
+| `knowledgebase` | RAG: document upload, vectorization (pgvector), similarity search, chat |
+| `profile` | User profiling, spaced repetition (SM-2), weak/strong point tracking, semantic dedup |
+| `dashboard` | Summary statistics |
+| `audio` | ASR/TTS adapters |
 
-**Async Processing**: Uses Redis Streams with template method pattern (`AbstractStreamConsumer`/`AbstractStreamProducer`) for long-running tasks like resume analysis and vectorization.
+Shared under `common/`:
+- `result/Result<T>` — unified response wrapper (code 200 = success, all errors in HTTP 200 body)
+- `exception/ErrorCode` — 30+ error codes in 8 domains (1xxx-9xxx)
+- `async/AbstractStreamConsumer<T>` / `AbstractStreamProducer<T>` — Redis Streams template method for async tasks (4 streams defined in `AsyncTaskStreamConstants`)
+- `ai/StructuredOutputInvoker` — LLM structured JSON output with retry
+- `annotation/RateLimit` — Redis-backed rate limiting (GLOBAL/IP/USER dimensions)
 
-**AI Integration**: Uses Spring AI with `StructuredOutputInvoker` for typed AI responses and prompt templates (`.st` files under `resources/prompts/`).
+Prompt templates: `.st` files in `resources/prompts/` (14 templates for interview, resume, KB, profile).
 
-### Frontend Architecture
+`infrastructure/`: `RedisService` (Redisson), `FileStorageService` (S3/MinIO), `PdfExportService` (iText 8), `XunfeiWebSocketClient`.
 
-The frontend uses React Router with lazy-loaded pages:
+DB migrations: Flyway scripts in `resources/db/migration/`.
 
-```
-App.tsx → Routes → Page Components → Hooks/API
-```
+### Frontend (`frontend/src/`)
 
-Key directories:
-- `src/pages/` - Route pages (Upload, History, Interview, KnowledgeBase)
-- `src/components/` - Reusable components including `InterviewAvatar/` (3D VRM) and `InterviewRoom/` (interview UI)
-- `src/api/` - Axios API clients
-- `src/hooks/` - Custom hooks (useTheme, useAvatar, useRecording)
-- `src/components/InterviewAvatar/` - Three.js VRM model loader with lip-sync
+React Router with lazy-loaded pages. Key paths:
+- `api/request.ts` — Axios singleton, unwraps `Result<T>` in interceptor
+- `components/InterviewAvatar/` — Three.js VRM loader with lip-sync (`LipSync.ts`) and expression animations (`AvatarAnimations.ts`)
+- `pages/` — 11 pages: upload, history, interview (config → room with 3D avatar), knowledge base (manage/upload/chat), profile
 
-**3D Avatar**: Uses `@pixiv/three-vrm` to load VRM models. The `InterviewAvatar` component manages the 3D interviewer appearance with avatar animations and voice-driven lip-sync.
+### API Convention
 
-**Interview Flow**: `InterviewPage` → `InterviewConfigPanel` (select job role) → `InterviewRoom` (3D avatar + chat panel)
-
-### MiniApp Architecture
-
-Taro 3-based multi-platform app sharing API contracts with the frontend. Key pages mirror the web app: upload, resume list, interview, and report views.
-
-## API Conventions
-
-The backend uses a unified `Result<T>` response wrapper:
-
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": { ... }
-}
-```
-
-Error responses have `code != 200`. Frontend API clients (`src/api/*.ts`) handle this via a response interceptor.
+All responses use `Result<T>`: `{ "code": 200, "message": "success", "data": {...} }`. Frontend interceptor rejects on non-200 code.
 
 ## Key Patterns
 
-- **Template Method**: `AbstractStreamConsumer`/`AbstractStreamProducer` for Redis Stream async tasks
-- **Strategy**: Job-specific interview strategies (`JavaBackendStrategy`, `WebFrontendStrategy`)
-- **Adapter**: `AsrAdapter`/`TtsAdapter` for audio service abstraction
-- **Rate Limiting**: `@RateLimit` annotation with Redis-backed `RateLimitAspect`
-
-## Database
-
-- **PostgreSQL** (port 5432): Main data store with pgvector extension for embedding similarity search
-- **Redis** (port 6379): Session cache, rate limiting, async task queues (Streams)
-- **MinIO** (port 9000): File storage for resumes and documents
-
+- **Template Method**: `AbstractStreamConsumer`/`AbstractStreamProducer` for Redis Stream async tasks (resume analysis, KB vectorization, interview evaluation, profile update)
+- **Strategy**: Job-specific interview question generation (`JavaBackendStrategy`, `PythonAlgorithmStrategy`, `WebFrontendStrategy`)
+- **Adapter**: `AsrAdapter`/`TtsAdapter` for audio abstraction
+- **SM-2 Spaced Repetition**: `SpacedRepetitionService` with `Sm2State` (JSONB) in `user_weak_points`
