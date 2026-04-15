@@ -1,15 +1,28 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Brain, Target, CheckCircle, Clock } from 'lucide-react';
-import { profileApi, type UserProfileDto, type WeakPointDto } from '../api/profile';
+import { profileApi, type UserProfileDto, type WeakPointDto, type StrongPointDto } from '../api/profile';
 import { getErrorMessage } from '../api/request';
+import { getScoreProgressColor } from '../utils/score';
 
 type FilterTab = 'weak' | 'improved' | 'due';
+
+const MASTERY_ZONES = [
+  { min: 80, label: '掌握', color: 'text-green-500 bg-green-50 dark:bg-green-900/20' },
+  { min: 60, label: '熟悉', color: 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' },
+  { min: 40, label: '薄弱', color: 'text-orange-500 bg-orange-50 dark:bg-orange-900/20' },
+  { min: 0, label: '欠缺', color: 'text-red-500 bg-red-50 dark:bg-red-900/20' },
+] as const;
+
+function getZone(score: number) {
+  return MASTERY_ZONES.find(z => score >= z.min) ?? MASTERY_ZONES[MASTERY_ZONES.length - 1];
+}
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfileDto | null>(null);
   const [dueReviews, setDueReviews] = useState<WeakPointDto[]>([]);
+  const [strongPoints, setStrongPoints] = useState<StrongPointDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterTab, setFilterTab] = useState<FilterTab>('weak');
@@ -17,12 +30,14 @@ export default function ProfilePage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [profileData, reviewsData] = await Promise.all([
-        profileApi.getProfile('current'),
-        profileApi.getDueReviews('current'),
+      const [profileData, reviewsData, strongData] = await Promise.all([
+        profileApi.getProfile(),
+        profileApi.getDueReviews(),
+        profileApi.getStrongPoints(),
       ]);
       setProfile(profileData);
       setDueReviews(reviewsData);
+      setStrongPoints(strongData);
     } catch (e) {
       setError(getErrorMessage(e));
     } finally {
@@ -31,6 +46,18 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  const improvedPoints = useMemo(() => dueReviews.filter(w => w.isImproved), [dueReviews]);
+  const weakPoints = useMemo(() => dueReviews.filter(w => !w.isImproved), [dueReviews]);
+
+  const totalSessions = useMemo(
+    () => profile?.topicMasteries.reduce((sum, m) => sum + m.sessionCount, 0) ?? 0,
+    [profile]
+  );
+  const avgScore = useMemo(() => {
+    const ms = profile?.topicMasteries ?? [];
+    return ms.length > 0 ? ms.reduce((sum, m) => sum + m.score, 0) / ms.length : 0;
+  }, [profile]);
 
   if (loading) {
     return (
@@ -49,27 +76,8 @@ export default function ProfilePage() {
     );
   }
 
-  // Derive improved weak points from dueReviews (isImproved=true)
-  const improvedPoints = dueReviews.filter(w => w.isImproved);
-  const weakPoints = dueReviews.filter(w => !w.isImproved);
-
-  // Practice statistics
-  const totalSessions = profile.topicMasteries.reduce((sum, m) => sum + m.sessionCount, 0);
-  const avgScore = profile.topicMasteries.length > 0
-    ? profile.topicMasteries.reduce((sum, m) => sum + m.score, 0) / profile.topicMasteries.length
-    : 0;
-
-  // Get zone label based on mastery score
-  const getZone = (score: number) => {
-    if (score >= 80) return { label: '掌握', color: 'text-green-500 bg-green-50 dark:bg-green-900/20' };
-    if (score >= 60) return { label: '熟悉', color: 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' };
-    if (score >= 40) return { label: '薄弱', color: 'text-orange-500 bg-orange-50 dark:bg-orange-900/20' };
-    return { label: '欠缺的', color: 'text-red-500 bg-red-50 dark:bg-red-900/20' };
-  };
-
   return (
     <div className="max-w-4xl mx-auto p-6">
-      {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <button onClick={() => navigate('/upload')} className="p-2 rounded-lg hover:bg-[var(--color-surface-raised)]">
           <ChevronLeft className="w-5 h-5" />
@@ -80,7 +88,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatsCard icon={<Target className="w-5 h-5" />} label="总练习次数" value={totalSessions} color="text-blue-500" />
         <StatsCard icon={<CheckCircle className="w-5 h-5" />} label="综合均分" value={parseFloat(avgScore.toFixed(1))} color="text-green-500" />
@@ -88,7 +95,6 @@ export default function ProfilePage() {
         <StatsCard icon={<Brain className="w-5 h-5" />} label="技能覆盖" value={profile.topicMasteries.length} color="text-purple-500" />
       </div>
 
-      {/* Domain Table */}
       <div className="bg-[var(--color-bg-secondary)] rounded-xl p-6 mb-6">
         <h3 className="font-semibold text-[var(--color-text)] mb-4">技能掌握详情</h3>
         <div className="space-y-3">
@@ -99,7 +105,7 @@ export default function ProfilePage() {
                 <span className="w-28 text-sm text-[var(--color-text)] truncate">{m.topic}</span>
                 <div className="flex-1 h-2 bg-[var(--color-bg)] rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all ${m.score >= 80 ? 'bg-green-500' : m.score >= 60 ? 'bg-yellow-500' : m.score >= 40 ? 'bg-orange-500' : 'bg-red-500'}`}
+                    className={`h-full rounded-full transition-all ${getScoreProgressColor(m.score, [80, 60])}`}
                     style={{ width: `${m.score}%` }}
                   />
                 </div>
@@ -115,7 +121,29 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Evidence Table with tabs */}
+      {strongPoints.length > 0 && (
+        <div className="bg-[var(--color-bg-secondary)] rounded-xl p-6 mb-6">
+          <h3 className="font-semibold text-[var(--color-text)] mb-4">强项</h3>
+          <div className="space-y-2">
+            {Object.entries(
+              strongPoints.reduce((acc, sp) => {
+                (acc[sp.topic] = acc[sp.topic] || []).push(sp);
+                return acc;
+              }, {} as Record<string, StrongPointDto[]>)
+            ).map(([topic, points]) => (
+              <div key={topic}>
+                <span className="text-xs font-medium px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-900/20 text-blue-500">{topic}</span>
+                <ul className="mt-1 ml-4 space-y-1">
+                  {points.map(p => (
+                    <li key={p.id} className="text-sm text-[var(--color-text-muted)]">- {p.description}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="bg-[var(--color-bg-secondary)] rounded-xl p-6">
         <div className="flex gap-4 border-b border-[var(--color-border)] mb-4">
           {[
@@ -141,8 +169,8 @@ export default function ProfilePage() {
           {(filterTab === 'weak' ? weakPoints : filterTab === 'due' ? dueReviews : improvedPoints).map(wp => (
             <div key={wp.id} className="p-4 bg-[var(--color-bg)] rounded-lg">
               <div className="flex items-start justify-between gap-2 mb-2">
-                <div>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded bg-red-50 dark:bg-red-900/20 text-red-500 mr-2">{wp.topic}</span>
+                <div className="flex gap-2">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded bg-red-50 dark:bg-red-900/20 text-red-500">{wp.topic}</span>
                   {wp.isImproved && <span className="text-xs font-medium px-2 py-0.5 rounded bg-green-50 dark:bg-green-900/20 text-green-500">已改善</span>}
                 </div>
                 <span className="text-xs text-[var(--color-text-muted)]">已见{wp.timesSeen}次</span>

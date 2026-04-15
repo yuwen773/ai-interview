@@ -21,6 +21,15 @@ export interface WeakPointDto {
   isImproved: boolean;
 }
 
+export interface StrongPointDto {
+  id: number;
+  topic: string;
+  description: string;
+  source: string;
+  sessionId: number | null;
+  firstSeen: string;
+}
+
 export interface UserProfileDto {
   userId: string;
   targetRole: string | null;
@@ -30,9 +39,22 @@ export interface UserProfileDto {
   dueReviewCount: number;
 }
 
+function buildUrl(base: string, params: Record<string, string | undefined>): string {
+  const searchParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined) searchParams.set(key, value);
+  }
+  const qs = searchParams.toString();
+  return qs ? `${base}?${qs}` : base;
+}
+
 export const profileApi = {
   getProfile: (userId: string = 'current') =>
-    request.get<UserProfileDto>(`/api/profile?userId=${userId}`),
+    request.get<UserProfileDto>(buildUrl('/api/profile', { userId })),
   getDueReviews: (userId: string = 'current', topic?: string) =>
-    request.get<WeakPointDto[]>(`/api/review/due?userId=${userId}${topic ? `&topic=${topic}` : ''}`),
+    request.get<WeakPointDto[]>(buildUrl('/api/review/due', { userId, topic })),
+  getStrongPoints: (userId: string = 'current') =>
+    request.get<StrongPointDto[]>(buildUrl('/api/profile/strong-points', { userId })),
+  enrollWeakPoints: (userId: string, items: Record<string, unknown>[]) =>
+    request.post('/api/review/enroll', { userId, items }),
 };
