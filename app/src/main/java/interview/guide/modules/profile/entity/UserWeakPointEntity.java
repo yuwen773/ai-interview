@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -201,4 +202,56 @@ public class UserWeakPointEntity {
 
     public List<Map<String, String>> getHistory() { return history; }
     public void setHistory(List<Map<String, String>> history) { this.history = history; }
+
+    // ========== Domain helper methods ==========
+
+    /** Record that this weak point was seen again */
+    public void recordSeen() {
+        this.timesSeen = this.timesSeen != null ? this.timesSeen + 1 : 2;
+        this.lastSeen = LocalDateTime.now();
+    }
+
+    /** Mark this weak point as improved with a history entry */
+    public void markImproved(String action, String reason) {
+        this.isImproved = true;
+        this.improvedAt = LocalDateTime.now();
+        addHistoryEntry(action, reason);
+    }
+
+    /** Append a history entry */
+    public void addHistoryEntry(String action, String reason) {
+        if (this.history == null) this.history = new ArrayList<>();
+        Map<String, String> entry = new LinkedHashMap<>();
+        entry.put("action", action);
+        entry.put("reason", reason);
+        entry.put("at", LocalDateTime.now().toString());
+        this.history.add(entry);
+    }
+
+    /** Append a history entry with from/to fields */
+    public void addHistoryEntry(String action, String from, String to, String reason) {
+        if (this.history == null) this.history = new ArrayList<>();
+        Map<String, String> entry = new LinkedHashMap<>();
+        entry.put("action", action);
+        entry.put("from", from);
+        entry.put("to", to);
+        entry.put("at", LocalDateTime.now().toString());
+        this.history.add(entry);
+    }
+
+    /** Create a new weak point entity from interview extraction */
+    public static UserWeakPointEntity create(String userId, String topic, String questionText,
+                                              String answerSummary, double score, Long sessionId) {
+        UserWeakPointEntity entity = new UserWeakPointEntity();
+        entity.setUserId(userId);
+        entity.setTopic(topic);
+        entity.setQuestionText(questionText);
+        entity.setAnswerSummary(answerSummary);
+        entity.setScore(BigDecimal.valueOf(score));
+        entity.setSource("INTERVIEW");
+        entity.setSessionId(sessionId);
+        entity.setSrState(interview.guide.modules.profile.service.SpacedRepetitionService
+            .buildInitialSrState(score));
+        return entity;
+    }
 }
