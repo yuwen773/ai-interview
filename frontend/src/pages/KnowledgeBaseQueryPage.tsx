@@ -360,13 +360,13 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
   };
 
   return (
-    <div className="max-w-7xl mx-auto pb-12 px-6">
+    <div className="max-w-7xl mx-auto px-6 h-full overflow-hidden flex flex-col">
       {/* 头部 - 充足的上方空间形成视觉呼吸 */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-        className="flex items-center justify-between mb-8"
+        className="flex items-center justify-between mb-4"
       >
         <div className="flex items-center gap-4">
           <div>
@@ -396,7 +396,7 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
         </div>
       </motion.div>
 
-      <div className="flex gap-4 h-[calc(100vh-10rem)]">
+      <div className="flex gap-4 h-[calc(100vh-6rem)] overflow-hidden">
         {/* 左侧：对话历史 - 与中间聊天区保持视觉区隔 */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}

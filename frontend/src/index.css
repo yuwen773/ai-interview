@@ -1,6 +1,15 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* 自定义字体：Kaushan Script（Logo 专用） */
+@font-face {
+  font-family: 'Kaushan Script';
+  src: url('./assets/font/KaushanScript-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* 启用深色模式 - 使用 class 策略 */
 @custom-variant dark (&:where(.dark, .dark *));
 
