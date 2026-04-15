@@ -14,7 +14,6 @@ export default function InterviewReportPage({ onBack }: InterviewReportPageProps
   const [report, setReport] = useState<InterviewReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAutoNotice] = useState(true);
 
   useEffect(() => {
     if (!sessionId) {
@@ -96,13 +95,11 @@ export default function InterviewReportPage({ onBack }: InterviewReportPageProps
         </div>
       )}
 
-      {showAutoNotice && (
-        <div className="flex gap-3">
-          <div className="flex-1 py-3 rounded-xl font-semibold bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 text-center text-sm">
-            面试完成后画像将自动更新
-          </div>
+      <div className="flex gap-3">
+        <div className="flex-1 py-3 rounded-xl font-semibold bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 text-center text-sm">
+          画像已自动更新
         </div>
-      )}
+      </div>
     </div>
   );
 }

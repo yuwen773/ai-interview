@@ -106,11 +106,19 @@ public class ProfileUpdateService {
     @Transactional
     public void applyFallback(String userId, ProfileExtractResult extraction, Long sessionId) {
         log.info("Using fallback rule-based profile update for user: {}", userId);
-        Set<String> existingTexts = new HashSet<>(weakPointRepo.findAllQuestionTextsByUserId(userId));
+        List<UserWeakPointEntity> existingWeak = weakPointRepo.findByUserIdAndIsImprovedFalse(userId);
+        Map<String, UserWeakPointEntity> weakByText = new HashMap<>();
+        for (UserWeakPointEntity e : existingWeak) {
+            weakByText.put(e.getQuestionText(), e);
+        }
 
         for (var weak : extraction.weakPoints()) {
-            if (existingTexts.contains(weak.question())) {
-                log.debug("Skipping duplicate weak point: {}", weak.question());
+            UserWeakPointEntity existing = weakByText.get(weak.question());
+            if (existing != null) {
+                existing.setTimesSeen(existing.getTimesSeen() + 1);
+                existing.setLastSeen(LocalDateTime.now());
+                weakPointRepo.save(existing);
+                log.debug("Updated timesSeen for existing weak point: {}", weak.question());
             } else {
                 UserWeakPointEntity entity = new UserWeakPointEntity();
                 entity.setUserId(userId);

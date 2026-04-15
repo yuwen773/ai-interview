@@ -28,6 +28,7 @@ public class UserProfileService {
     @Autowired private UserTopicMasteryRepository masteryRepo;
     @Autowired private UserProfileRepository profileRepo;
     @Autowired private SpacedRepetitionService srService;
+    @Autowired private UserStrongPointRepository strongPointRepo;
 
     @Transactional
     public int enrollWeakPoints(String userId, List<WeakPointEnrollItem> items) {
@@ -127,6 +128,19 @@ public class UserProfileService {
         long dueReviewCount = weakPointRepo.countDueReviews(userId, LocalDate.now());
 
         return new UserProfileDto(userId, null, topicMasteries, (int) totalWeakPoints, (int) improvedCount, (int) dueReviewCount);
+    }
+
+    public List<StrongPointDto> getStrongPoints(String userId) {
+        return strongPointRepo.findByUserId(userId).stream()
+            .map(e -> new StrongPointDto(
+                e.getId(),
+                e.getTopic(),
+                e.getDescription(),
+                e.getSource(),
+                e.getSessionId(),
+                e.getFirstSeen() != null ? e.getFirstSeen().toString() : null
+            ))
+            .toList();
     }
 
     public List<WeakPointDto> getDueReviewDtos(String userId, String topic) {
