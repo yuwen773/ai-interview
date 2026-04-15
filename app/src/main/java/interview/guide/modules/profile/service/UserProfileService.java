@@ -47,7 +47,7 @@ public class UserProfileService {
                 entity.setScore(BigDecimal.valueOf(item.score()));
                 entity.setSource(item.source());
                 entity.setSessionId(item.sessionId());
-                entity.setSrState(buildInitialSrState(item.score()));
+                entity.setSrState(SpacedRepetitionService.buildInitialSrState(item.score()));
                 entity.setTimesSeen(1);
                 return entity;
             })
@@ -166,16 +166,6 @@ public class UserProfileService {
             entity.getTimesSeen(),
             Boolean.TRUE.equals(entity.isImproved())
         );
-    }
-
-    private Map<String, Object> buildInitialSrState(double lastScore) {
-        Map<String, Object> state = new HashMap<>();
-        state.put(SR_INTERVAL_DAYS, 1);
-        state.put(SR_EASE_FACTOR, 2.5);
-        state.put(SR_REPETITIONS, 0);
-        state.put(SR_NEXT_REVIEW, LocalDate.now().plusDays(1).toString());
-        state.put(SR_LAST_SCORE, lastScore);
-        return state;
     }
 
     private static Map<String, Object> applySrResult(Map<String, Object> current, Sm2Result result, double lastScore) {

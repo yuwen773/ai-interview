@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -55,7 +54,7 @@ public class ProfileUpdateService {
         List<UserStrongPointEntity> existingStrong = strongPointRepo.findByUserId(userId);
 
         String userPrompt = updatePromptTemplate.render(Map.of(
-            "existingWeakPoints", formatExistingWeakPoints(existingWeak),
+            "existingWeakPoints", ProfileExtractService.formatWeakPointsForPrompt(existingWeak),
             "existingStrongPoints", formatExistingStrongPoints(existingStrong),
             "newWeakPoints", formatNewWeakPoints(extraction.weakPoints()),
             "newStrongPoints", formatNewStrongPoints(extraction.strengths())
@@ -128,7 +127,7 @@ public class ProfileUpdateService {
                 entity.setScore(BigDecimal.valueOf(weak.score()));
                 entity.setSource("INTERVIEW");
                 entity.setSessionId(sessionId);
-                entity.setSrState(buildInitialSrState(weak.score()));
+                entity.setSrState(SpacedRepetitionService.buildInitialSrState(weak.score()));
                 weakPointRepo.save(entity);
             }
         }
@@ -153,7 +152,7 @@ public class ProfileUpdateService {
         entity.setScore(op.score() != null ? BigDecimal.valueOf(op.score()) : null);
         entity.setSource("INTERVIEW");
         entity.setSessionId(sessionId);
-        entity.setSrState(buildInitialSrState(op.score() != null ? op.score() : 5.0));
+        entity.setSrState(SpacedRepetitionService.buildInitialSrState(op.score() != null ? op.score() : 5.0));
         weakPointRepo.save(entity);
         log.info("ADD weak point: {} - {}", op.topic(), op.point());
     }
@@ -179,7 +178,7 @@ public class ProfileUpdateService {
         }
         entity.setTimesSeen(entity.getTimesSeen() + 1);
         entity.setLastSeen(LocalDateTime.now());
-        entity.setSrState(buildInitialSrState(5.0));
+        entity.setSrState(SpacedRepetitionService.buildInitialSrState(5.0));
         weakPointRepo.save(entity);
         log.info("UPDATE weak point [{}]: {} -> {}", op.index(), entry.get("from"), op.newPoint());
     }
@@ -208,28 +207,6 @@ public class ProfileUpdateService {
         entity.setImprovedAt(LocalDateTime.now());
         weakPointRepo.save(entity);
         log.info("IMPROVE weak point: {} - reason: {}", entity.getQuestionText(), reason);
-    }
-
-    private Map<String, Object> buildInitialSrState(double lastScore) {
-        Map<String, Object> state = new HashMap<>();
-        state.put("interval_days", 1);
-        state.put("ease_factor", 2.5);
-        state.put("repetitions", 0);
-        state.put("next_review", LocalDate.now().plusDays(1).toString());
-        state.put("last_score", lastScore);
-        return state;
-    }
-
-    private String formatExistingWeakPoints(List<UserWeakPointEntity> weakPoints) {
-        if (weakPoints.isEmpty()) return "无";
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < weakPoints.size(); i++) {
-            UserWeakPointEntity wp = weakPoints.get(i);
-            sb.append("[").append(i).append("] ").append(wp.getTopic())
-              .append(" - ").append(wp.getQuestionText())
-              .append(" (已观察").append(wp.getTimesSeen()).append("次)\n");
-        }
-        return sb.toString();
     }
 
     private String formatExistingStrongPoints(List<UserStrongPointEntity> strongPoints) {

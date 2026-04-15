@@ -52,35 +52,7 @@ public class ProfileExtractService {
     }
 
     public ProfileExtractResult extractFromSession(Long sessionId) {
-        InterviewSessionEntity session = sessionRepo.findById(sessionId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.PROFILE_SESSION_NOT_FOUND, "Interview session not found: " + sessionId));
-
-        List<InterviewAnswerEntity> answers = session.getAnswers();
-        String jobRole = session.getJobLabelSnapshot() != null
-            ? session.getJobLabelSnapshot()
-            : (session.getJobRole() != null ? session.getJobRole().name() : "未知岗位");
-
-        String answersText = buildAnswersText(answers);
-
-        String systemPrompt = systemPromptTemplate;
-        String userPrompt = userPromptTemplate.render(Map.of(
-            "jobRole", jobRole,
-            "answers", answersText,
-            "existingWeakPoints", "无"
-        ));
-
-        String systemPromptWithFormat = systemPrompt + "\n\n" + outputConverter.getFormat();
-
-        return structuredOutputInvoker.invoke(
-            chatClient,
-            systemPromptWithFormat,
-            userPrompt,
-            outputConverter,
-            ErrorCode.PROFILE_EXTRACTION_FAILED,
-            "Profile extraction failed: ",
-            "ProfileExtract",
-            log
-        );
+        return extractFromSession(sessionId, null);
     }
 
     public ProfileExtractResult extractFromSession(Long sessionId, String userId) {
@@ -94,7 +66,7 @@ public class ProfileExtractService {
             : (session.getJobRole() != null ? session.getJobRole().name() : "未知岗位");
 
         String answersText = buildAnswersText(answers);
-        String existingWeakPoints = buildExistingWeakPointsText(userId);
+        String existingWeakPoints = userId != null ? buildExistingWeakPointsText(userId) : "无";
 
         String systemPrompt = systemPromptTemplate;
         String userPrompt = userPromptTemplate.render(Map.of(
@@ -118,13 +90,14 @@ public class ProfileExtractService {
     }
 
     private String buildExistingWeakPointsText(String userId) {
-        List<UserWeakPointEntity> existing = weakPointRepo.findByUserIdAndIsImprovedFalse(userId);
-        if (existing.isEmpty()) {
-            return "无";
-        }
+        return formatWeakPointsForPrompt(weakPointRepo.findByUserIdAndIsImprovedFalse(userId));
+    }
+
+    static String formatWeakPointsForPrompt(List<UserWeakPointEntity> weakPoints) {
+        if (weakPoints.isEmpty()) return "无";
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < existing.size(); i++) {
-            UserWeakPointEntity wp = existing.get(i);
+        for (int i = 0; i < weakPoints.size(); i++) {
+            UserWeakPointEntity wp = weakPoints.get(i);
             sb.append("[").append(i).append("] ").append(wp.getTopic())
               .append(" - ").append(wp.getQuestionText())
               .append(" (已观察").append(wp.getTimesSeen()).append("次)\n");

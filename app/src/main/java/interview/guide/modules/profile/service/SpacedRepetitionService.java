@@ -5,6 +5,8 @@ import interview.guide.modules.profile.model.Sm2State;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class SpacedRepetitionService {
@@ -40,5 +42,15 @@ public class SpacedRepetitionService {
 
     public boolean isImproved(int repetitions) {
         return repetitions >= 3;
+    }
+
+    public static Map<String, Object> buildInitialSrState(double lastScore) {
+        Map<String, Object> state = new HashMap<>();
+        state.put("interval_days", 1);
+        state.put("ease_factor", 2.5);
+        state.put("repetitions", 0);
+        state.put("next_review", LocalDate.now().plusDays(1).toString());
+        state.put("last_score", lastScore);
+        return state;
     }
 }
