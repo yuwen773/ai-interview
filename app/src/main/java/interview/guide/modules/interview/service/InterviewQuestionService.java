@@ -110,7 +110,7 @@ public class InterviewQuestionService {
         // 获取到期弱项
         List<UserWeakPointEntity> dueReviews = profileService.getDueReviews(userId, topic);
         String weakContext = "";
-        if (!dueReviews.isEmpty()) {
+        if (dueReviews != null && !dueReviews.isEmpty()) {
             weakContext = dueReviews.stream()
                 .map(wp -> {
                     Map<String, Object> sr = wp.getSrState();
@@ -118,13 +118,15 @@ public class InterviewQuestionService {
                     if (sr != null && sr.get("ease_factor") instanceof Number) {
                         ef = ((Number) sr.get("ease_factor")).doubleValue();
                     }
+                    String topicStr = wp.getTopic() != null ? sanitizeForPrompt(wp.getTopic()) : "未知";
+                    String questionStr = wp.getQuestionText() != null ? sanitizeForPrompt(wp.getQuestionText()) : "";
                     return String.format("- [%s] %s (暴露%d次, EF=%.1f)",
-                        wp.getTopic(), wp.getQuestionText(),
+                        topicStr, questionStr,
                         wp.getTimesSeen() != null ? wp.getTimesSeen() : 1,
                         ef);
                 })
                 .collect(Collectors.joining("\n"));
-            log.debug("注入 {} 条历史弱项到专项训练题目生成", dueReviews.size());
+            log.info("注入 {} 条历史弱项到专项训练题目生成", dueReviews.size());
         }
 
         // 调用原有生成逻辑，但注入弱项上下文
@@ -348,5 +350,19 @@ public class InterviewQuestionService {
         return Arrays.stream(QuestionType.values())
             .map(Enum::name)
             .collect(Collectors.joining(", "));
+    }
+
+    /**
+     * Sanitize user-controlled text for safe insertion into AI prompts.
+     * Prevents prompt injection by escaping special characters.
+     */
+    private String sanitizeForPrompt(String input) {
+        if (input == null) return "";
+        // Remove newlines and limit length to prevent prompt injection
+        String sanitized = input.replaceAll("[\\r\\n]+", " ").trim();
+        if (sanitized.length() > 500) {
+            sanitized = sanitized.substring(0, 500) + "...";
+        }
+        return sanitized;
     }
 }

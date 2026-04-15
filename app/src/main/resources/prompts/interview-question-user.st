@@ -27,5 +27,8 @@
 {historicalQuestions}
 ---历史提问结束---
 
+## 历史弱项（专项训练优先）
+{weakPointContext}
+
 ## 输出要求
 请严格按照 JSON 格式输出问题列表，直接输出 JSON 对象，不要包含任何 Markdown 代码块标签。
