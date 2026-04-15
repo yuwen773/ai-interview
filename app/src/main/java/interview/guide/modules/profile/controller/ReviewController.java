@@ -17,8 +17,8 @@ public class ReviewController {
     private final UserProfileService profileService;
 
     @PostMapping("/enroll")
-    public Result<Integer> enroll(@RequestBody List<WeakPointEnrollItem> items, @RequestParam String userId) {
-        int count = profileService.enrollWeakPoints(userId, items);
+    public Result<Integer> enroll(@RequestBody EnrollWeakPointsRequest req) {
+        int count = profileService.enrollWeakPoints(req.userId(), req.items());
         return Result.success(count);
     }
 
