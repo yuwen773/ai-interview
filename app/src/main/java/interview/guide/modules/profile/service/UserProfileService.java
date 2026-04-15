@@ -65,11 +65,11 @@ public class UserProfileService {
 
         Map<String, Object> stateMap = entity.getSrState();
         Sm2State state = new Sm2State(
-            ((Number) stateMap.get("interval_days")).intValue(),
-            ((Number) stateMap.get("ease_factor")).doubleValue(),
-            ((Number) stateMap.get("repetitions")).intValue(),
+            toInt(stateMap, "interval_days", 1),
+            toDouble(stateMap, "ease_factor", 2.5),
+            toInt(stateMap, "repetitions", 0),
             LocalDate.parse((String) stateMap.get("next_review")),
-            (Double) stateMap.get("last_score")
+            toDouble(stateMap, "last_score", 0.0)
         );
 
         Sm2Result result = srService.sm2Update(state, score);
@@ -118,9 +118,7 @@ public class UserProfileService {
     }
 
     public UserProfileDto getProfile(String userId) {
-        List<UserTopicMasteryEntity> masteries = masteryRepo.findAll().stream()
-            .filter(m -> m.getUserId().equals(userId))
-            .toList();
+        List<UserTopicMasteryEntity> masteries = masteryRepo.findByUserId(userId);
 
         List<TopicMasteryDto> topicMasteries = masteries.stream()
             .map(m -> new TopicMasteryDto(m.getTopic(), m.getScore().doubleValue(), m.getSessionCount()))
@@ -128,9 +126,7 @@ public class UserProfileService {
 
         List<UserWeakPointEntity> weakPoints = weakPointRepo.findByUserIdAndIsImprovedFalse(userId);
         int dueReviewCount = weakPointRepo.findAllDueReviews(userId, LocalDate.now()).size();
-        int improvedCount = weakPointRepo.findAll().stream()
-            .filter(w -> w.getUserId().equals(userId) && Boolean.TRUE.equals(w.isImproved()))
-            .toList().size();
+        int improvedCount = (int) weakPointRepo.countByUserIdAndIsImprovedTrue(userId);
 
         return new UserProfileDto(userId, null, topicMasteries, weakPoints.size(), improvedCount, dueReviewCount);
     }
@@ -153,10 +149,22 @@ public class UserProfileService {
             entity.getSource(),
             entity.getSessionId(),
             LocalDate.parse((String) s.get("next_review")),
-            ((Number) s.get("ease_factor")).doubleValue(),
-            ((Number) s.get("repetitions")).intValue(),
+            toDouble(s, "ease_factor", 2.5),
+            toInt(s, "repetitions", 0),
             entity.getTimesSeen(),
             Boolean.TRUE.equals(entity.isImproved())
         );
+    }
+
+    private static int toInt(Map<String, Object> map, String key, int defaultValue) {
+        Object v = map.get(key);
+        if (v instanceof Number) return ((Number) v).intValue();
+        return defaultValue;
+    }
+
+    private static double toDouble(Map<String, Object> map, String key, double defaultValue) {
+        Object v = map.get(key);
+        if (v instanceof Number) return ((Number) v).doubleValue();
+        return defaultValue;
     }
 }

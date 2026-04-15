@@ -38,4 +38,6 @@ public interface UserWeakPointRepository extends JpaRepository<UserWeakPointEnti
     List<UserWeakPointEntity> findAllDueReviews(@Param("userId") String userId, @Param("date") LocalDate date);
 
     boolean existsByUserIdAndQuestionText(String userId, String questionText);
+
+    long countByUserIdAndIsImprovedTrue(String userId);
 }
