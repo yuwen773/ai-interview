@@ -2,10 +2,14 @@ package interview.guide.modules.profile.service;
 
 import interview.guide.common.exception.BusinessException;
 import interview.guide.common.exception.ErrorCode;
-import interview.guide.modules.profile.entity.*;
-import interview.guide.modules.profile.model.*;
+import interview.guide.modules.profile.entity.UserTopicMasteryEntity;
+import interview.guide.modules.profile.entity.UserWeakPointEntity;
+import interview.guide.modules.profile.model.Sm2Result;
+import interview.guide.modules.profile.model.Sm2State;
 import interview.guide.modules.profile.model.dto.*;
 import interview.guide.modules.profile.repository.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +22,8 @@ import java.util.*;
 @Service
 public class UserProfileService {
 
+    private static final Logger log = LoggerFactory.getLogger(UserProfileService.class);
+
     private static final String SR_INTERVAL_DAYS = "interval_days";
     private static final String SR_EASE_FACTOR = "ease_factor";
     private static final String SR_REPETITIONS = "repetitions";
@@ -29,6 +35,7 @@ public class UserProfileService {
     @Autowired private UserProfileRepository profileRepo;
     @Autowired private SpacedRepetitionService srService;
     @Autowired private UserStrongPointRepository strongPointRepo;
+    @Autowired private ProfileSemanticService semanticService;
 
     @Transactional
     public int enrollWeakPoints(String userId, List<WeakPointEnrollItem> items) {
@@ -38,19 +45,9 @@ public class UserProfileService {
 
         List<UserWeakPointEntity> toSave = items.stream()
             .filter(item -> !existing.contains(item.questionText()))
-            .map(item -> {
-                UserWeakPointEntity entity = new UserWeakPointEntity();
-                entity.setUserId(userId);
-                entity.setTopic(item.topic());
-                entity.setQuestionText(item.questionText());
-                entity.setAnswerSummary(item.answerSummary());
-                entity.setScore(BigDecimal.valueOf(item.score()));
-                entity.setSource(item.source());
-                entity.setSessionId(item.sessionId());
-                entity.setSrState(SpacedRepetitionService.buildInitialSrState(item.score()));
-                entity.setTimesSeen(1);
-                return entity;
-            })
+            .map(item -> UserWeakPointEntity.create(
+                userId, item.topic(), item.questionText(), item.answerSummary(),
+                item.score(), item.sessionId()))
             .toList();
         weakPointRepo.saveAll(toSave);
         return toSave.size();
@@ -69,28 +66,16 @@ public class UserProfileService {
         UserWeakPointEntity entity = weakPointRepo.findById(weakPointId)
             .orElseThrow(() -> new BusinessException(ErrorCode.INTERVIEW_QUESTION_NOT_FOUND, "WeakPoint not found: " + weakPointId));
 
-        Map<String, Object> stateMap = entity.getSrState();
-        Sm2State state = new Sm2State(
-            toInt(stateMap, SR_INTERVAL_DAYS, 1),
-            toDouble(stateMap, SR_EASE_FACTOR, 2.5),
-            toInt(stateMap, SR_REPETITIONS, 0),
-            LocalDate.parse((String) stateMap.get(SR_NEXT_REVIEW)),
-            toDouble(stateMap, SR_LAST_SCORE, 0.0)
-        );
-
+        Sm2State state = Sm2State.fromMap(entity.getSrState());
         Sm2Result result = srService.sm2Update(state, score);
-
-        entity.setSrState(applySrResult(stateMap, result, score));
+        entity.setSrState(applySrResult(entity.getSrState(), result, score));
 
         if (srService.isImproved(result.repetitions())) {
-            entity.setImproved(true);
-            entity.setImprovedAt(LocalDateTime.now());
+            entity.markImproved("MANUAL_REVIEW", "手动复习中连续通过");
         }
 
-        entity.setLastSeen(LocalDateTime.now());
-        entity.setTimesSeen(entity.getTimesSeen() + 1);
+        entity.recordSeen();
         weakPointRepo.save(entity);
-
         updateMasteryAfterReview(entity.getUserId(), entity.getTopic(), score);
 
         return result;
@@ -120,7 +105,10 @@ public class UserProfileService {
         List<UserTopicMasteryEntity> masteries = masteryRepo.findByUserId(userId);
 
         List<TopicMasteryDto> topicMasteries = masteries.stream()
-            .map(m -> new TopicMasteryDto(m.getTopic(), m.getScore().doubleValue(), m.getSessionCount()))
+            .map(m -> new TopicMasteryDto(m.getTopic(),
+                Math.round(SpacedRepetitionService.applyDecay(
+                    m.getScore().doubleValue(), m.getLastAssessed()) * 10.0) / 10.0,
+                m.getSessionCount()))
             .toList();
 
         long totalWeakPoints = weakPointRepo.findByUserIdAndIsImprovedFalse(userId).size();
@@ -150,6 +138,84 @@ public class UserProfileService {
         return entities.stream().map(this::toDto).toList();
     }
 
+    @Transactional
+    public int archiveStaleWeakPoints(String userId) {
+        List<UserWeakPointEntity> activeWeak = weakPointRepo.findByUserIdAndIsImprovedFalse(userId);
+        int archived = 0;
+        for (UserWeakPointEntity wp : activeWeak) {
+            if (SpacedRepetitionService.shouldArchive(wp.getLastSeen(), wp.getTimesSeen())) {
+                wp.markImproved("ARCHIVE_STALE", "长期未见，自动归档");
+                weakPointRepo.save(wp);
+                archived++;
+            }
+        }
+        if (archived > 0) {
+            log.info("Archived {} stale weak points for user: {}", archived, userId);
+        }
+        return archived;
+    }
+
+    /**
+     * 面试评估后自动更新匹配弱项的 SR 状态（反馈循环）。
+     * 预取全部弱项一次，避免 N+1 查询。
+     */
+    @Transactional
+    public int autoUpdateSrFromEvaluation(String userId, List<EvaluationMatch> evaluations) {
+        if (evaluations == null || evaluations.isEmpty()) return 0;
+
+        // 预取全部活跃弱项（归档 + 匹配共用一次查询）
+        List<UserWeakPointEntity> activeWeak = weakPointRepo.findByUserIdAndIsImprovedFalse(userId);
+
+        // 归档过时弱项（直接操作预取列表）
+        int archived = 0;
+        var iterator = activeWeak.iterator();
+        while (iterator.hasNext()) {
+            UserWeakPointEntity wp = iterator.next();
+            if (SpacedRepetitionService.shouldArchive(wp.getLastSeen(), wp.getTimesSeen())) {
+                wp.markImproved("ARCHIVE_STALE", "长期未见，自动归档");
+                weakPointRepo.save(wp);
+                iterator.remove();
+                archived++;
+            }
+        }
+        if (archived > 0) {
+            log.info("Archived {} stale weak points for user: {}", archived, userId);
+        }
+
+        // 匹配评估结果并更新 SR（使用同一份预取列表）
+        int updated = 0;
+        for (EvaluationMatch eval : evaluations) {
+            Optional<UserWeakPointEntity> match = semanticService.findMatchingWeakPoint(
+                activeWeak, eval.question(), eval.topic());
+
+            if (match.isPresent()) {
+                UserWeakPointEntity wp = match.get();
+                Sm2State state = Sm2State.fromMap(wp.getSrState());
+                Sm2Result result = srService.sm2Update(state, eval.score());
+                wp.setSrState(applySrResult(wp.getSrState(), result, eval.score()));
+                wp.recordSeen();
+
+                if (srService.isImproved(result.repetitions())) {
+                    wp.markImproved("AUTO_IMPROVE", "面试评估中连续通过，自动标记为已改进");
+                    activeWeak.remove(wp);
+                }
+
+                weakPointRepo.save(wp);
+                updateMasteryAfterReview(userId, eval.topic(), eval.score());
+                updated++;
+                log.info("Auto SR update: weak point '{}' score={} -> nextReview={}",
+                    wp.getQuestionText(), eval.score(), result.nextReview());
+            }
+        }
+        return updated;
+    }
+
+    public double getDecayedMasteryScore(String userId, String topic) {
+        return masteryRepo.findByUserIdAndTopic(userId, topic)
+            .map(m -> SpacedRepetitionService.applyDecay(m.getScore().doubleValue(), m.getLastAssessed()))
+            .orElse(50.0);
+    }
+
     private WeakPointDto toDto(UserWeakPointEntity entity) {
         Map<String, Object> s = entity.getSrState();
         return new WeakPointDto(
@@ -160,9 +226,9 @@ public class UserProfileService {
             entity.getScore() != null ? entity.getScore().doubleValue() : null,
             entity.getSource(),
             entity.getSessionId(),
-            LocalDate.parse((String) s.get(SR_NEXT_REVIEW)),
-            toDouble(s, SR_EASE_FACTOR, 2.5),
-            toInt(s, SR_REPETITIONS, 0),
+            s.get(SR_NEXT_REVIEW) != null ? LocalDate.parse((String) s.get(SR_NEXT_REVIEW)) : null,
+            s.get(SR_EASE_FACTOR) instanceof Number n ? n.doubleValue() : 2.5,
+            s.get(SR_REPETITIONS) instanceof Number n ? n.intValue() : 0,
             entity.getTimesSeen(),
             Boolean.TRUE.equals(entity.isImproved())
         );
@@ -176,17 +242,5 @@ public class UserProfileService {
         newState.put(SR_NEXT_REVIEW, result.nextReview().toString());
         newState.put(SR_LAST_SCORE, lastScore);
         return newState;
-    }
-
-    private static int toInt(Map<String, Object> map, String key, int defaultValue) {
-        Object v = map.get(key);
-        if (v instanceof Number) return ((Number) v).intValue();
-        return defaultValue;
-    }
-
-    private static double toDouble(Map<String, Object> map, String key, double defaultValue) {
-        Object v = map.get(key);
-        if (v instanceof Number) return ((Number) v).doubleValue();
-        return defaultValue;
     }
 }

@@ -32,6 +32,7 @@ public class ProfileUpdateService {
     private final StructuredOutputInvoker structuredOutputInvoker;
     private final UserWeakPointRepository weakPointRepo;
     private final UserStrongPointRepository strongPointRepo;
+    private final ProfileSemanticService semanticService;
     private final PromptTemplate updatePromptTemplate;
     private final BeanOutputConverter<ProfileUpdateResult> outputConverter;
 
@@ -40,11 +41,13 @@ public class ProfileUpdateService {
             StructuredOutputInvoker structuredOutputInvoker,
             UserWeakPointRepository weakPointRepo,
             UserStrongPointRepository strongPointRepo,
+            ProfileSemanticService semanticService,
             @Value("classpath:prompts/profile-update-system.st") Resource promptResource) throws Exception {
         this.chatClient = chatClientBuilder.build();
         this.structuredOutputInvoker = structuredOutputInvoker;
         this.weakPointRepo = weakPointRepo;
         this.strongPointRepo = strongPointRepo;
+        this.semanticService = semanticService;
         this.updatePromptTemplate = new PromptTemplate(promptResource.getContentAsString(StandardCharsets.UTF_8));
         this.outputConverter = new BeanOutputConverter<>(ProfileUpdateResult.class);
     }
@@ -104,31 +107,42 @@ public class ProfileUpdateService {
 
     @Transactional
     public void applyFallback(String userId, ProfileExtractResult extraction, Long sessionId) {
-        log.info("Using fallback rule-based profile update for user: {}", userId);
+        log.info("Using fallback semantic profile update for user: {}", userId);
         List<UserWeakPointEntity> existingWeak = weakPointRepo.findByUserIdAndIsImprovedFalse(userId);
-        Map<String, UserWeakPointEntity> weakByText = new HashMap<>();
-        for (UserWeakPointEntity e : existingWeak) {
-            weakByText.put(e.getQuestionText(), e);
-        }
 
         for (var weak : extraction.weakPoints()) {
-            UserWeakPointEntity existing = weakByText.get(weak.question());
-            if (existing != null) {
-                existing.setTimesSeen(existing.getTimesSeen() + 1);
-                existing.setLastSeen(LocalDateTime.now());
-                weakPointRepo.save(existing);
-                log.debug("Updated timesSeen for existing weak point: {}", weak.question());
+            // 先尝试精确匹配
+            UserWeakPointEntity exactMatch = null;
+            for (UserWeakPointEntity e : existingWeak) {
+                if (e.getQuestionText().equals(weak.question())) {
+                    exactMatch = e;
+                    break;
+                }
+            }
+
+            if (exactMatch != null) {
+                exactMatch.recordSeen();
+                weakPointRepo.save(exactMatch);
             } else {
-                UserWeakPointEntity entity = new UserWeakPointEntity();
-                entity.setUserId(userId);
-                entity.setTopic(weak.topic());
-                entity.setQuestionText(weak.question());
-                entity.setAnswerSummary(weak.answerSummary());
-                entity.setScore(BigDecimal.valueOf(weak.score()));
-                entity.setSource("INTERVIEW");
-                entity.setSessionId(sessionId);
-                entity.setSrState(SpacedRepetitionService.buildInitialSrState(weak.score()));
-                weakPointRepo.save(entity);
+                // 精确匹配失败，尝试语义相似度匹配
+                Optional<UserWeakPointEntity> semanticMatch =
+                    semanticService.findSimilarWeakPoint(existingWeak, weak.question());
+
+                if (semanticMatch.isPresent()) {
+                    UserWeakPointEntity existing = semanticMatch.get();
+                    existing.recordSeen();
+                    if (weak.answerSummary() != null && existing.getAnswerSummary() == null) {
+                        existing.setAnswerSummary(weak.answerSummary());
+                    }
+                    weakPointRepo.save(existing);
+                    log.info("Semantic match updated: '{}' <-> '{}' (merged)", weak.question(), existing.getQuestionText());
+                } else {
+                    UserWeakPointEntity entity = UserWeakPointEntity.create(
+                        userId, weak.topic(), weak.question(), weak.answerSummary(), weak.score(), sessionId);
+                    weakPointRepo.save(entity);
+                    existingWeak.add(entity);
+                    semanticService.storeEmbedding(entity.getId(), weak.question());
+                }
             }
         }
 
@@ -144,15 +158,9 @@ public class ProfileUpdateService {
     }
 
     private void applyWeakAdd(String userId, ProfileUpdateResult.WeakPointOp op, Long sessionId) {
-        UserWeakPointEntity entity = new UserWeakPointEntity();
-        entity.setUserId(userId);
-        entity.setTopic(op.topic());
-        entity.setQuestionText(op.point());
-        entity.setAnswerSummary(op.answerSummary());
-        entity.setScore(op.score() != null ? BigDecimal.valueOf(op.score()) : null);
-        entity.setSource("INTERVIEW");
-        entity.setSessionId(sessionId);
-        entity.setSrState(SpacedRepetitionService.buildInitialSrState(op.score() != null ? op.score() : 5.0));
+        double score = op.score() != null ? op.score() : 5.0;
+        UserWeakPointEntity entity = UserWeakPointEntity.create(
+            userId, op.topic(), op.point(), op.answerSummary(), score, sessionId);
         weakPointRepo.save(entity);
         log.info("ADD weak point: {} - {}", op.topic(), op.point());
     }
@@ -163,24 +171,16 @@ public class ProfileUpdateService {
             return;
         }
         UserWeakPointEntity entity = existing.get(op.index());
-        List<Map<String, String>> history = entity.getHistory();
-        if (history == null) history = new ArrayList<>();
-        Map<String, String> entry = new LinkedHashMap<>();
-        entry.put("action", "UPDATE");
-        entry.put("from", entity.getQuestionText());
-        entry.put("to", op.newPoint());
-        entry.put("at", LocalDateTime.now().toString());
-        history.add(entry);
-        entity.setHistory(history);
+        String oldText = entity.getQuestionText();
+        entity.addHistoryEntry("UPDATE", oldText, op.newPoint(), null);
         entity.setQuestionText(op.newPoint());
         if (op.newAnswerSummary() != null) {
             entity.setAnswerSummary(op.newAnswerSummary());
         }
-        entity.setTimesSeen(entity.getTimesSeen() + 1);
-        entity.setLastSeen(LocalDateTime.now());
+        entity.recordSeen();
         entity.setSrState(SpacedRepetitionService.buildInitialSrState(5.0));
         weakPointRepo.save(entity);
-        log.info("UPDATE weak point [{}]: {} -> {}", op.index(), entry.get("from"), op.newPoint());
+        log.info("UPDATE weak point [{}]: {} -> {}", op.index(), oldText, op.newPoint());
     }
 
     private void applyStrongAdd(String userId, ProfileUpdateResult.StrongPointOp op, Long sessionId) {
@@ -195,16 +195,7 @@ public class ProfileUpdateService {
     }
 
     private void applyImprove(UserWeakPointEntity entity, String reason) {
-        List<Map<String, String>> history = entity.getHistory();
-        if (history == null) history = new ArrayList<>();
-        Map<String, String> entry = new LinkedHashMap<>();
-        entry.put("action", "IMPROVE");
-        entry.put("reason", reason);
-        entry.put("at", LocalDateTime.now().toString());
-        history.add(entry);
-        entity.setHistory(history);
-        entity.setImproved(true);
-        entity.setImprovedAt(LocalDateTime.now());
+        entity.markImproved("IMPROVE", reason);
         weakPointRepo.save(entity);
         log.info("IMPROVE weak point: {} - reason: {}", entity.getQuestionText(), reason);
     }
