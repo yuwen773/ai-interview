@@ -1,6 +1,6 @@
 import {Link, Outlet, useLocation} from 'react-router-dom';
 import {motion} from 'framer-motion';
-import {ChevronRight, Database, FileStack, MessageSquare, Moon, Sparkles, Sun, Upload, Users,} from 'lucide-react';
+import {ChevronRight, Database, FileStack, MessageSquare, Moon, Sparkles, Sun, Upload, Users, Brain,} from 'lucide-react';
 import {useTheme} from '../hooks/useTheme';
 
 interface NavItem {
@@ -31,6 +31,7 @@ export default function Layout() {
         { id: 'upload', path: '/upload', label: '上传简历', icon: Upload, description: 'AI 分析简历' },
         { id: 'resumes', path: '/history', label: '简历库', icon: FileStack, description: '管理所有简历' },
         { id: 'interviews', path: '/interviews', label: '面试记录', icon: Users, description: '查看面试历史' },
+        { id: 'profile', path: '/profile', label: '个人画像', icon: Brain, description: '查看能力画像' },
       ],
     },
     {
@@ -60,22 +61,34 @@ export default function Layout() {
       {/* 左侧边栏 */}
           <aside
               className="w-64 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border-r border-[var(--color-border)] dark:border-[var(--color-border-dark)] fixed h-screen left-0 top-0 z-50 flex flex-col">
+
+        {/* Top accent line — amber/gold brand mark */}
+        <div className="h-1 bg-gradient-to-r from-amber-500 to-amber-400 w-full" />
+
         {/* Logo */}
-              <div className="p-6 border-b border-[var(--color-border)] dark:border-[var(--color-border-dark)] flex items-center justify-between">
-          <Link to="/upload" className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[var(--color-primary)] rounded-xl flex items-center justify-center text-white">
-              <Sparkles className="w-5 h-5" />
+              <div className="px-6 pt-8 pb-6">
+          <Link to="/upload" className="flex items-center gap-4 group">
+            {/* Logo icon — larger, bolder, with architectural depth */}
+            <div className="relative">
+              <div className="w-12 h-12 bg-[var(--color-primary)] rounded-2xl flex items-center justify-center text-white shadow-md group-hover:shadow-lg transition-shadow duration-200">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              {/* Amber corner mark — brand accent */}
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-amber-500 rounded-full border-2 border-[var(--color-surface)] dark:border-[var(--color-surface-dark)]" />
             </div>
+
+            {/* Typography — Kaushan Script for brand logo */}
             <div>
                 <span
-                    className="text-lg font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)] tracking-tight block">AI Interview</span>
-                <span className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">智能面试助手</span>
+                    style={{ fontFamily: "'Kaushan Script', cursive" }}
+                    className="text-3xl text-[var(--color-text)] dark:text-[var(--color-text-dark)] tracking-normal block leading-none">AI Interview</span>
+                <span className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mt-1 block font-normal tracking-wide">智能面试助手</span>
             </div>
           </Link>
         </div>
 
               {/* 主题切换按钮 */}
-              <div className="px-4 pb-2">
+              <div className="px-6 pb-3">
                   <button
                       onClick={toggleTheme}
                       aria-label={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
@@ -151,14 +164,11 @@ export default function Layout() {
           </div>
         </nav>
 
-        {/* 底部信息 */}
-              <div className="p-4 border-t border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
-                  <div
-                      className="px-3 py-2 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] rounded-xl border border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
-                      <p className="text-xs text-[var(--color-primary-hover)] dark:text-[var(--color-primary)] font-medium">AI 面试助手</p>
-                      <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mt-0.5">专业面试训练平台</p>
+        {/* 底部信息 — 去掉多余容器，纯文字层次 */}
+              <div className="px-6 pb-5 pt-1">
+                  <p className="text-sm font-semibold text-[var(--color-primary-hover)] dark:text-[var(--color-primary)] tracking-wide">AI 面试助手</p>
+                  <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mt-0.5 leading-relaxed">专业面试训练平台</p>
           </div>
-        </div>
       </aside>
 
       {/* 主内容区 */}

@@ -38,7 +38,7 @@ interface InterviewProps {
   resumeText: string;
   resumeId?: number;
   onBack: () => void;
-  onInterviewComplete: () => void;
+  onInterviewComplete: (sessionId: string) => void;
 }
 
 const INTERVIEW_PACKAGES: InterviewPackageOption[] = [
@@ -382,7 +382,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         lastAutoPlayedQuestionRef.current = null;
         stopQuestionAudio();
         await cleanupSessionVoiceCache(session.sessionId);
-        onInterviewComplete();
+        onInterviewComplete(session.sessionId);
       }
     } catch (err) {
       setMessages(prev => prev.slice(0, -1));
@@ -459,7 +459,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       await cleanupSessionVoiceCache(session.sessionId);
       setShowCompleteConfirm(false);
       // 面试已完成，评估将在后台进行，跳转到面试记录页
-      onInterviewComplete();
+      onInterviewComplete(session.sessionId);
     } catch {
       setError('提前交卷失败，请重试');
     } finally {

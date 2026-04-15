@@ -11,9 +11,11 @@ const ResumeDetailPage = lazy(() => import('./pages/ResumeDetailPage'));
 const GrowthCurvePage = lazy(() => import('./pages/GrowthCurvePage'));
 const Interview = lazy(() => import('./pages/InterviewPage'));
 const InterviewHistoryPage = lazy(() => import('./pages/InterviewHistoryPage'));
+const InterviewReportPage = lazy(() => import('./pages/InterviewReportPage'));
 const KnowledgeBaseQueryPage = lazy(() => import('./pages/KnowledgeBaseQueryPage'));
 const KnowledgeBaseUploadPage = lazy(() => import('./pages/KnowledgeBaseUploadPage'));
 const KnowledgeBaseManagePage = lazy(() => import('./pages/KnowledgeBaseManagePage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 
 // Loading component
 const Loading = () => (
@@ -135,9 +137,9 @@ function InterviewWrapper() {
     navigate(`/history/${resumeId}`, { replace: false });
   };
 
-  const handleInterviewComplete = () => {
-    // 面试完成后跳转到面试记录页
-    navigate('/interviews');
+  const handleInterviewComplete = (sessionId: string) => {
+    // 面试完成后跳转到面试报告页
+    navigate(`/interviews/report/${sessionId}`);
   };
 
   if (loading) {
@@ -159,6 +161,18 @@ function InterviewWrapper() {
       onInterviewComplete={handleInterviewComplete}
     />
   );
+}
+
+// 面试报告页面包装器
+function InterviewReportPageWrapper() {
+  const { sessionId } = useParams<{ sessionId: string }>();
+  const navigate = useNavigate();
+
+  if (!sessionId) {
+    return <Navigate to="/interviews" replace />;
+  }
+
+  return <InterviewReportPage onBack={() => navigate('/interviews')} />;
 }
 
 function App() {
@@ -188,6 +202,9 @@ function App() {
             {/* 模拟面试 */}
             <Route path="interview/:resumeId" element={<InterviewWrapper />} />
 
+            {/* 面试报告 */}
+            <Route path="interviews/report/:sessionId" element={<InterviewReportPageWrapper />} />
+
             {/* 知识库管理 */}
             <Route path="knowledgebase" element={<KnowledgeBaseManagePageWrapper />} />
 
@@ -196,6 +213,9 @@ function App() {
 
             {/* 问答助手（知识库聊天） */}
             <Route path="knowledgebase/chat" element={<KnowledgeBaseQueryPageWrapper />} />
+
+            {/* 个人画像 */}
+            <Route path="profile" element={<ProfilePage />} />
           </Route>
         </Routes>
       </Suspense>
