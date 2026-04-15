@@ -8,17 +8,21 @@ import interview.guide.modules.interview.model.InterviewQuestionDTO.QuestionType
 import interview.guide.modules.interview.model.JobRole;
 import interview.guide.modules.interview.model.QuestionBucket;
 import interview.guide.modules.interview.model.QuestionPlan;
+import interview.guide.modules.profile.entity.UserWeakPointEntity;
+import interview.guide.modules.profile.service.UserProfileService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.converter.BeanOutputConverter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -44,6 +48,7 @@ public class InterviewQuestionService {
     private final StructuredOutputInvoker structuredOutputInvoker;
     private final InterviewJobStrategyRegistry strategyRegistry;
     private final int followUpCount;
+    private final UserProfileService profileService;
 
     private record QuestionListDTO(
         List<QuestionDTO> questions
@@ -56,10 +61,12 @@ public class InterviewQuestionService {
         List<String> followUps
     ) {}
 
+    @Autowired
     public InterviewQuestionService(
         ChatClient.Builder chatClientBuilder,
         InterviewJobStrategyRegistry strategyRegistry,
         StructuredOutputInvoker structuredOutputInvoker,
+        UserProfileService profileService,
         @Value("classpath:prompts/interview-question-system.st") Resource systemPromptResource,
         @Value("classpath:prompts/interview-question-user.st") Resource userPromptResource,
         @Value("${app.interview.follow-up-count:1}") int followUpCount
@@ -67,6 +74,7 @@ public class InterviewQuestionService {
         this.chatClient = chatClientBuilder.build();
         this.strategyRegistry = strategyRegistry;
         this.structuredOutputInvoker = structuredOutputInvoker;
+        this.profileService = profileService;
         this.systemPromptTemplate = new PromptTemplate(systemPromptResource.getContentAsString(StandardCharsets.UTF_8));
         this.userPromptTemplate = new PromptTemplate(userPromptResource.getContentAsString(StandardCharsets.UTF_8));
         this.outputConverter = new BeanOutputConverter<>(QuestionListDTO.class);
@@ -78,6 +86,57 @@ public class InterviewQuestionService {
         String resumeText,
         int questionCount,
         List<String> historicalQuestions
+    ) {
+        return generateQuestionsWithWeakContext(jobRole, resumeText, questionCount, historicalQuestions, "");
+    }
+
+    public List<InterviewQuestionDTO> generateQuestions(JobRole jobRole, String resumeText, int questionCount) {
+        return generateQuestions(jobRole, resumeText, questionCount, null);
+    }
+
+    /**
+     * 生成专项训练问题，注入用户历史弱项上下文
+     */
+    public List<InterviewQuestionDTO> generateTargetedQuestions(
+        JobRole jobRole,
+        String resumeText,
+        int questionCount,
+        String userId,
+        String topic
+    ) {
+        log.info("开始生成专项训练问题，岗位: {}, 主题: {}, 简历长度: {}, 问题数量: {}",
+            jobRole, topic, resumeText.length(), questionCount);
+
+        // 获取到期弱项
+        List<UserWeakPointEntity> dueReviews = profileService.getDueReviews(userId, topic);
+        String weakContext = "";
+        if (!dueReviews.isEmpty()) {
+            weakContext = dueReviews.stream()
+                .map(wp -> {
+                    Map<String, Object> sr = wp.getSrState();
+                    double ef = 2.5;
+                    if (sr != null && sr.get("ease_factor") instanceof Number) {
+                        ef = ((Number) sr.get("ease_factor")).doubleValue();
+                    }
+                    return String.format("- [%s] %s (暴露%d次, EF=%.1f)",
+                        wp.getTopic(), wp.getQuestionText(),
+                        wp.getTimesSeen() != null ? wp.getTimesSeen() : 1,
+                        ef);
+                })
+                .collect(Collectors.joining("\n"));
+            log.debug("注入 {} 条历史弱项到专项训练题目生成", dueReviews.size());
+        }
+
+        // 调用原有生成逻辑，但注入弱项上下文
+        return generateQuestionsWithWeakContext(jobRole, resumeText, questionCount, null, weakContext);
+    }
+
+    private List<InterviewQuestionDTO> generateQuestionsWithWeakContext(
+        JobRole jobRole,
+        String resumeText,
+        int questionCount,
+        List<String> historicalQuestions,
+        String weakContext
     ) {
         log.info("开始生成面试问题，岗位: {}, 简历长度: {}, 问题数量: {}, 历史问题数: {}",
             jobRole, resumeText.length(), questionCount, historicalQuestions != null ? historicalQuestions.size() : 0);
@@ -105,6 +164,13 @@ public class InterviewQuestionService {
                 variables.put("historicalQuestions", "暂无历史提问");
             }
 
+            // 注入弱项上下文
+            if (weakContext != null && !weakContext.isEmpty()) {
+                variables.put("weakPointContext", "\n\n历史弱项（优先考察）：\n" + weakContext);
+            } else {
+                variables.put("weakPointContext", "");
+            }
+
             String userPrompt = userPromptTemplate.render(variables);
             String systemPromptWithFormat = systemPrompt + "\n\n" + outputConverter.getFormat();
 
@@ -127,10 +193,6 @@ public class InterviewQuestionService {
             log.error("生成面试问题失败: {}", e.getMessage(), e);
             return generateDefaultQuestions(jobRole, questionCount);
         }
-    }
-
-    public List<InterviewQuestionDTO> generateQuestions(JobRole jobRole, String resumeText, int questionCount) {
-        return generateQuestions(jobRole, resumeText, questionCount, null);
     }
 
     private List<InterviewQuestionDTO> convertToQuestions(QuestionListDTO dto) {
@@ -255,9 +317,9 @@ public class InterviewQuestionService {
 
     private String buildDefaultFollowUp(String mainQuestion, int order) {
         if (order == 1) {
-            return "基于“" + mainQuestion + "”，请结合你亲自做过的一个真实场景展开说明。";
+            return "基于\u201c" + mainQuestion + "\u201d，请结合你亲自做过的一个真实场景展开说明。";
         }
-        return "基于“" + mainQuestion + "”，如果线上出现异常，你会如何定位并给出修复方案？";
+        return "基于\u201c" + mainQuestion + "\u201d，如果线上出现异常，你会如何定位并给出修复方案？";
     }
 
     private String buildFocusAreaText(List<String> focusAreas) {
