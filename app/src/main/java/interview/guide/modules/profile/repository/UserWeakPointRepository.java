@@ -37,7 +37,16 @@ public interface UserWeakPointRepository extends JpaRepository<UserWeakPointEnti
         """, nativeQuery = true)
     List<UserWeakPointEntity> findAllDueReviews(@Param("userId") String userId, @Param("date") LocalDate date);
 
-    boolean existsByUserIdAndQuestionText(String userId, String questionText);
+    @Query("SELECT w.questionText FROM UserWeakPointEntity w WHERE w.userId = :userId")
+    List<String> findAllQuestionTextsByUserId(@Param("userId") String userId);
 
     long countByUserIdAndIsImprovedTrue(String userId);
+
+    @Query(value = """
+        SELECT COUNT(*) FROM user_weak_points
+        WHERE user_id = :userId
+          AND is_improved = false
+          AND (sr_state->>'next_review')::date <= :date
+        """, nativeQuery = true)
+    long countDueReviews(@Param("userId") String userId, @Param("date") LocalDate date);
 }

@@ -1,5 +1,7 @@
 package interview.guide.modules.profile.service;
 
+import interview.guide.common.exception.BusinessException;
+import interview.guide.common.exception.ErrorCode;
 import interview.guide.modules.profile.entity.*;
 import interview.guide.modules.profile.model.*;
 import interview.guide.modules.profile.model.dto.*;
@@ -16,6 +18,12 @@ import java.util.*;
 @Service
 public class UserProfileService {
 
+    private static final String SR_INTERVAL_DAYS = "interval_days";
+    private static final String SR_EASE_FACTOR = "ease_factor";
+    private static final String SR_REPETITIONS = "repetitions";
+    private static final String SR_NEXT_REVIEW = "next_review";
+    private static final String SR_LAST_SCORE = "last_score";
+
     @Autowired private UserWeakPointRepository weakPointRepo;
     @Autowired private UserTopicMasteryRepository masteryRepo;
     @Autowired private UserProfileRepository profileRepo;
@@ -24,9 +32,11 @@ public class UserProfileService {
     @Transactional
     public int enrollWeakPoints(String userId, List<WeakPointEnrollItem> items) {
         if (items == null || items.isEmpty()) return 0;
-        // 过滤已存在的，避免重复录入
+
+        Set<String> existing = new HashSet<>(weakPointRepo.findAllQuestionTextsByUserId(userId));
+
         List<UserWeakPointEntity> toSave = items.stream()
-            .filter(item -> !weakPointRepo.existsByUserIdAndQuestionText(userId, item.questionText()))
+            .filter(item -> !existing.contains(item.questionText()))
             .map(item -> {
                 UserWeakPointEntity entity = new UserWeakPointEntity();
                 entity.setUserId(userId);
@@ -36,13 +46,7 @@ public class UserProfileService {
                 entity.setScore(BigDecimal.valueOf(item.score()));
                 entity.setSource(item.source());
                 entity.setSessionId(item.sessionId());
-                Map<String, Object> srState = new HashMap<>();
-                srState.put("interval_days", 1);
-                srState.put("ease_factor", 2.5);
-                srState.put("repetitions", 0);
-                srState.put("next_review", LocalDate.now().plusDays(1).toString());
-                srState.put("last_score", item.score());
-                entity.setSrState(srState);
+                entity.setSrState(buildInitialSrState(item.score()));
                 entity.setTimesSeen(1);
                 return entity;
             })
@@ -62,26 +66,20 @@ public class UserProfileService {
     @Transactional
     public Sm2Result submitReviewAnswer(Long weakPointId, double score) {
         UserWeakPointEntity entity = weakPointRepo.findById(weakPointId)
-            .orElseThrow(() -> new RuntimeException("WeakPoint not found"));
+            .orElseThrow(() -> new BusinessException(ErrorCode.INTERVIEW_QUESTION_NOT_FOUND, "WeakPoint not found: " + weakPointId));
 
         Map<String, Object> stateMap = entity.getSrState();
         Sm2State state = new Sm2State(
-            toInt(stateMap, "interval_days", 1),
-            toDouble(stateMap, "ease_factor", 2.5),
-            toInt(stateMap, "repetitions", 0),
-            LocalDate.parse((String) stateMap.get("next_review")),
-            toDouble(stateMap, "last_score", 0.0)
+            toInt(stateMap, SR_INTERVAL_DAYS, 1),
+            toDouble(stateMap, SR_EASE_FACTOR, 2.5),
+            toInt(stateMap, SR_REPETITIONS, 0),
+            LocalDate.parse((String) stateMap.get(SR_NEXT_REVIEW)),
+            toDouble(stateMap, SR_LAST_SCORE, 0.0)
         );
 
         Sm2Result result = srService.sm2Update(state, score);
 
-        Map<String, Object> newState = new HashMap<>(stateMap);
-        newState.put("interval_days", result.intervalDays());
-        newState.put("ease_factor", result.easeFactor());
-        newState.put("repetitions", result.repetitions());
-        newState.put("next_review", result.nextReview().toString());
-        newState.put("last_score", score);
-        entity.setSrState(newState);
+        entity.setSrState(applySrResult(stateMap, result, score));
 
         if (srService.isImproved(result.repetitions())) {
             entity.setImproved(true);
@@ -92,7 +90,6 @@ public class UserProfileService {
         entity.setTimesSeen(entity.getTimesSeen() + 1);
         weakPointRepo.save(entity);
 
-        // 同时更新 topic mastery
         updateMasteryAfterReview(entity.getUserId(), entity.getTopic(), score);
 
         return result;
@@ -125,11 +122,11 @@ public class UserProfileService {
             .map(m -> new TopicMasteryDto(m.getTopic(), m.getScore().doubleValue(), m.getSessionCount()))
             .toList();
 
-        List<UserWeakPointEntity> weakPoints = weakPointRepo.findByUserIdAndIsImprovedFalse(userId);
-        int dueReviewCount = weakPointRepo.findAllDueReviews(userId, LocalDate.now()).size();
-        int improvedCount = (int) weakPointRepo.countByUserIdAndIsImprovedTrue(userId);
+        long totalWeakPoints = weakPointRepo.findByUserIdAndIsImprovedFalse(userId).size();
+        long improvedCount = weakPointRepo.countByUserIdAndIsImprovedTrue(userId);
+        long dueReviewCount = weakPointRepo.countDueReviews(userId, LocalDate.now());
 
-        return new UserProfileDto(userId, null, topicMasteries, weakPoints.size(), improvedCount, dueReviewCount);
+        return new UserProfileDto(userId, null, topicMasteries, (int) totalWeakPoints, (int) improvedCount, (int) dueReviewCount);
     }
 
     public List<WeakPointDto> getDueReviewDtos(String userId, String topic) {
@@ -149,12 +146,32 @@ public class UserProfileService {
             entity.getScore() != null ? entity.getScore().doubleValue() : null,
             entity.getSource(),
             entity.getSessionId(),
-            LocalDate.parse((String) s.get("next_review")),
-            toDouble(s, "ease_factor", 2.5),
-            toInt(s, "repetitions", 0),
+            LocalDate.parse((String) s.get(SR_NEXT_REVIEW)),
+            toDouble(s, SR_EASE_FACTOR, 2.5),
+            toInt(s, SR_REPETITIONS, 0),
             entity.getTimesSeen(),
             Boolean.TRUE.equals(entity.isImproved())
         );
+    }
+
+    private Map<String, Object> buildInitialSrState(double lastScore) {
+        Map<String, Object> state = new HashMap<>();
+        state.put(SR_INTERVAL_DAYS, 1);
+        state.put(SR_EASE_FACTOR, 2.5);
+        state.put(SR_REPETITIONS, 0);
+        state.put(SR_NEXT_REVIEW, LocalDate.now().plusDays(1).toString());
+        state.put(SR_LAST_SCORE, lastScore);
+        return state;
+    }
+
+    private static Map<String, Object> applySrResult(Map<String, Object> current, Sm2Result result, double lastScore) {
+        Map<String, Object> newState = new HashMap<>(current);
+        newState.put(SR_INTERVAL_DAYS, result.intervalDays());
+        newState.put(SR_EASE_FACTOR, result.easeFactor());
+        newState.put(SR_REPETITIONS, result.repetitions());
+        newState.put(SR_NEXT_REVIEW, result.nextReview().toString());
+        newState.put(SR_LAST_SCORE, lastScore);
+        return newState;
     }
 
     private static int toInt(Map<String, Object> map, String key, int defaultValue) {
