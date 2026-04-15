@@ -1,6 +1,8 @@
 package interview.guide.modules.profile.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -17,8 +19,9 @@ public class UserProfileEntity {
     @Column(name = "target_role", length = 128)
     private String targetRole;
 
+    @UpdateTimestamp
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private LocalDateTime updatedAt;
 
     // Getters and Setters
     public Long getId() {

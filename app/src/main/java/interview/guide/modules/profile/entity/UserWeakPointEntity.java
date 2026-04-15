@@ -2,11 +2,13 @@ package interview.guide.modules.profile.entity;
 
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.Type;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 
 @Entity
@@ -40,13 +42,13 @@ public class UserWeakPointEntity {
 
     @Type(JsonType.class)
     @Column(name = "sr_state", columnDefinition = "jsonb")
-    private Map<String, Object> srState = Map.of(
+    private Map<String, Object> srState = new HashMap<>(Map.of(
         "interval_days", 1,
         "ease_factor", 2.5,
         "repetitions", 0,
-        "next_review", LocalDate.now().plusDays(1).toString(),
+        "next_review", LocalDateTime.now().plusDays(1).toString(),
         "last_score", null
-    );
+    ));
 
     @Column(name = "is_improved")
     private Boolean isImproved = false;
@@ -57,14 +59,17 @@ public class UserWeakPointEntity {
     @Column(name = "times_seen")
     private Integer timesSeen = 1;
 
+    @CreationTimestamp
     @Column(name = "first_seen")
-    private LocalDateTime firstSeen = LocalDateTime.now();
+    private LocalDateTime firstSeen;
 
+    @UpdateTimestamp
     @Column(name = "last_seen")
-    private LocalDateTime lastSeen = LocalDateTime.now();
+    private LocalDateTime lastSeen;
 
+    @CreationTimestamp
     @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
 
     // Getters and Setters
     public Long getId() {
@@ -139,11 +144,11 @@ public class UserWeakPointEntity {
         this.srState = srState;
     }
 
-    public Boolean getIsImproved() {
+    public Boolean isImproved() {
         return isImproved;
     }
 
-    public void setIsImproved(Boolean isImproved) {
+    public void setImproved(Boolean isImproved) {
         this.isImproved = isImproved;
     }
 
