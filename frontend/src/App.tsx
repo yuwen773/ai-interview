@@ -19,7 +19,7 @@ const KnowledgeBaseUploadPage = lazy(() => import('./pages/KnowledgeBaseUploadPa
 const KnowledgeBaseManagePage = lazy(() => import('./pages/KnowledgeBaseManagePage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const KnowledgeGraphPage = lazy(() => import('./pages/KnowledgeGraphPage'));
-const LandingPage = lazy(() => import('./pages/LandingPage'));
+const LandingPage = lazy(() => import('./pages/landing'));
 
 // Loading component
 const Loading = () => (
