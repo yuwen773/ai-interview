@@ -1,6 +1,6 @@
 import {Link, Outlet, useLocation} from 'react-router-dom';
 import {motion} from 'framer-motion';
-import {ChevronRight, Database, FileStack, MessageSquare, Moon, Sparkles, Sun, Upload, Users, Brain,} from 'lucide-react';
+import {ChevronRight, Database, FileStack, GitBranch, MessageSquare, Moon, Sparkles, Sun, Upload, Users, Brain,} from 'lucide-react';
 import {useTheme} from '../hooks/useTheme';
 
 interface NavItem {
@@ -40,6 +40,7 @@ export default function Layout() {
       items: [
         { id: 'kb-manage', path: '/knowledgebase', label: '知识库管理', icon: Database, description: '管理知识文档' },
         { id: 'chat', path: '/knowledgebase/chat', label: '问答助手', icon: MessageSquare, description: '基于知识库问答' },
+        { id: 'graph', path: '/graph', label: '知识图谱', icon: GitBranch, description: '题目关联图谱' },
       ],
     },
   ];

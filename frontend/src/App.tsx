@@ -18,6 +18,7 @@ const KnowledgeBaseQueryPage = lazy(() => import('./pages/KnowledgeBaseQueryPage
 const KnowledgeBaseUploadPage = lazy(() => import('./pages/KnowledgeBaseUploadPage'));
 const KnowledgeBaseManagePage = lazy(() => import('./pages/KnowledgeBaseManagePage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const KnowledgeGraphPage = lazy(() => import('./pages/KnowledgeGraphPage'));
 
 // Loading component
 const Loading = () => (
@@ -219,6 +220,9 @@ function App() {
 
               {/* 个人画像 */}
               <Route path="profile" element={<ProfilePage />} />
+
+              {/* 知识图谱 */}
+              <Route path="graph" element={<KnowledgeGraphPage />} />
             </Route>
           </Routes>
         </Suspense>
