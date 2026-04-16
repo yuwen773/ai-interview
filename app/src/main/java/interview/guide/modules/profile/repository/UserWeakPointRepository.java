@@ -42,6 +42,8 @@ public interface UserWeakPointRepository extends JpaRepository<UserWeakPointEnti
 
     long countByUserIdAndIsImprovedTrue(String userId);
 
+    List<UserWeakPointEntity> findByTopicAndUserIdOrderByScoreAsc(String topic, String userId);
+
     @Query(value = """
         SELECT COUNT(*) FROM user_weak_points
         WHERE user_id = :userId
