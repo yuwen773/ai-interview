@@ -4,6 +4,7 @@ import { ChevronLeft, Brain, Target, CheckCircle, Clock } from 'lucide-react';
 import { profileApi, type UserProfileDto, type WeakPointDto, type StrongPointDto } from '../api/profile';
 import { getErrorMessage } from '../api/request';
 import { getScoreProgressColor } from '../utils/score';
+import { useScrollReveal } from '../hooks/useScrollReveal';
 
 type FilterTab = 'weak' | 'improved' | 'due';
 
@@ -20,6 +21,8 @@ function getZone(score: number) {
 
 export default function ProfilePage() {
   const navigate = useNavigate();
+  const skillsRef = useScrollReveal<HTMLDivElement>();
+  const weakPointsRef = useScrollReveal<HTMLDivElement>();
   const [profile, setProfile] = useState<UserProfileDto | null>(null);
   const [dueReviews, setDueReviews] = useState<WeakPointDto[]>([]);
   const [strongPoints, setStrongPoints] = useState<StrongPointDto[]>([]);
@@ -89,13 +92,19 @@ export default function ProfilePage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatsCard icon={<Target className="w-5 h-5" />} label="总练习次数" value={totalSessions} color="text-blue-500" />
-        <StatsCard icon={<CheckCircle className="w-5 h-5" />} label="综合均分" value={parseFloat(avgScore.toFixed(1))} color="text-green-500" />
-        <StatsCard icon={<Clock className="w-5 h-5" />} label="待复习" value={profile.dueReviewCount} color="text-orange-500" />
-        <StatsCard icon={<Brain className="w-5 h-5" />} label="技能覆盖" value={profile.topicMasteries.length} color="text-purple-500" />
+        {[
+          { icon: <Target className="w-5 h-5" />, label: '总练习次数', value: totalSessions, color: 'text-blue-500' },
+          { icon: <CheckCircle className="w-5 h-5" />, label: '综合均分', value: parseFloat(avgScore.toFixed(1)), color: 'text-green-500' },
+          { icon: <Clock className="w-5 h-5" />, label: '待复习', value: profile.dueReviewCount, color: 'text-orange-500' },
+          { icon: <Brain className="w-5 h-5" />, label: '技能覆盖', value: profile.topicMasteries.length, color: 'text-purple-500' },
+        ].map((card, i) => (
+          <div key={card.label} className="reveal-item" style={{ '--reveal-delay': `${i * 100}ms` } as React.CSSProperties}>
+            <StatsCard icon={card.icon} label={card.label} value={card.value} color={card.color} />
+          </div>
+        ))}
       </div>
 
-      <div className="bg-[var(--color-bg-secondary)] rounded-xl p-6 mb-6">
+      <div ref={skillsRef} className="scroll-reveal bg-[var(--color-bg-secondary)] rounded-xl p-6 mb-6">
         <h3 className="font-semibold text-[var(--color-text)] mb-4">技能掌握详情</h3>
         <div className="space-y-3">
           {profile.topicMasteries.map(m => {
@@ -144,7 +153,7 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <div className="bg-[var(--color-bg-secondary)] rounded-xl p-6">
+      <div ref={weakPointsRef} className="scroll-reveal bg-[var(--color-bg-secondary)] rounded-xl p-6">
         <div className="flex gap-4 border-b border-[var(--color-border)] mb-4">
           {[
             { key: 'weak' as FilterTab, label: '弱项', count: weakPoints.length },

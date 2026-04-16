@@ -564,7 +564,7 @@ export default function KnowledgeBaseQueryPage({ onBack, onUpload }: KnowledgeBa
                       initialTopMostItemIndex={messages.length - 1}
                       followOutput="smooth"
                       className="h-full w-full"
-                      itemContent={(index, msg) => (
+                      itemContent={(_index, msg) => (
                           <div className="pb-5 px-5 first:pt-5 last:pb-5 dark:bg-[var(--color-surface-dark)]">
                           <motion.div
                             initial={{ opacity: 0, y: 16, scale: 0.96 }}

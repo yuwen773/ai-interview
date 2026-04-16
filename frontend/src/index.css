@@ -82,6 +82,15 @@
   --font-sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
     'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica,
     Arial, sans-serif;
+
+  /* === 动画 === */
+  --animate-fade-in-up: fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  --animate-shimmer: shimmer 2s infinite linear;
+  --animate-pulse-dot: pulse-dot 1.4s infinite ease-in-out both;
+  --animate-bounce-in: bounce-in 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-glow-pulse: glow-pulse 2s infinite ease-in-out;
+  --animate-tag-pop: tag-pop 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-gradient-shimmer: gradient-shimmer 3s infinite linear;
 }
 
 /* 自定义基础样式 */
@@ -206,6 +215,29 @@
     .bubble-interviewer {
         @apply bg-[var(--color-bubble-interviewer)] dark:bg-[var(--color-bubble-interviewer-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-2xl rounded-tl-sm;
     }
+
+    /* 滚动揭示动画 */
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+                  transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .scroll-reveal[data-revealed] {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .scroll-reveal .reveal-item {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                  transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+      transition-delay: var(--reveal-delay, 0ms);
+    }
+    .scroll-reveal[data-revealed] .reveal-item {
+      opacity: 1;
+      transform: translateY(0);
+    }
 }
 
 /* 自定义工具类 */
@@ -245,6 +277,56 @@
   .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: var(--color-text-muted-dark);
   }
+
+  .skeleton {
+    background: linear-gradient(90deg, var(--color-surface-raised) 25%, var(--color-border-subtle) 50%, var(--color-surface-raised) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite linear;
+    border-radius: 0.5rem;
+  }
+  .dark .skeleton {
+    background: linear-gradient(90deg, var(--color-surface-dark) 25%, var(--color-border-dark) 50%, var(--color-surface-dark) 75%);
+    background-size: 200% 100%;
+  }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-dot {
+  0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes bounce-in {
+  0%   { opacity: 0; transform: scale(0.3); }
+  50%  { opacity: 1; transform: scale(1.05); }
+  70%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 5px rgba(245, 158, 11, 0.2); }
+  50%      { box-shadow: 0 0 20px rgba(245, 158, 11, 0.4); }
+}
+
+@keyframes tag-pop {
+  0%   { opacity: 0; transform: scale(0.8); }
+  60%  { transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes gradient-shimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* 减少动画偏好 - 当用户设置时禁用所有动画 */
