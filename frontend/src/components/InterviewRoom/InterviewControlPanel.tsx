@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Mic, Keyboard, Send, Loader2, Brain, MessageCircle, MicOff } from 'lucide-react';
 import type { InterviewMode } from './Interviewer2D';
 import type { CandidateInputMode } from '../../types/interview';
+import { useVoiceInput } from '../../hooks/useVoiceInput';
 
 interface InterviewControlPanelProps {
   mode: InterviewMode;
@@ -44,16 +45,26 @@ export function InterviewControlPanel({
   answer,
   onAnswerChange,
   onSubmit,
-  onStartRecording,
-  onStopRecording,
+  onStartRecording: _onStartRecording,
+  onStopRecording: _onStopRecording,
   onStopInterview,
   onCandidateInputModeChange,
   onReRecordVoice,
   voiceJustRecognized,
   error,
 }: InterviewControlPanelProps) {
+  const voiceInput = useVoiceInput({
+    onResult: (text) => {
+      onAnswerChange(text);
+    },
+    onError: (err) => {
+      console.error('语音输入错误:', err);
+    },
+  });
+
   const isIdle = mode === 'idle';
-  const isBusy = isSubmitting || isRecognizing || isRecording;
+  // When voiceInput is active (listening or transcribing), treat as busy too
+  const isBusy = isSubmitting || isRecognizing || isRecording || voiceInput.isListening || voiceInput.isTranscribing;
 
   // 状态配置 - 使用语义化状态色（thinking/speaking/listening）
   const statusConfig = {
@@ -115,7 +126,7 @@ export function InterviewControlPanel({
                   exit={{ opacity: 0, x: -8 }}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${status.bgColor} ${status.borderColor}`}
                 >
-                  {isRecording ? (
+                  {isRecording || voiceInput.isListening ? (
                     <>
                       <Mic className={`w-4 h-4 ${prefersReducedMotion ? '' : 'animate-pulse'} text-red-400`} />
                       <span className="text-sm text-red-400 font-medium">录音中</span>
@@ -245,18 +256,18 @@ export function InterviewControlPanel({
                       >
                         {/* 录音按钮 */}
                         <motion.button
-                          onClick={isRecording ? onStopRecording : onStartRecording}
-                          disabled={!isRecording && (isBusy || mode === 'thinking' || mode === 'speaking')}
-                          aria-label={isRecording ? '停止录音' : '开始录音'}
+                          onClick={voiceInput.toggle}
+                          disabled={!voiceInput.isListening && !voiceInput.isTranscribing && (isBusy || mode === 'thinking' || mode === 'speaking')}
+                          aria-label={voiceInput.isListening ? '停止录音' : '开始录音'}
                           className={`relative px-6 py-3 rounded-xl font-medium transition-all duration-200 flex items-center gap-2 ${
-                            isRecording
+                            voiceInput.isListening
                               ? 'bg-red-500 hover:bg-red-600 text-white'
                               : 'bg-[var(--color-primary)]/20 hover:bg-[var(--color-primary)]/30 text-[var(--color-primary)] border border-[var(--color-primary)]/30 disabled:opacity-40 disabled:cursor-not-allowed'
                           }`}
-                          whileHover={isRecording ? { scale: 1.02 } : (isBusy || mode === 'thinking' || mode === 'speaking' ? {} : { scale: 1.02 })}
-                          whileTap={isRecording ? { scale: 0.98 } : {}}
+                          whileHover={voiceInput.isListening ? { scale: 1.02 } : (isBusy || mode === 'thinking' || mode === 'speaking' ? {} : { scale: 1.02 })}
+                          whileTap={voiceInput.isListening ? { scale: 0.98 } : {}}
                         >
-                          {isRecording ? (
+                          {voiceInput.isListening ? (
                             <>
                               {!prefersReducedMotion ? (
                                 <motion.div
@@ -269,7 +280,7 @@ export function InterviewControlPanel({
                               )}
                               <span>停止录音</span>
                             </>
-                          ) : isRecognizing ? (
+                          ) : voiceInput.isTranscribing ? (
                             <>
                               <Loader2 className="w-4 h-4 animate-spin" />
                               <span>识别中...</span>
@@ -284,9 +295,9 @@ export function InterviewControlPanel({
 
                         {/* 波形动画 */}
                         <div className="flex-1 flex items-center gap-1 h-12 overflow-hidden">
-                          {isRecording ? (
+                          {voiceInput.isListening ? (
                             <VoiceWaveform audioLevel={audioLevel} />
-                          ) : isRecognizing ? (
+                          ) : voiceInput.isTranscribing ? (
                             <div className="flex items-center gap-2 text-stone-400 text-sm">
                               <Loader2 className="w-4 h-4 animate-spin" />
                               <span>正在识别...</span>
