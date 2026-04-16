@@ -19,6 +19,7 @@ const KnowledgeBaseUploadPage = lazy(() => import('./pages/KnowledgeBaseUploadPa
 const KnowledgeBaseManagePage = lazy(() => import('./pages/KnowledgeBaseManagePage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const KnowledgeGraphPage = lazy(() => import('./pages/KnowledgeGraphPage'));
+const LandingPage = lazy(() => import('./pages/LandingPage'));
 
 // Loading component
 const Loading = () => (
@@ -185,8 +186,8 @@ function App() {
         <Suspense fallback={<Loading />}>
           <Routes>
             <Route path="/" element={<Layout />}>
-              {/* 默认重定向到上传页面 */}
-              <Route index element={<Navigate to="/upload" replace />} />
+              {/* 着陆页 */}
+              <Route index element={<LandingPage />} />
 
               {/* 上传页面 */}
               <Route path="upload" element={<UploadPageWrapper />} />

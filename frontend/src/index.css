@@ -91,6 +91,7 @@
   --animate-glow-pulse: glow-pulse 2s infinite ease-in-out;
   --animate-tag-pop: tag-pop 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   --animate-gradient-shimmer: gradient-shimmer 3s infinite linear;
+  --animate-beam: beam 2s infinite linear;
 }
 
 /* 自定义基础样式 */
@@ -327,6 +328,11 @@
   0%   { background-position: 0% 50%; }
   50%  { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
+}
+
+@keyframes beam {
+  0%   { stroke-dashoffset: 100; }
+  100% { stroke-dashoffset: 0; }
 }
 
 /* 减少动画偏好 - 当用户设置时禁用所有动画 */
