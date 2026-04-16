@@ -26,7 +26,7 @@ public class KnowledgeGraphController {
     @GetMapping("/{topic}")
     public Result<KnowledgeGraphService.GraphData> getGraph(
             @PathVariable String topic,
-            @RequestParam(defaultValue = "current") String userId) {
+            @RequestParam(defaultValue = "0") String userId) {
         return Result.success(graphService.getGraph(topic, userId));
     }
 }

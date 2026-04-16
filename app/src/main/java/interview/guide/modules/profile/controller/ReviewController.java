@@ -42,7 +42,7 @@ public class ReviewController {
      * @return 到期需要复习的弱项列表
      */
     @GetMapping("/due")
-    public Result<List<WeakPointDto>> getDueReviews(@RequestParam String userId,
+    public Result<List<WeakPointDto>> getDueReviews(@RequestParam(defaultValue = "0") String userId,
             @RequestParam(required = false) String topic) {
         var reviews = profileService.getDueReviewDtos(userId, topic);
         return Result.success(reviews);

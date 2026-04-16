@@ -30,7 +30,7 @@ public class ProfileController {
      * @return 用户画像信息，包含知识点掌握度、弱项统计、待复习数量
      */
     @GetMapping
-    public Result<UserProfileDto> getProfile(@RequestParam String userId) {
+    public Result<UserProfileDto> getProfile(@RequestParam(defaultValue = "0") String userId) {
         return Result.success(profileService.getProfile(userId));
     }
 
@@ -42,7 +42,7 @@ public class ProfileController {
      */
     @GetMapping("/strong-points")
     public Result<List<StrongPointDto>> getStrongPoints(
-            @RequestParam(defaultValue = "current") String userId) {
+            @RequestParam(defaultValue = "0") String userId) {
         return Result.success(profileService.getStrongPoints(userId));
     }
 
