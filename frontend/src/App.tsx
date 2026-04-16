@@ -3,6 +3,8 @@ import Layout from './components/Layout';
 import { useEffect, useState, Suspense, lazy } from 'react';
 import { historyApi } from './api/history';
 import type { UploadKnowledgeBaseResponse } from './api/knowledgebase';
+import { TaskStatusProvider } from './contexts/TaskStatusContext';
+import { TaskNotification } from './components/TaskNotification';
 
 // Lazy load components
 const UploadPage = lazy(() => import('./pages/UploadPage'));
@@ -178,47 +180,50 @@ function InterviewReportPageWrapper() {
 function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<Loading />}>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            {/* 默认重定向到上传页面 */}
-            <Route index element={<Navigate to="/upload" replace />} />
+      <TaskStatusProvider>
+        <Suspense fallback={<Loading />}>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              {/* 默认重定向到上传页面 */}
+              <Route index element={<Navigate to="/upload" replace />} />
 
-            {/* 上传页面 */}
-            <Route path="upload" element={<UploadPageWrapper />} />
+              {/* 上传页面 */}
+              <Route path="upload" element={<UploadPageWrapper />} />
 
-            {/* 历史记录列表（简历库） */}
-            <Route path="history" element={<HistoryListWrapper />} />
+              {/* 历史记录列表（简历库） */}
+              <Route path="history" element={<HistoryListWrapper />} />
 
-            {/* 简历详情 */}
-            <Route path="history/:resumeId" element={<ResumeDetailWrapper />} />
+              {/* 简历详情 */}
+              <Route path="history/:resumeId" element={<ResumeDetailWrapper />} />
 
-            {/* 成长曲线 */}
-            <Route path="history/:resumeId/growth" element={<GrowthCurveWrapper />} />
+              {/* 成长曲线 */}
+              <Route path="history/:resumeId/growth" element={<GrowthCurveWrapper />} />
 
-            {/* 面试记录列表 */}
-            <Route path="interviews" element={<InterviewHistoryWrapper />} />
+              {/* 面试记录列表 */}
+              <Route path="interviews" element={<InterviewHistoryWrapper />} />
 
-            {/* 模拟面试 */}
-            <Route path="interview/:resumeId" element={<InterviewWrapper />} />
+              {/* 模拟面试 */}
+              <Route path="interview/:resumeId" element={<InterviewWrapper />} />
 
-            {/* 面试报告 */}
-            <Route path="interviews/report/:sessionId" element={<InterviewReportPageWrapper />} />
+              {/* 面试报告 */}
+              <Route path="interviews/report/:sessionId" element={<InterviewReportPageWrapper />} />
 
-            {/* 知识库管理 */}
-            <Route path="knowledgebase" element={<KnowledgeBaseManagePageWrapper />} />
+              {/* 知识库管理 */}
+              <Route path="knowledgebase" element={<KnowledgeBaseManagePageWrapper />} />
 
-            {/* 知识库上传 */}
-            <Route path="knowledgebase/upload" element={<KnowledgeBaseUploadPageWrapper />} />
+              {/* 知识库上传 */}
+              <Route path="knowledgebase/upload" element={<KnowledgeBaseUploadPageWrapper />} />
 
-            {/* 问答助手（知识库聊天） */}
-            <Route path="knowledgebase/chat" element={<KnowledgeBaseQueryPageWrapper />} />
+              {/* 问答助手（知识库聊天） */}
+              <Route path="knowledgebase/chat" element={<KnowledgeBaseQueryPageWrapper />} />
 
-            {/* 个人画像 */}
-            <Route path="profile" element={<ProfilePage />} />
-          </Route>
-        </Routes>
-      </Suspense>
+              {/* 个人画像 */}
+              <Route path="profile" element={<ProfilePage />} />
+            </Route>
+          </Routes>
+        </Suspense>
+        <TaskNotification />
+      </TaskStatusProvider>
     </BrowserRouter>
   );
 }
