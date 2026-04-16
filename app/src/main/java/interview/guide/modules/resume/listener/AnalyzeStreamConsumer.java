@@ -84,6 +84,7 @@ public class AnalyzeStreamConsumer extends AbstractStreamConsumer<AnalyzeStreamC
 
     @Override
     protected void markProcessing(AnalyzePayload payload) {
+        redisService().setTaskStatus(String.valueOf(payload.resumeId()), AsyncTaskStatus.PROCESSING);
         updateAnalyzeStatus(payload.resumeId(), AsyncTaskStatus.PROCESSING, null);
     }
 
@@ -106,11 +107,13 @@ public class AnalyzeStreamConsumer extends AbstractStreamConsumer<AnalyzeStreamC
 
     @Override
     protected void markCompleted(AnalyzePayload payload) {
+        redisService().setTaskStatus(String.valueOf(payload.resumeId()), AsyncTaskStatus.COMPLETED);
         updateAnalyzeStatus(payload.resumeId(), AsyncTaskStatus.COMPLETED, null);
     }
 
     @Override
     protected void markFailed(AnalyzePayload payload, String error) {
+        redisService().setTaskStatus(String.valueOf(payload.resumeId()), AsyncTaskStatus.FAILED, error);
         updateAnalyzeStatus(payload.resumeId(), AsyncTaskStatus.FAILED, error);
     }
 

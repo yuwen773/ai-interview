@@ -2,6 +2,7 @@ package interview.guide.modules.profile.listener;
 
 import interview.guide.common.async.AbstractStreamConsumer;
 import interview.guide.common.constant.AsyncTaskStreamConstants;
+import interview.guide.common.model.AsyncTaskStatus;
 import interview.guide.infrastructure.redis.RedisService;
 import interview.guide.modules.profile.service.ProfileMemoryService;
 import lombok.extern.slf4j.Slf4j;
@@ -70,6 +71,7 @@ public class ProfileUpdateStreamConsumer extends AbstractStreamConsumer<ProfileU
 
     @Override
     protected void markProcessing(ProfileUpdatePayload payload) {
+        redisService().setTaskStatus(payload.sessionId(), AsyncTaskStatus.PROCESSING);
         log.info("开始画像更新: sessionId={}, userId={}", payload.sessionId(), payload.userId());
     }
 
@@ -80,11 +82,13 @@ public class ProfileUpdateStreamConsumer extends AbstractStreamConsumer<ProfileU
 
     @Override
     protected void markCompleted(ProfileUpdatePayload payload) {
+        redisService().setTaskStatus(payload.sessionId(), AsyncTaskStatus.COMPLETED);
         log.info("画像更新完成: sessionId={}", payload.sessionId());
     }
 
     @Override
     protected void markFailed(ProfileUpdatePayload payload, String error) {
+        redisService().setTaskStatus(payload.sessionId(), AsyncTaskStatus.FAILED, error);
         log.error("画像更新失败: sessionId={}, error={}", payload.sessionId(), error);
     }
 

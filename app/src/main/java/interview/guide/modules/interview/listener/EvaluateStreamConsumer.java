@@ -109,6 +109,7 @@ public class EvaluateStreamConsumer extends AbstractStreamConsumer<EvaluateStrea
 
     @Override
     protected void markProcessing(EvaluatePayload payload) {
+        redisService().setTaskStatus(payload.sessionId(), AsyncTaskStatus.PROCESSING);
         updateEvaluateStatus(payload.sessionId(), AsyncTaskStatus.PROCESSING, null);
     }
 
@@ -175,11 +176,13 @@ public class EvaluateStreamConsumer extends AbstractStreamConsumer<EvaluateStrea
 
     @Override
     protected void markCompleted(EvaluatePayload payload) {
+        redisService().setTaskStatus(payload.sessionId(), AsyncTaskStatus.COMPLETED);
         updateEvaluateStatus(payload.sessionId(), AsyncTaskStatus.COMPLETED, null);
     }
 
     @Override
     protected void markFailed(EvaluatePayload payload, String error) {
+        redisService().setTaskStatus(payload.sessionId(), AsyncTaskStatus.FAILED, error);
         updateEvaluateStatus(payload.sessionId(), AsyncTaskStatus.FAILED, error);
     }
 

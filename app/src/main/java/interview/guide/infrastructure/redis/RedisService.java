@@ -11,7 +11,10 @@ import org.redisson.api.stream.StreamReadGroupArgs;
 import org.redisson.client.codec.StringCodec;
 import org.springframework.stereotype.Service;
 
+import interview.guide.common.model.AsyncTaskStatus;
+
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -27,6 +30,40 @@ import java.util.function.Function;
 public class RedisService {
 
     private final RedissonClient redissonClient;
+
+    private static final String TASK_STATUS_PREFIX = "task:status:";
+
+    // ==================== 任务状态操作 ====================
+
+    /**
+     * 设置任务状态
+     */
+    public void setTaskStatus(String taskId, AsyncTaskStatus status) {
+        setTaskStatus(taskId, status, null);
+    }
+
+    /**
+     * 设置任务状态（带结果信息）
+     */
+    public void setTaskStatus(String taskId, AsyncTaskStatus status, String result) {
+        RMap<String, String> map = redissonClient.getMap(TASK_STATUS_PREFIX + taskId);
+        map.put("status", status.name());
+        if (result != null) {
+            map.put("result", result);
+        }
+        map.expire(Duration.ofHours(1));
+    }
+
+    /**
+     * 获取任务状态
+     */
+    public Map<String, String> getTaskStatus(String taskId) {
+        RMap<String, String> map = redissonClient.getMap(TASK_STATUS_PREFIX + taskId);
+        if (map.isEmpty()) {
+            return Map.of("status", "PENDING");
+        }
+        return new HashMap<>(map.readAllMap());
+    }
 
     // ==================== 基础键值操作 ====================
 

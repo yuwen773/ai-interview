@@ -2,6 +2,7 @@ package interview.guide.modules.knowledgebase.listener;
 
 import interview.guide.common.async.AbstractStreamConsumer;
 import interview.guide.common.constant.AsyncTaskStreamConstants;
+import interview.guide.common.model.AsyncTaskStatus;
 import interview.guide.infrastructure.redis.RedisService;
 import interview.guide.modules.knowledgebase.model.VectorStatus;
 import interview.guide.modules.knowledgebase.repository.KnowledgeBaseRepository;
@@ -78,6 +79,7 @@ public class VectorizeStreamConsumer extends AbstractStreamConsumer<VectorizeStr
 
     @Override
     protected void markProcessing(VectorizePayload payload) {
+        redisService().setTaskStatus(String.valueOf(payload.kbId()), AsyncTaskStatus.PROCESSING);
         updateVectorStatus(payload.kbId(), VectorStatus.PROCESSING, null);
     }
 
@@ -88,11 +90,13 @@ public class VectorizeStreamConsumer extends AbstractStreamConsumer<VectorizeStr
 
     @Override
     protected void markCompleted(VectorizePayload payload) {
+        redisService().setTaskStatus(String.valueOf(payload.kbId()), AsyncTaskStatus.COMPLETED);
         updateVectorStatus(payload.kbId(), VectorStatus.COMPLETED, null);
     }
 
     @Override
     protected void markFailed(VectorizePayload payload, String error) {
+        redisService().setTaskStatus(String.valueOf(payload.kbId()), AsyncTaskStatus.FAILED, error);
         updateVectorStatus(payload.kbId(), VectorStatus.FAILED, error);
     }
 
