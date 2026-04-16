@@ -185,10 +185,10 @@ function App() {
       <TaskStatusProvider>
         <Suspense fallback={<Loading />}>
           <Routes>
-            <Route path="/" element={<Layout />}>
-              {/* 着陆页 */}
-              <Route index element={<LandingPage />} />
+            {/* 着陆页 — 独立路由，不显示侧边栏 */}
+            <Route path="/" element={<LandingPage />} />
 
+            <Route path="/" element={<Layout />}>
               {/* 上传页面 */}
               <Route path="upload" element={<UploadPageWrapper />} />
 
