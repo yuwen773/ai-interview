@@ -68,7 +68,7 @@ export default function Layout() {
 
         {/* Logo */}
               <div className="px-6 pt-8 pb-6">
-          <Link to="/upload" className="flex items-center gap-4 group">
+          <Link to="/" className="flex items-center gap-4 group">
             {/* Logo icon — larger, bolder, with architectural depth */}
             <div className="relative">
               <div className="w-12 h-12 bg-[var(--color-primary)] rounded-2xl flex items-center justify-center text-white shadow-md group-hover:shadow-lg transition-shadow duration-200">
