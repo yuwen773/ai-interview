@@ -51,7 +51,7 @@ public class UserWeakPointEntity {
         "ease_factor", 2.5,
         "repetitions", 0,
         "next_review", LocalDate.now().plusDays(1).toString(),
-        "last_score", null
+        "last_score", 0
     ));
 
     @Type(JsonType.class)

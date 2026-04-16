@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import interview.guide.common.model.AsyncTaskStatus;
 
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -60,9 +59,9 @@ public class RedisService {
     public Map<String, String> getTaskStatus(String taskId) {
         RMap<String, String> map = redissonClient.getMap(TASK_STATUS_PREFIX + taskId);
         if (map.isEmpty()) {
-            return Map.of("status", "PENDING");
+            return Map.of("status", AsyncTaskStatus.PENDING.name());
         }
-        return new HashMap<>(map.readAllMap());
+        return map.readAllMap();
     }
 
     // ==================== 基础键值操作 ====================

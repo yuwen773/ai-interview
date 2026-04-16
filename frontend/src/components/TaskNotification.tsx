@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { CheckCircle, AlertCircle, Loader2, X } from 'lucide-react';
 import { useTaskStatus, type Task } from '../contexts/TaskStatusContext';
 
@@ -17,13 +17,18 @@ function StatusIcon({ status }: { status: Task['status'] }) {
 
 export function TaskNotification() {
   const { tasks, dismissTask } = useTaskStatus();
+  const scheduledRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    const doneTasks = tasks.filter(t => t.status === 'done' || t.status === 'error');
-    const timers = doneTasks.map(t =>
-      setTimeout(() => dismissTask(t.id), AUTO_DISMISS_MS),
-    );
-    return () => timers.forEach(clearTimeout);
+    for (const t of tasks) {
+      if ((t.status === 'done' || t.status === 'error') && !scheduledRef.current.has(t.id)) {
+        scheduledRef.current.add(t.id);
+        setTimeout(() => {
+          scheduledRef.current.delete(t.id);
+          dismissTask(t.id);
+        }, AUTO_DISMISS_MS);
+      }
+    }
   }, [tasks, dismissTask]);
 
   if (tasks.length === 0) return null;

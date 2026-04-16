@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { audioApi } from '../api/audio';
 
 interface UseVoiceInputOptions {
@@ -84,6 +84,16 @@ export function useVoiceInput({ onResult, onError }: UseVoiceInputOptions) {
       void startListening();
     }
   }, [isListening, startListening, stopListening]);
+
+  useEffect(() => {
+    return () => {
+      const recorder = mediaRecorderRef.current;
+      if (recorder && recorder.state !== 'inactive') {
+        recorder.stream.getTracks().forEach(t => t.stop());
+        recorder.stop();
+      }
+    };
+  }, []);
 
   return { isListening, isTranscribing, isSupported, toggle, startListening, stopListening };
 }
