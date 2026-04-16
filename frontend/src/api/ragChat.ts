@@ -1,4 +1,5 @@
 import { request, getErrorMessage } from './request';
+import { processStreamChunk, type EvalData } from '../utils/evalTag';
 
 const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:8080';
 
@@ -106,13 +107,13 @@ export const ragChatApi = {
   },
 
   /**
-   * 发送消息（流式SSE）
+   * 发送消息（流式SSE，支持隐藏评估标签）
    */
   async sendMessageStream(
     sessionId: number,
     question: string,
     onMessage: (chunk: string) => void,
-    onComplete: () => void,
+    onComplete: (evals?: EvalData[]) => void,
     onError: (error: Error) => void
   ): Promise<void> {
     try {
@@ -145,6 +146,8 @@ export const ragChatApi = {
 
       const decoder = new TextDecoder();
       let buffer = '';
+      let evalPending = '';
+      const collectedEvals: EvalData[] = [];
 
       // 从 SSE 事件中提取内容
       const extractEventContent = (event: string): string | null => {
@@ -176,10 +179,12 @@ export const ragChatApi = {
           if (buffer) {
             const content = extractEventContent(buffer);
             if (content) {
-              onMessage(content);
+              const { text, evals } = processStreamChunk(evalPending, content);
+              collectedEvals.push(...evals);
+              if (text) onMessage(text);
             }
           }
-          onComplete();
+          onComplete(collectedEvals.length > 0 ? collectedEvals : undefined);
           break;
         }
 
@@ -194,7 +199,11 @@ export const ragChatApi = {
             const line = buffer.substring(0, singleLineIndex);
             const content = extractEventContent(line);
             if (content) {
-              onMessage(content);
+              // 提取隐藏评估标签，与主路径保持一致
+              const { text, evals, pending } = processStreamChunk(evalPending, content);
+              evalPending = pending;
+              collectedEvals.push(...evals);
+              if (text) onMessage(text);
             }
             buffer = buffer.substring(singleLineIndex + 1);
           }
@@ -207,7 +216,11 @@ export const ragChatApi = {
 
         const content = extractEventContent(eventBlock);
         if (content !== null) {
-          onMessage(content);
+          // 提取隐藏评估标签，将清理后的文本发给前端
+          const { text, evals, pending } = processStreamChunk(evalPending, content);
+          evalPending = pending;
+          collectedEvals.push(...evals);
+          if (text) onMessage(text);
         }
       }
     } catch (error) {
