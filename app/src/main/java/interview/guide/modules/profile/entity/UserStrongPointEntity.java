@@ -5,6 +5,10 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
+/**
+ * 用户强项实体
+ * 记录用户在面试中表现突出的知识点，由AI从面试回答中提取
+ */
 @Entity
 @Table(name = "user_strong_points")
 public class UserStrongPointEntity {
@@ -13,25 +17,32 @@ public class UserStrongPointEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 用户ID
     @Column(name = "user_id", nullable = false)
     private String userId;
 
+    // 知识主题名称
     @Column(name = "topic", nullable = false)
     private String topic;
 
+    // 强项描述
     @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
+    // 来源（INTERVIEW / MANUAL）
     @Column(name = "source")
     private String source = "INTERVIEW";
 
+    // 关联的面试会话ID
     @Column(name = "session_id")
     private Long sessionId;
 
+    // 首次发现时间（自动填充）
     @CreationTimestamp
     @Column(name = "first_seen")
     private LocalDateTime firstSeen;
 
+    // 创建时间（自动填充）
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;

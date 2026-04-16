@@ -15,6 +15,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 用户弱项实体
+ * 记录用户在面试中暴露的知识薄弱点，支持SM-2间隔重复复习和语义去重
+ */
 @Entity
 @Table(name = "user_weak_points")
 public class UserWeakPointEntity {
@@ -23,27 +27,35 @@ public class UserWeakPointEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 用户ID
     @Column(name = "user_id", nullable = false)
     private String userId;
 
+    // 知识主题名称
     @Column(name = "topic", nullable = false)
     private String topic;
 
+    // 面试原题文本
     @Column(name = "question_text", nullable = false, columnDefinition = "TEXT")
     private String questionText;
 
+    // 用户回答摘要
     @Column(name = "answer_summary", columnDefinition = "TEXT")
     private String answerSummary;
 
+    // 评分（0-10）
     @Column(name = "score", precision = 5, scale = 2)
     private BigDecimal score;
 
+    // 来源（INTERVIEW / MANUAL）
     @Column(name = "source")
     private String source = "INTERVIEW";
 
+    // 关联的面试会话ID
     @Column(name = "session_id")
     private Long sessionId;
 
+    // SM-2间隔重复状态（JSONB：interval_days, ease_factor, repetitions, next_review, last_score）
     @Type(JsonType.class)
     @Column(name = "sr_state", columnDefinition = "jsonb")
     private Map<String, Object> srState = new HashMap<>(Map.of(
@@ -54,27 +66,34 @@ public class UserWeakPointEntity {
         "last_score", 0
     ));
 
+    // 操作历史记录（JSONB数组，记录每次状态变更）
     @Type(JsonType.class)
     @Column(name = "history", columnDefinition = "jsonb")
     private List<Map<String, String>> history = new ArrayList<>();
 
+    // 是否已改善
     @Column(name = "is_improved")
     private Boolean isImproved = false;
 
+    // 标记为已改善的时间
     @Column(name = "improved_at")
     private LocalDateTime improvedAt;
 
+    // 被观察到的次数
     @Column(name = "times_seen")
     private Integer timesSeen = 1;
 
+    // 首次发现时间（自动填充）
     @CreationTimestamp
     @Column(name = "first_seen")
     private LocalDateTime firstSeen;
 
+    // 最后观察时间（自动更新）
     @UpdateTimestamp
     @Column(name = "last_seen")
     private LocalDateTime lastSeen;
 
+    // 创建时间（自动填充）
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -203,22 +222,22 @@ public class UserWeakPointEntity {
     public List<Map<String, String>> getHistory() { return history; }
     public void setHistory(List<Map<String, String>> history) { this.history = history; }
 
-    // ========== Domain helper methods ==========
+    // ========== 领域辅助方法 ==========
 
-    /** Record that this weak point was seen again */
+    /** 记录该弱项再次被观察到，更新观察次数和最后观察时间 */
     public void recordSeen() {
         this.timesSeen = this.timesSeen != null ? this.timesSeen + 1 : 2;
         this.lastSeen = LocalDateTime.now();
     }
 
-    /** Mark this weak point as improved with a history entry */
+    /** 标记该弱项为已改善，并记录操作历史 */
     public void markImproved(String action, String reason) {
         this.isImproved = true;
         this.improvedAt = LocalDateTime.now();
         addHistoryEntry(action, reason);
     }
 
-    /** Append a history entry */
+    /** 追加一条操作历史记录 */
     public void addHistoryEntry(String action, String reason) {
         if (this.history == null) this.history = new ArrayList<>();
         Map<String, String> entry = new LinkedHashMap<>();
@@ -228,7 +247,7 @@ public class UserWeakPointEntity {
         this.history.add(entry);
     }
 
-    /** Append a history entry with from/to fields */
+    /** 追加一条包含变更前后值的操作历史记录 */
     public void addHistoryEntry(String action, String from, String to, String reason) {
         if (this.history == null) this.history = new ArrayList<>();
         Map<String, String> entry = new LinkedHashMap<>();
@@ -239,7 +258,7 @@ public class UserWeakPointEntity {
         this.history.add(entry);
     }
 
-    /** Create a new weak point entity from interview extraction */
+    /** 从面试提取结果创建新的弱项实体，自动初始化SM-2状态 */
     public static UserWeakPointEntity create(String userId, String topic, String questionText,
                                               String answerSummary, double score, Long sessionId) {
         UserWeakPointEntity entity = new UserWeakPointEntity();

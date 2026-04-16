@@ -20,8 +20,10 @@ public class ProfileUpdateStreamProducer extends AbstractStreamProducer<ProfileU
         super(redisService);
     }
 
+    /** 画像更新任务载荷 */
     public record ProfileUpdatePayload(String sessionId, String userId) {}
 
+    /** 发送画像更新任务到Redis Stream */
     public void sendProfileUpdateTask(String sessionId, String userId) {
         sendTask(new ProfileUpdatePayload(sessionId, userId));
     }

@@ -23,6 +23,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * 画像更新服务
+ * 基于LLM决策更新用户画像（弱项新增/更新、强项新增、改善标记），失败时回退到语义相似度匹配
+ */
 @Service
 public class ProfileUpdateService {
 
@@ -52,6 +56,10 @@ public class ProfileUpdateService {
         this.outputConverter = new BeanOutputConverter<>(ProfileUpdateResult.class);
     }
 
+    /**
+     * 使用LLM决策画像更新操作
+     * 将已有弱项/强项与新提取结果一起交给LLM，由LLM返回增/改/改善决策
+     */
     public ProfileUpdateResult decideUpdates(String userId, ProfileExtractResult extraction) {
         List<UserWeakPointEntity> existingWeak = weakPointRepo.findByUserIdAndIsImprovedFalse(userId);
         List<UserStrongPointEntity> existingStrong = strongPointRepo.findByUserId(userId);
@@ -77,10 +85,15 @@ public class ProfileUpdateService {
         );
     }
 
+    /**
+     * 应用LLM决策的更新操作
+     * 遍历弱项操作（ADD/UPDATE）、强项操作（ADD）和改善标记，逐一应用到数据库
+     */
     @Transactional
     public void applyOperations(String userId, ProfileUpdateResult result, Long sessionId) {
         List<UserWeakPointEntity> existingWeak = weakPointRepo.findByUserIdAndIsImprovedFalse(userId);
 
+        // 应用弱项操作
         for (ProfileUpdateResult.WeakPointOp op : result.weakPointOps()) {
             switch (op.action()) {
                 case "ADD" -> applyWeakAdd(userId, op, sessionId);
@@ -89,6 +102,7 @@ public class ProfileUpdateService {
             }
         }
 
+        // 应用强项操作
         for (ProfileUpdateResult.StrongPointOp op : result.strongPointOps()) {
             switch (op.action()) {
                 case "ADD" -> applyStrongAdd(userId, op, sessionId);
@@ -96,6 +110,7 @@ public class ProfileUpdateService {
             }
         }
 
+        // 应用改善标记
         for (ProfileUpdateResult.ImprovementOp imp : result.improvements()) {
             if (imp.weakIndex() >= 0 && imp.weakIndex() < existingWeak.size()) {
                 applyImprove(existingWeak.get(imp.weakIndex()), imp.reason());
@@ -105,6 +120,10 @@ public class ProfileUpdateService {
         }
     }
 
+    /**
+     * 回退方案：当LLM决策失败时，基于语义相似度匹配更新画像
+     * 精确匹配优先，语义匹配次之，均无匹配则新增弱项
+     */
     @Transactional
     public void applyFallback(String userId, ProfileExtractResult extraction, Long sessionId) {
         log.info("Using fallback semantic profile update for user: {}", userId);
@@ -157,6 +176,7 @@ public class ProfileUpdateService {
         }
     }
 
+    /** 新增弱项 */
     private void applyWeakAdd(String userId, ProfileUpdateResult.WeakPointOp op, Long sessionId) {
         double score = op.score() != null ? op.score() : 5.0;
         UserWeakPointEntity entity = UserWeakPointEntity.create(
@@ -165,6 +185,7 @@ public class ProfileUpdateService {
         log.info("ADD weak point: {} - {}", op.topic(), op.point());
     }
 
+    /** 更新已有弱项（合并回答摘要，重置SR状态） */
     private void applyWeakUpdate(List<UserWeakPointEntity> existing, ProfileUpdateResult.WeakPointOp op) {
         if (op.index() == null || op.index() < 0 || op.index() >= existing.size()) {
             log.warn("UPDATE index out of bounds: {}", op.index());
@@ -183,6 +204,7 @@ public class ProfileUpdateService {
         log.info("UPDATE weak point [{}]: {} -> {}", op.index(), oldText, op.newPoint());
     }
 
+    /** 新增强项 */
     private void applyStrongAdd(String userId, ProfileUpdateResult.StrongPointOp op, Long sessionId) {
         UserStrongPointEntity entity = new UserStrongPointEntity();
         entity.setUserId(userId);
@@ -194,12 +216,14 @@ public class ProfileUpdateService {
         log.info("ADD strong point: {} - {}", op.topic(), op.point());
     }
 
+    /** 标记弱项为已改善 */
     private void applyImprove(UserWeakPointEntity entity, String reason) {
         entity.markImproved("IMPROVE", reason);
         weakPointRepo.save(entity);
         log.info("IMPROVE weak point: {} - reason: {}", entity.getQuestionText(), reason);
     }
 
+    /** 格式化已有强项文本，供Prompt使用 */
     private String formatExistingStrongPoints(List<UserStrongPointEntity> strongPoints) {
         if (strongPoints.isEmpty()) return "无";
         StringBuilder sb = new StringBuilder();
@@ -211,6 +235,7 @@ public class ProfileUpdateService {
         return sb.toString();
     }
 
+    /** 格式化新提取的弱项文本 */
     private String formatNewWeakPoints(List<ProfileExtractResult.WeakPointInsight> weakPoints) {
         if (weakPoints == null || weakPoints.isEmpty()) return "无";
         StringBuilder sb = new StringBuilder();
@@ -222,6 +247,7 @@ public class ProfileUpdateService {
         return sb.toString();
     }
 
+    /** 格式化新提取的强项文本 */
     private String formatNewStrongPoints(List<ProfileExtractResult.StrengthInsight> strongPoints) {
         if (strongPoints == null || strongPoints.isEmpty()) return "无";
         StringBuilder sb = new StringBuilder();

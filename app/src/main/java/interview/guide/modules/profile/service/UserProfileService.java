@@ -19,11 +19,16 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * 用户画像核心服务
+ * 管理弱项登记、间隔复习、画像查询、面试评估反馈循环等核心业务逻辑
+ */
 @Service
 public class UserProfileService {
 
     private static final Logger log = LoggerFactory.getLogger(UserProfileService.class);
 
+    // SM-2状态JSONB字段常量
     private static final String SR_INTERVAL_DAYS = "interval_days";
     private static final String SR_EASE_FACTOR = "ease_factor";
     private static final String SR_REPETITIONS = "repetitions";
@@ -37,6 +42,10 @@ public class UserProfileService {
     @Autowired private UserStrongPointRepository strongPointRepo;
     @Autowired private ProfileSemanticService semanticService;
 
+    /**
+     * 批量登记弱项到复习计划
+     * 自动跳过已存在的重复题目（按题目文本精确匹配）
+     */
     @Transactional
     public int enrollWeakPoints(String userId, List<WeakPointEnrollItem> items) {
         if (items == null || items.isEmpty()) return 0;
@@ -53,14 +62,20 @@ public class UserProfileService {
         return toSave.size();
     }
 
+    /** 查询指定主题下到期的待复习弱项 */
     public List<UserWeakPointEntity> getDueReviews(String userId, String topic) {
         return weakPointRepo.findDueReviews(userId, topic, LocalDate.now());
     }
 
+    /** 查询所有到期的待复习弱项（不限主题） */
     public List<UserWeakPointEntity> getAllDueReviews(String userId) {
         return weakPointRepo.findAllDueReviews(userId, LocalDate.now());
     }
 
+    /**
+     * 提交复习评分，触发SM-2算法更新复习间隔
+     * 连续通过3次以上自动标记为已改善，同时更新知识点掌握度
+     */
     @Transactional
     public Sm2Result submitReviewAnswer(Long weakPointId, double score) {
         UserWeakPointEntity entity = weakPointRepo.findById(weakPointId)
@@ -81,6 +96,7 @@ public class UserProfileService {
         return result;
     }
 
+    /** 复习后更新知识点掌握度（加权移动平均） */
     private void updateMasteryAfterReview(String userId, String topic, double score) {
         UserTopicMasteryEntity mastery = masteryRepo.findByUserIdAndTopic(userId, topic)
             .orElseGet(() -> {
@@ -101,6 +117,7 @@ public class UserProfileService {
         masteryRepo.save(mastery);
     }
 
+    /** 获取用户完整画像概览（知识点掌握度带时间衰减） */
     public UserProfileDto getProfile(String userId) {
         List<UserTopicMasteryEntity> masteries = masteryRepo.findByUserId(userId);
 
@@ -118,6 +135,7 @@ public class UserProfileService {
         return new UserProfileDto(userId, null, topicMasteries, (int) totalWeakPoints, (int) improvedCount, (int) dueReviewCount);
     }
 
+    /** 获取用户强项列表 */
     public List<StrongPointDto> getStrongPoints(String userId) {
         return strongPointRepo.findByUserId(userId).stream()
             .map(e -> new StrongPointDto(
@@ -131,6 +149,7 @@ public class UserProfileService {
             .toList();
     }
 
+    /** 获取待复习弱项DTO列表 */
     public List<WeakPointDto> getDueReviewDtos(String userId, String topic) {
         List<UserWeakPointEntity> entities = topic != null
             ? getDueReviews(userId, topic)
@@ -138,6 +157,7 @@ public class UserProfileService {
         return entities.stream().map(this::toDto).toList();
     }
 
+    /** 归档长期未见的过时弱项（超过60天或30天且仅观察1-2次） */
     @Transactional
     public int archiveStaleWeakPoints(String userId) {
         List<UserWeakPointEntity> activeWeak = weakPointRepo.findByUserIdAndIsImprovedFalse(userId);
@@ -210,12 +230,14 @@ public class UserProfileService {
         return updated;
     }
 
+    /** 获取带时间衰减的知识点掌握度评分 */
     public double getDecayedMasteryScore(String userId, String topic) {
         return masteryRepo.findByUserIdAndTopic(userId, topic)
             .map(m -> SpacedRepetitionService.applyDecay(m.getScore().doubleValue(), m.getLastAssessed()))
             .orElse(50.0);
     }
 
+    /** 弱项实体转DTO */
     private WeakPointDto toDto(UserWeakPointEntity entity) {
         Map<String, Object> s = entity.getSrState();
         return new WeakPointDto(
@@ -234,6 +256,7 @@ public class UserProfileService {
         );
     }
 
+    /** 将SM-2计算结果写回JSONB状态Map */
     private static Map<String, Object> applySrResult(Map<String, Object> current, Sm2Result result, double lastScore) {
         Map<String, Object> newState = new HashMap<>(current);
         newState.put(SR_INTERVAL_DAYS, result.intervalDays());

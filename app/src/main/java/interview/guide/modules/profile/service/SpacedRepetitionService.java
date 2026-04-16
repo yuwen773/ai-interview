@@ -10,9 +10,20 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * SM-2间隔重复算法服务
+ * 实现SuperMemo 2算法管理弱项复习间隔，包含时间衰减和自动归档机制
+ */
 @Service
 public class SpacedRepetitionService {
 
+    /**
+     * SM-2核心算法：根据当前状态和评分计算下一次复习参数
+     *
+     * @param state      当前SM-2状态
+     * @param score0to10 用户评分（0-10）
+     * @return 更新后的SM-2结果
+     */
     public Sm2Result sm2Update(Sm2State state, double score0to10) {
         int quality = mapScoreToQuality(score0to10);
         double ef = state.easeFactor();
@@ -34,6 +45,7 @@ public class SpacedRepetitionService {
         return new Sm2Result(interval, ef, reps, LocalDate.now().plusDays(interval));
     }
 
+    /** 将0-10评分映射到SM-2质量等级（0-5） */
     private int mapScoreToQuality(double score) {
         if (score <= 2) return 0;
         if (score <= 4) return 2;
@@ -42,10 +54,12 @@ public class SpacedRepetitionService {
         return 5;
     }
 
+    /** 判断弱项是否已改善（连续成功3次以上） */
     public boolean isImproved(int repetitions) {
         return repetitions >= 3;
     }
 
+    /** 构建初始SM-2状态（间隔1天，难度因子2.5） */
     public static Map<String, Object> buildInitialSrState(double lastScore) {
         Map<String, Object> state = new HashMap<>();
         state.put("interval_days", 1);

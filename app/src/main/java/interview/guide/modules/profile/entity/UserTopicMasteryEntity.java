@@ -7,6 +7,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * 用户知识点掌握度实体
+ * 记录用户对各个知识主题的掌握程度，分数随面试评估动态更新
+ */
 @Entity
 @Table(name = "user_topic_mastery")
 public class UserTopicMasteryEntity {
@@ -15,28 +19,36 @@ public class UserTopicMasteryEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 用户ID
     @Column(name = "user_id", nullable = false)
     private String userId;
 
+    // 知识主题名称
     @Column(name = "topic", nullable = false)
     private String topic;
 
+    // 掌握度评分（0-100，默认50）
     @Column(name = "score", precision = 5, scale = 2)
     private BigDecimal score = BigDecimal.valueOf(50.0);
 
+    // 该主题参与的面试会话数
     @Column(name = "session_count")
     private Integer sessionCount = 0;
 
+    // 备注
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
+    // 最后评估时间
     @Column(name = "last_assessed")
     private LocalDateTime lastAssessed;
 
+    // 创建时间（自动填充）
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    // 更新时间（自动填充）
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;

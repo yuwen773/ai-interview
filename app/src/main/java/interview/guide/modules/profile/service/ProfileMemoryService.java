@@ -8,6 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+/**
+ * 画像更新编排服务
+ * Mem0 式画像更新：两阶段流水线（提取 + 更新），从面试会话中提取弱项和强项并更新用户画像
+ */
 @Service
 public class ProfileMemoryService {
 
@@ -26,6 +30,11 @@ public class ProfileMemoryService {
         this.updateService = updateService;
     }
 
+    /**
+     * 执行两阶段画像更新
+     * Stage 1: 从面试会话中提取弱项和强项
+     * Stage 2: 基于LLM决策更新画像，失败时回退到语义相似度匹配
+     */
     public void extractAndUpdate(String sessionId, String userId) {
         log.info("Starting Mem0 profile update: sessionId={}, userId={}", sessionId, userId);
 
@@ -66,6 +75,7 @@ public class ProfileMemoryService {
         log.info("Mem0 profile update complete: sessionId={}", sessionId);
     }
 
+    /** 将UUID格式的sessionId解析为数据库自增ID */
     private Long resolveNumericSessionId(String sessionId) {
         return sessionRepo.findBySessionId(sessionId)
             .map(InterviewSessionEntity::getId)

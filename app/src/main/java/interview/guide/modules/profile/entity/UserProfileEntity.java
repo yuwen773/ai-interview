@@ -5,6 +5,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
+/**
+ * 用户画像实体
+ * 存储用户的基本画像信息，如目标岗位等
+ */
 @Entity
 @Table(name = "user_profiles")
 public class UserProfileEntity {
@@ -13,12 +17,15 @@ public class UserProfileEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 用户ID（全局唯一）
     @Column(name = "user_id", nullable = false, unique = true)
     private String userId;
 
+    // 用户目标岗位角色
     @Column(name = "target_role", length = 128)
     private String targetRole;
 
+    // 最后更新时间（自动更新）
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;

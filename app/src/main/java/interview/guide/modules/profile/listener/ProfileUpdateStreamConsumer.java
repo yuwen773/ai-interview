@@ -26,6 +26,7 @@ public class ProfileUpdateStreamConsumer extends AbstractStreamConsumer<ProfileU
         this.memoryService = memoryService;
     }
 
+    /** 画像更新任务载荷 */
     record ProfileUpdatePayload(String sessionId, String userId) {}
 
     @Override
@@ -53,6 +54,7 @@ public class ProfileUpdateStreamConsumer extends AbstractStreamConsumer<ProfileU
         return "profile-update-consumer";
     }
 
+    /** 从Redis Stream消息中解析任务载荷，格式不合法时返回null跳过 */
     @Override
     protected ProfileUpdatePayload parsePayload(StreamMessageId messageId, Map<String, String> data) {
         String sessionId = data.get(AsyncTaskStreamConstants.FIELD_SESSION_ID);
@@ -69,29 +71,34 @@ public class ProfileUpdateStreamConsumer extends AbstractStreamConsumer<ProfileU
         return "sessionId=" + payload.sessionId() + ", userId=" + payload.userId();
     }
 
+    /** 标记任务为处理中 */
     @Override
     protected void markProcessing(ProfileUpdatePayload payload) {
         redisService().setTaskStatus(payload.sessionId(), AsyncTaskStatus.PROCESSING);
         log.info("开始画像更新: sessionId={}, userId={}", payload.sessionId(), payload.userId());
     }
 
+    /** 执行画像更新核心业务逻辑 */
     @Override
     protected void processBusiness(ProfileUpdatePayload payload) {
         memoryService.extractAndUpdate(payload.sessionId(), payload.userId());
     }
 
+    /** 标记任务为已完成 */
     @Override
     protected void markCompleted(ProfileUpdatePayload payload) {
         redisService().setTaskStatus(payload.sessionId(), AsyncTaskStatus.COMPLETED);
         log.info("画像更新完成: sessionId={}", payload.sessionId());
     }
 
+    /** 标记任务为失败 */
     @Override
     protected void markFailed(ProfileUpdatePayload payload, String error) {
         redisService().setTaskStatus(payload.sessionId(), AsyncTaskStatus.FAILED, error);
         log.error("画像更新失败: sessionId={}, error={}", payload.sessionId(), error);
     }
 
+    /** 将失败任务重新入队等待重试 */
     @Override
     protected void retryMessage(ProfileUpdatePayload payload, int retryCount) {
         try {

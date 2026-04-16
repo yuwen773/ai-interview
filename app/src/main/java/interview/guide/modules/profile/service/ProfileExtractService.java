@@ -22,6 +22,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 画像提取服务
+ * 使用 LLM 从面试会话的问答记录中提取弱项洞察和强项洞察
+ */
 @Service
 public class ProfileExtractService {
 
@@ -51,10 +55,18 @@ public class ProfileExtractService {
         this.outputConverter = new BeanOutputConverter<>(ProfileExtractResult.class);
     }
 
+    /** 从面试会话中提取画像（不传入userId，不加载已有弱项） */
     public ProfileExtractResult extractFromSession(Long sessionId) {
         return extractFromSession(sessionId, null);
     }
 
+    /**
+     * 从面试会话中提取画像洞察
+     *
+     * @param sessionId 面试会话ID
+     * @param userId    用户ID，非空时将已有弱项信息传递给LLM以辅助提取
+     * @return 提取的弱项和强项列表
+     */
     public ProfileExtractResult extractFromSession(Long sessionId, String userId) {
         InterviewSessionEntity session = sessionRepo.findById(sessionId)
             .orElseThrow(() -> new BusinessException(ErrorCode.PROFILE_SESSION_NOT_FOUND,
@@ -89,10 +101,12 @@ public class ProfileExtractService {
         );
     }
 
+    /** 构建已有弱项文本，传递给LLM作为参考上下文 */
     private String buildExistingWeakPointsText(String userId) {
         return formatWeakPointsForPrompt(weakPointRepo.findByUserIdAndIsImprovedFalse(userId));
     }
 
+    /** 将弱项列表格式化为带索引的文本，供Prompt使用 */
     static String formatWeakPointsForPrompt(List<UserWeakPointEntity> weakPoints) {
         if (weakPoints.isEmpty()) return "无";
         StringBuilder sb = new StringBuilder();
@@ -105,6 +119,7 @@ public class ProfileExtractService {
         return sb.toString();
     }
 
+    /** 将面试问答记录格式化为文本，限制最大字符数避免超出Token限制 */
     private String buildAnswersText(List<InterviewAnswerEntity> answers) {
         StringBuilder sb = new StringBuilder();
         int maxChars = 4000;
