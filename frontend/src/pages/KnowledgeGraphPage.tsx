@@ -16,36 +16,23 @@ import { graphApi, type GraphData, type GraphNode } from '../api/graph';
 import { profileApi, type UserProfileDto } from '../api/profile';
 import { getErrorMessage } from '../api/request';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Map a 0-100 score to a hex color. */
 function getScoreColor(score: number): string {
-  if (score >= 70) return '#34d399'; // green
-  if (score >= 40) return '#fbbf24'; // amber
-  return '#f87171'; // red
+  if (score >= 70) return '#34d399';
+  if (score >= 40) return '#fbbf24';
+  return '#f87171';
 }
 
-/** Lower-score nodes appear larger so they attract attention. */
 function getNodeRadius(score: number): number {
   return 4 + Math.max(0, 100 - score) / 20;
 }
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
 export default function KnowledgeGraphPage() {
   const navigate = useNavigate();
 
-  // --- data state ---
   const [profile, setProfile] = useState<UserProfileDto | null>(null);
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // --- ui state ---
   const [selectedTopic, setSelectedTopic] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [scoreRange, setScoreRange] = useState<[number, number]>([0, 100]);
@@ -53,15 +40,11 @@ export default function KnowledgeGraphPage() {
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [hoverNode, setHoverNode] = useState<GraphNode | null>(null);
 
-  // --- refs ---
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fgRef = useRef<any>(null);
 
-  // ---------------------------------------------------------------------------
-  // Responsive canvas sizing via ResizeObserver
-  // ---------------------------------------------------------------------------
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -77,24 +60,16 @@ export default function KnowledgeGraphPage() {
     return () => observer.disconnect();
   }, []);
 
-  // ---------------------------------------------------------------------------
-  // Load profile (topic list)
-  // ---------------------------------------------------------------------------
   const loadProfile = useCallback(async () => {
     try {
       const data = await profileApi.getProfile();
       setProfile(data);
-      if (data.topicMasteries.length > 0 && !selectedTopic) {
-        setSelectedTopic(data.topicMasteries[0].topic);
-      }
+      setSelectedTopic(prev => prev || (data.topicMasteries.length > 0 ? data.topicMasteries[0].topic : ''));
     } catch (e) {
       setError(getErrorMessage(e));
     }
-  }, [selectedTopic]);
+  }, []);
 
-  // ---------------------------------------------------------------------------
-  // Load graph data for a topic
-  // ---------------------------------------------------------------------------
   const loadGraph = useCallback(async (topic: string) => {
     if (!topic) return;
     setLoading(true);
@@ -111,22 +86,12 @@ export default function KnowledgeGraphPage() {
     }
   }, []);
 
-  // initial profile load
-  useEffect(() => {
-    loadProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useEffect(() => { loadProfile(); }, [loadProfile]);
 
-  // load graph when topic changes
   useEffect(() => {
-    if (selectedTopic) {
-      loadGraph(selectedTopic);
-    }
+    if (selectedTopic) loadGraph(selectedTopic);
   }, [selectedTopic, loadGraph]);
 
-  // ---------------------------------------------------------------------------
-  // Filtered data (search + score range + weak-only)
-  // ---------------------------------------------------------------------------
   const filteredData = useMemo(() => {
     if (!graphData) return null;
 
@@ -153,9 +118,6 @@ export default function KnowledgeGraphPage() {
     return { nodes: filteredNodes, links: filteredLinks };
   }, [graphData, scoreRange, focusWeak, searchQuery]);
 
-  // ---------------------------------------------------------------------------
-  // Neighbor highlighting for selection
-  // ---------------------------------------------------------------------------
   const neighborIds = useMemo(() => {
     if (!selectedNode || !graphData) return new Set<string>();
     const ids = new Set<string>();
@@ -169,17 +131,11 @@ export default function KnowledgeGraphPage() {
     return ids;
   }, [selectedNode, graphData]);
 
-  // ---------------------------------------------------------------------------
-  // Topic list from profile
-  // ---------------------------------------------------------------------------
   const topics = useMemo(() => {
     if (!profile) return [];
     return profile.topicMasteries.map((m) => m.topic);
   }, [profile]);
 
-  // ---------------------------------------------------------------------------
-  // Zoom helpers
-  // ---------------------------------------------------------------------------
   const handleZoomIn = () => {
     const fg = fgRef.current;
     if (!fg) return;
@@ -199,9 +155,6 @@ export default function KnowledgeGraphPage() {
     (fg as any).zoomToFit(400, 40);
   };
 
-  // ---------------------------------------------------------------------------
-  // Custom node canvas painter
-  // ---------------------------------------------------------------------------
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const paintNode = useCallback(
     (node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
@@ -271,9 +224,6 @@ export default function KnowledgeGraphPage() {
     [selectedNode, neighborIds, hoverNode]
   );
 
-  // ---------------------------------------------------------------------------
-  // Custom link canvas painter
-  // ---------------------------------------------------------------------------
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const paintLink = useCallback(
     (link: any, ctx: CanvasRenderingContext2D, _globalScale: number) => {
@@ -304,9 +254,6 @@ export default function KnowledgeGraphPage() {
     [selectedNode, neighborIds]
   );
 
-  // ---------------------------------------------------------------------------
-  // Render helpers
-  // ---------------------------------------------------------------------------
 
   const renderEmptyState = (message: string, subtext?: string) => (
     <div className="flex flex-col items-center justify-center h-full gap-3 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
@@ -316,9 +263,6 @@ export default function KnowledgeGraphPage() {
     </div>
   );
 
-  // ---------------------------------------------------------------------------
-  // Main render
-  // ---------------------------------------------------------------------------
   return (
     <div className="min-h-screen flex flex-col">
       {/* ---- Header ---- */}

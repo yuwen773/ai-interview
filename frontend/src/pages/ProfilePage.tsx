@@ -44,7 +44,6 @@ function ScoreTrendChart({ masteries }: { masteries: TopicMasteryDto[] }) {
           <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
         </linearGradient>
       </defs>
-      {/* Grid lines */}
       {[0, 25, 50, 75, 100].map(v => (
         <g key={v}>
           <line
@@ -61,11 +60,8 @@ function ScoreTrendChart({ masteries }: { masteries: TopicMasteryDto[] }) {
           </text>
         </g>
       ))}
-      {/* Area */}
       <path d={areaPath} fill="url(#scoreGradient)" />
-      {/* Line */}
       <path d={linePath} fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      {/* Data points */}
       {points.map((p, i) => (
         <g key={i}>
           <circle cx={p.x} cy={p.y} r="4" fill="var(--color-primary)" stroke="white" strokeWidth="2" />
@@ -135,84 +131,100 @@ export default function ProfilePage() {
   if (error || !profile) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-[var(--color-text-muted)]">{error || '加载失败'}</p>
+        <p className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">{error || '加载失败'}</p>
         <button onClick={() => navigate('/upload')} className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg">返回首页</button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => navigate('/upload')} className="p-2 rounded-lg hover:bg-[var(--color-surface-raised)]">
-          <ChevronLeft className="w-5 h-5" />
+    <div className="max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center gap-4 mb-8">
+        <button
+          onClick={() => navigate('/upload')}
+          className="p-2 rounded-xl hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5 text-[var(--color-text)] dark:text-[var(--color-text-dark)]" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-text)]">个人画像</h1>
-          {profile.targetRole && <p className="text-sm text-[var(--color-text-muted)]">目标岗位: {profile.targetRole}</p>}
+          <h1 className="text-3xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)] tracking-tight">个人画像</h1>
+          {profile.targetRole && (
+            <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mt-1">目标岗位: {profile.targetRole}</p>
+          )}
         </div>
       </div>
 
+      {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
-          { icon: <Target className="w-5 h-5" />, label: '总练习次数', value: totalSessions, color: 'text-blue-500' },
-          { icon: <CheckCircle className="w-5 h-5" />, label: '综合均分', value: parseFloat(avgScore.toFixed(1)), color: 'text-green-500' },
-          { icon: <Clock className="w-5 h-5" />, label: '待复习', value: profile.dueReviewCount, color: 'text-orange-500' },
-          { icon: <Brain className="w-5 h-5" />, label: '技能覆盖', value: profile.topicMasteries.length, color: 'text-purple-500' },
+          { icon: <Target className="w-5 h-5" />, label: '总练习次数', value: totalSessions, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+          { icon: <CheckCircle className="w-5 h-5" />, label: '综合均分', value: parseFloat(avgScore.toFixed(1)), color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-900/20' },
+          { icon: <Clock className="w-5 h-5" />, label: '待复习', value: profile.dueReviewCount, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20' },
+          { icon: <Brain className="w-5 h-5" />, label: '技能覆盖', value: profile.topicMasteries.length, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20' },
         ].map((card, i) => (
           <div key={card.label} className="reveal-item" style={{ '--reveal-delay': `${i * 100}ms` } as React.CSSProperties}>
-            <StatsCard icon={card.icon} label={card.label} value={card.value} color={card.color} />
+            <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-2xl p-5">
+              <div className={`w-9 h-9 rounded-xl ${card.bg} flex items-center justify-center mb-3`}>
+                <span className={card.color}>{card.icon}</span>
+              </div>
+              <div className="text-2xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{card.value}</div>
+              <div className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mt-0.5">{card.label}</div>
+            </div>
           </div>
         ))}
       </div>
 
+      {/* Score Trend Chart */}
       {profile.topicMasteries.length > 1 && (
-        <div className="bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] rounded-xl p-6 mb-6">
+        <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-2xl p-6 mb-6">
           <h3 className="font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-4">技能分数概览</h3>
           <ScoreTrendChart masteries={profile.topicMasteries} />
         </div>
       )}
 
-      <div ref={skillsRef} className="scroll-reveal bg-[var(--color-bg-secondary)] rounded-xl p-6 mb-6">
-        <h3 className="font-semibold text-[var(--color-text)] mb-4">技能掌握详情</h3>
+      {/* Skill Mastery Details */}
+      <div ref={skillsRef} className="scroll-reveal bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-2xl p-6 mb-6">
+        <h3 className="font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-4">技能掌握详情</h3>
         <div className="space-y-3">
           {profile.topicMasteries.map(m => {
             const zone = getZone(m.score);
             return (
               <div key={m.topic} className="flex items-center gap-3">
-                <span className="w-28 text-sm text-[var(--color-text)] truncate">{m.topic}</span>
-                <div className="flex-1 h-2 bg-[var(--color-bg)] rounded-full overflow-hidden">
+                <span className="w-28 text-sm text-[var(--color-text)] dark:text-[var(--color-text-dark)] truncate">{m.topic}</span>
+                <div className="flex-1 h-2 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all ${zone.barColor}`}
                     style={{ width: `${m.score}%` }}
                   />
                 </div>
-                <span className="w-12 text-sm font-medium text-right">{m.score.toFixed(1)}</span>
+                <span className="w-12 text-sm font-medium text-right text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{m.score.toFixed(1)}</span>
                 <span className={`w-16 text-xs text-center px-2 py-0.5 rounded-full ${zone.color}`}>{zone.label}</span>
-                <span className="text-xs text-[var(--color-text-muted)]">{m.sessionCount}次练习</span>
+                <span className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">{m.sessionCount}次练习</span>
               </div>
             );
           })}
           {profile.topicMasteries.length === 0 && (
-            <p className="text-sm text-[var(--color-text-muted)] text-center py-4">暂无练习数据</p>
+            <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] text-center py-4">暂无练习数据</p>
           )}
         </div>
       </div>
 
-      <div ref={weakPointsRef} className="scroll-reveal bg-[var(--color-bg-secondary)] rounded-xl p-6">
+      {/* Weak Points / Review Section */}
+      <div ref={weakPointsRef} className="scroll-reveal bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-2xl p-6">
         <div className="flex items-center justify-between mb-4">
           {topics.length > 1 && (
             <select
               value={topicFilter}
               onChange={(e) => setTopicFilter(e.target.value)}
-              className="text-sm border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-lg px-2 py-1 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)]"
+              className="text-sm border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-lg px-3 py-1.5 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
             >
               <option value="">全部主题</option>
               {topics.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           )}
         </div>
-        <div className="flex gap-4 border-b border-[var(--color-border)] mb-4">
+        <div className="flex gap-4 border-b border-[var(--color-border)] dark:border-[var(--color-border-dark)] mb-4">
           {[
             { key: 'weak' as FilterTab, label: '弱项', count: weakPoints.filter(w => !topicFilter || w.topic === topicFilter).length },
             { key: 'due' as FilterTab, label: '待复习', count: dueReviews.filter(w => !topicFilter || w.topic === topicFilter).length },
@@ -225,7 +237,7 @@ export default function ProfilePage() {
               className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${
                 filterTab === tab.key
                   ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
-                  : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                  : 'border-transparent text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] hover:text-[var(--color-text)] dark:hover:text-[var(--color-text-dark)]'
               }`}
             >
               {tab.label}
@@ -241,7 +253,7 @@ export default function ProfilePage() {
             if (filterTab === 'strong') {
               const filtered = strongPoints.filter(sp => !topicFilter || sp.topic === topicFilter);
               if (filtered.length === 0) {
-                return <p className="text-sm text-[var(--color-text-muted)] text-center py-8">暂无强项记录，继续加油练习吧</p>;
+                return <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] text-center py-8">暂无强项记录，继续加油练习吧</p>;
               }
               return Object.entries(
                 filtered.reduce((acc, sp) => {
@@ -253,7 +265,7 @@ export default function ProfilePage() {
                   <span className="text-xs font-medium px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-900/20 text-blue-500">{topic}</span>
                   <ul className="mt-1 ml-4 space-y-1">
                     {points.map(p => (
-                      <li key={p.id} className="text-sm text-[var(--color-text-muted)]">- {p.description}</li>
+                      <li key={p.id} className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">- {p.description}</li>
                     ))}
                   </ul>
                 </div>
@@ -269,11 +281,11 @@ export default function ProfilePage() {
                 improved: '暂无已改善的弱项',
                 due: '暂无待复习内容',
               };
-              return <p className="text-sm text-[var(--color-text-muted)] text-center py-8">{emptyMessages[filterTab] ?? '暂无数据'}</p>;
+              return <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] text-center py-8">{emptyMessages[filterTab] ?? '暂无数据'}</p>;
             }
 
             return list.map(wp => (
-              <div key={wp.id} className="p-4 bg-[var(--color-bg)] rounded-lg">
+              <div key={wp.id} className="p-4 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] rounded-xl border border-[var(--color-border-subtle)] dark:border-[var(--color-border-subtle-dark)]">
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="flex gap-2">
                     <span className="text-xs font-medium px-2 py-0.5 rounded bg-red-50 dark:bg-red-900/20 text-red-500">{wp.topic}</span>
@@ -284,13 +296,13 @@ export default function ProfilePage() {
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-[var(--color-text-muted)]">已见{wp.timesSeen}次</span>
+                  <span className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">已见{wp.timesSeen}次</span>
                 </div>
-                <p className="text-sm text-[var(--color-text)] mb-1">{wp.questionText}</p>
+                <p className="text-sm text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-1">{wp.questionText}</p>
                 {wp.answerSummary && (
-                  <p className="text-xs text-[var(--color-text-muted)]">参考回答: {wp.answerSummary}</p>
+                  <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">参考回答: {wp.answerSummary}</p>
                 )}
-                <div className="flex items-center gap-4 mt-2 text-xs text-[var(--color-text-muted)]">
+                <div className="flex items-center gap-4 mt-2 text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
                   <span>下次复习: {wp.nextReview}</span>
                   <span>EF: {wp.easeFactor.toFixed(2)}</span>
                   <span>重复: {wp.repetitions}次</span>
@@ -300,16 +312,6 @@ export default function ProfilePage() {
           })()}
         </div>
       </div>
-    </div>
-  );
-}
-
-function StatsCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
-  return (
-    <div className="bg-[var(--color-bg-secondary)] rounded-xl p-4">
-      <div className={`${color} mb-2`}>{icon}</div>
-      <div className="text-2xl font-bold text-[var(--color-text)]">{value}</div>
-      <div className="text-xs text-[var(--color-text-muted)]">{label}</div>
     </div>
   );
 }

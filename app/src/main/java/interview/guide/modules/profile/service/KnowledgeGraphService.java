@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 知识图谱服务：基于弱项 embedding 向量余弦相似度构建知识图谱数据（节点 + 边），
@@ -21,6 +22,7 @@ public class KnowledgeGraphService {
 
     private final UserWeakPointRepository weakPointRepository;
     private final EmbeddingModel embeddingModel;
+    private final ProfileSemanticService semanticService;
 
     private static final double SIMILARITY_THRESHOLD = 0.6;
 
@@ -29,14 +31,17 @@ public class KnowledgeGraphService {
     public record GraphData(List<GraphNode> nodes, List<GraphLink> links) {}
 
     public KnowledgeGraphService(UserWeakPointRepository weakPointRepository,
-                                 EmbeddingModel embeddingModel) {
+                                 EmbeddingModel embeddingModel,
+                                 ProfileSemanticService semanticService) {
         this.weakPointRepository = weakPointRepository;
         this.embeddingModel = embeddingModel;
+        this.semanticService = semanticService;
     }
 
     /**
      * 获取指定 topic 和 userId 的知识图谱数据。
      * 节点为该用户在该 topic 下的所有弱项，边为 embedding 相似度 >= 阈值的节点对。
+     * 优先从 DB 加载已存储的 embedding，缺失时才调用 API 计算。
      */
     public GraphData getGraph(String topic, String userId) {
         List<UserWeakPointEntity> points = weakPointRepository
@@ -50,22 +55,16 @@ public class KnowledgeGraphService {
                 p.getTopic()))
             .toList();
 
-        List<float[]> embeddings = points.stream()
-            .map(p -> {
-                try {
-                    return embeddingModel.embed(p.getQuestionText());
-                } catch (Exception e) {
-                    log.warn("Embedding failed for weak point {}: {}", p.getId(), e.getMessage());
-                    return new float[0];
-                }
-            })
-            .toList();
+        Map<Long, float[]> embeddingMap = loadOrComputeEmbeddings(points);
 
         List<GraphLink> links = new ArrayList<>();
-        for (int i = 0; i < embeddings.size(); i++) {
-            for (int j = i + 1; j < embeddings.size(); j++) {
-                if (embeddings.get(i).length == 0 || embeddings.get(j).length == 0) continue;
-                double sim = cosineSimilarity(embeddings.get(i), embeddings.get(j));
+        for (int i = 0; i < points.size(); i++) {
+            float[] embA = embeddingMap.get(points.get(i).getId());
+            if (embA == null || embA.length == 0) continue;
+            for (int j = i + 1; j < points.size(); j++) {
+                float[] embB = embeddingMap.get(points.get(j).getId());
+                if (embB == null || embB.length == 0) continue;
+                double sim = ProfileSemanticService.cosineSimilarity(embA, embB);
                 if (sim >= SIMILARITY_THRESHOLD) {
                     links.add(new GraphLink(
                         String.valueOf(points.get(i).getId()),
@@ -78,14 +77,25 @@ public class KnowledgeGraphService {
         return new GraphData(nodes, links);
     }
 
-    private double cosineSimilarity(float[] a, float[] b) {
-        double dot = 0, normA = 0, normB = 0;
-        int len = Math.min(a.length, b.length);
-        for (int i = 0; i < len; i++) {
-            dot += a[i] * b[i];
-            normA += a[i] * a[i];
-            normB += b[i] * b[i];
+    /**
+     * 优先从 DB 批量加载已存储的 embedding（零 API 调用），
+     * 缺失时才调用 embeddingModel.embed() 计算。
+     */
+    private Map<Long, float[]> loadOrComputeEmbeddings(List<UserWeakPointEntity> points) {
+        Map<Long, float[]> embeddings = new java.util.HashMap<>(semanticService.batchLoadEmbeddings(points));
+
+        for (UserWeakPointEntity p : points) {
+            if (!embeddings.containsKey(p.getId())) {
+                try {
+                    float[] emb = embeddingModel.embed(p.getQuestionText());
+                    if (emb != null && emb.length > 0) {
+                        embeddings.put(p.getId(), emb);
+                    }
+                } catch (Exception e) {
+                    log.warn("Embedding failed for weak point {}: {}", p.getId(), e.getMessage());
+                }
+            }
         }
-        return (normA == 0 || normB == 0) ? 0 : dot / (Math.sqrt(normA) * Math.sqrt(normB));
+        return embeddings;
     }
 }
