@@ -4,16 +4,12 @@ type Theme = 'light' | 'dark';
 
 export function useTheme() {
     const [theme, setTheme] = useState<Theme>(() => {
-        // 优先读取 localStorage
+        // 优先读取 localStorage，未设置时默认深色模式
         const stored = localStorage.getItem('theme') as Theme;
         if (stored) {
             return stored;
         }
-        // 其次检测系统偏好
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            return 'dark';
-        }
-        return 'light';
+        return 'dark';
     });
 
     // 同步到 document 和 localStorage

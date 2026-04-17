@@ -127,7 +127,7 @@ export default function HeroSection() {
           linesColor={isDark ? '#78350f' : '#d4a54a'}
           gridScale={0.08}
           scanColor={isDark ? '#f59e0b' : '#d97706'}
-          scanOpacity={isDark ? 0.5 : 0.35}
+          scanOpacity={isDark ? 0.3 : 0.18}
           scanDirection="pingpong"
           scanDuration={3}
           scanDelay={1.5}
@@ -136,7 +136,7 @@ export default function HeroSection() {
           lineJitter={0.05}
           enablePost={false}
           noiseIntensity={0.008}
-          className={isDark ? 'opacity-60' : 'opacity-30'}
+          className={isDark ? 'opacity-35' : 'opacity-18'}
         />
       </div>
 
@@ -160,7 +160,7 @@ export default function HeroSection() {
           >
             <span className="text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{HERO_TITLE_LINE1}</span>
             <br />
-            <span className="bg-gradient-to-r from-amber-500 to-orange-400 bg-clip-text text-transparent">
+            <span className="text-[var(--color-primary)]">
               {HERO_TITLE_LINE2}
             </span>
           </motion.h1>
@@ -205,11 +205,11 @@ export default function HeroSection() {
               const Icon = STAT_ICONS[i];
               return (
                 <div key={stat.label} className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-[var(--color-primary-subtle)] dark:bg-[var(--color-primary-subtle-dark)] flex items-center justify-center text-[var(--color-primary)]">
-                    <Icon className="w-4 h-4" />
+                  <div className="w-10 h-10 rounded-xl bg-[var(--color-primary-subtle)] dark:bg-[var(--color-primary-subtle-dark)] flex items-center justify-center text-[var(--color-primary)]">
+                    <Icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="text-lg sm:text-xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
+                    <div className="text-2xl sm:text-3xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
                       {'raw' in stat ? stat.raw : <AnimatedCounter target={stat.value} suffix={'suffix' in stat ? stat.suffix : ''} decimal={'decimal' in stat ? stat.decimal : false} />}
                     </div>
                     <div className="text-[11px] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">{stat.label}</div>
@@ -220,13 +220,12 @@ export default function HeroSection() {
           </motion.div>
         </div>
 
-        <div className="hidden lg:block relative h-[440px]">
+        <div className="hidden lg:flex flex-col gap-4 items-end opacity-60">
           <motion.div
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7, delay: 0.3 }}
-            style={{ y: parallax.y * 0.5, x: parallax.x * 0.3 }}
-            className="absolute top-0 right-0 animate-[float_3s_ease-in-out_infinite]"
+            style={{ y: parallax.y * 0.3, x: parallax.x * 0.2 }}
           >
             <MockReportCard />
           </motion.div>
@@ -234,8 +233,7 @@ export default function HeroSection() {
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7, delay: 0.5 }}
-            style={{ y: parallax.y * 0.3, x: parallax.x * 0.5 }}
-            className="absolute top-[130px] right-[30px] animate-[float_4s_ease-in-out_infinite_0.5s]"
+            style={{ y: parallax.y * 0.2, x: parallax.x * 0.3 }}
           >
             <MockResumeCard />
           </motion.div>
@@ -243,8 +241,7 @@ export default function HeroSection() {
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7, delay: 0.7 }}
-            style={{ y: parallax.y * 0.7, x: parallax.x * 0.2 }}
-            className="absolute top-[260px] right-[10px] animate-[float_3.5s_ease-in-out_infinite_1s]"
+            style={{ y: parallax.y * 0.15, x: parallax.x * 0.1 }}
           >
             <MockChatCard />
           </motion.div>

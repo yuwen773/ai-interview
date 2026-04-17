@@ -16,9 +16,9 @@ function OrbitalDiagram() {
       <div className="relative w-[280px] h-[280px] flex-shrink-0">
         <svg viewBox="0 0 300 260" className="w-full h-full" aria-label="闭环训练流程图">
           {LOOP_ARCS.map((arc) => (
-            <path key={arc.key} d={arc.path} fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeDasharray="6 4" opacity="0.3" />
+            <path key={arc.key} d={arc.path} fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeDasharray="6 4" opacity="0.55" />
           ))}
-          <circle cx="150" cy="135" r="38" fill="var(--color-primary)" opacity="0.06" />
+          <circle cx="150" cy="135" r="38" fill="var(--color-primary)" opacity="0.12" />
           <text x="150" y="140" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--color-primary)">{LOOP_CENTER_TEXT}</text>
           {LOOP_NODES.map((node) => (
             <g key={node.label} className="cursor-pointer" onClick={() => setActive(active === node.label ? null : node.label)} role="button" tabIndex={0} aria-label={node.label}>
@@ -57,7 +57,7 @@ export default function HowItWorksSection() {
     <section id="how-it-works" className="py-20 lg:py-28 px-6">
       <div className="max-w-5xl mx-auto">
         <SectionHeading label={HOW_LABEL} title={HOW_TITLE} subtitle={HOW_SUBTITLE} />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1.1fr_1fr] gap-8 mb-16">
           {HOW_STEPS.map((step, i) => {
             const Icon = step.icon;
             return (
@@ -67,9 +67,9 @@ export default function HowItWorksSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.15, ease: [0.22, 1, 0.36, 1] }}
-                className="text-center"
+                className="relative text-center overflow-hidden"
               >
-                <div className="text-5xl font-bold text-[var(--color-primary)]/15 mb-3">{step.num}</div>
+                <div className="text-[10rem] font-black leading-none text-[var(--color-primary)]/[0.06] select-none mb-[-5rem]">{step.num}</div>
                 <div className="w-12 h-12 rounded-xl bg-[var(--color-primary-subtle)] dark:bg-[var(--color-primary-subtle-dark)] flex items-center justify-center mx-auto mb-4">
                   <Icon className="w-6 h-6 text-[var(--color-primary)]" />
                 </div>
