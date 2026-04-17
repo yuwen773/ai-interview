@@ -93,7 +93,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const [xunfeiDegraded, setXunfeiDegraded] = useState(false);
   const [xunfeiError, setXunfeiError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isRecognizing, setIsRecognizing] = useState(false);
+  const [isRecognizing] = useState(false);
   const [error, setError] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [checkingUnfinished, setCheckingUnfinished] = useState(false);
@@ -101,12 +101,11 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [forceCreateNew, setForceCreateNew] = useState(false);
   const [voiceJustRecognized, setVoiceJustRecognized] = useState(false);
-  const { isRecording, startRecording, stopRecording, clearRecording } = useRecording();
+  const { isRecording, clearRecording } = useRecording();
   const { mouthOpen, setAudioContext, _analyzeSource } = useLipSync();
   const lastAutoPlayedQuestionRef = useRef<string | null>(null);
   // 用 ref 做轻量级幂等保护，避免状态更新异步时同一动作被快速连点触发多次。
   const submitInFlightRef = useRef(false);
-  const recognizeInFlightRef = useRef(false);
   const createInFlightRef = useRef(false);
   const completeInFlightRef = useRef(false);
   const handleQuestionVoiceError = useCallback((message: string) => {
@@ -403,50 +402,6 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     }
   };
 
-  const handleStartRecording = async () => {
-    setError('');
-    // 录音与题目播报共用音频输出设备，开始录音前先停播，减少回声和串音。
-    stopQuestionAudio();
-    try {
-      await startRecording();
-    } catch (err) {
-      setError(getErrorMessage(err) || '无法开始录音');
-    }
-  };
-
-  const handleStopRecording = async () => {
-    if (!session || !currentQuestion || recognizeInFlightRef.current) return;
-
-    recognizeInFlightRef.current = true;
-    setIsRecognizing(true);
-    setError('');
-
-    try {
-      const audioBlob = await stopRecording();
-      if (!audioBlob || audioBlob.size === 0) {
-        throw new Error('录音内容为空，请重新录音');
-      }
-
-      const response = await interviewApi.recognizeVoiceAnswer({
-        sessionId: session.sessionId,
-        questionIndex: currentQuestion.questionIndex,
-        file: audioBlob,
-        inputMode: candidateInputMode
-      });
-
-      // 识别结果回显到文字输入框，切换到文字模式让用户确认后提交
-      setAnswer(response.recognizedText);
-      setCandidateInputMode('text');
-      setVoiceJustRecognized(true);
-    } catch (err) {
-      resetVoiceAnswer();
-      setError(getErrorMessage(err) || '语音识别失败，请重试或切回文字模式');
-    } finally {
-      recognizeInFlightRef.current = false;
-      setIsRecognizing(false);
-    }
-  };
-
   const handleCompleteEarly = async () => {
     if (!session || completeInFlightRef.current) return;
 
@@ -612,8 +567,6 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
                   }
                 }}
                 onSubmit={handleSubmitAnswer}
-                onStartRecording={handleStartRecording}
-                onStopRecording={handleStopRecording}
                 onStopInterview={handleCompleteEarly}
                 onCandidateInputModeChange={(mode) => {
                   setCandidateInputMode(mode);
@@ -648,8 +601,6 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
                   }
                 }}
                 onSubmit={handleSubmitAnswer}
-                onStartRecording={handleStartRecording}
-                onStopRecording={handleStopRecording}
                 onStopInterview={handleCompleteEarly}
                 onCandidateInputModeChange={(mode) => {
                   setCandidateInputMode(mode);
@@ -665,36 +616,13 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
               />
             </InterviewRoomScene>
 
-            {/* 讯飞降级提示 - 使用语义化配色 */}
+            {/* 讯飞降级提示 */}
             {xunfeiDegraded && (
-              <div style={{
-                position: 'absolute',
-                top: 16,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                backgroundColor: 'rgba(245, 158, 11, 0.95)',
-                color: '#fff',
-                padding: '12px 20px',
-                borderRadius: 10,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
-                zIndex: 100,
-              }}>
-                <span style={{ fontSize: 14, fontWeight: 500 }}>数字人暂时不可用，已切换到普通模式</span>
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 bg-[var(--color-primary)]/95 text-white px-5 py-3 rounded-xl shadow-lg shadow-[var(--color-primary)]/30">
+                <span className="text-sm font-medium">数字人暂时不可用，已切换到普通模式</span>
                 <button
                   onClick={handleRestoreXunfei}
-                  style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    color: '#d97706',
-                    border: 'none',
-                    padding: '6px 14px',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    fontSize: 13,
-                    fontWeight: 600,
-                  }}
+                  className="bg-white/95 text-[var(--color-primary-hover)] px-3.5 py-1.5 rounded-md text-[13px] font-semibold hover:bg-white transition-colors cursor-pointer"
                 >
                   重试数字人
                 </button>

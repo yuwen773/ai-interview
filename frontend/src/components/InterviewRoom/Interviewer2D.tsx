@@ -38,7 +38,7 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
   // 思考时头部微动
   useEffect(() => {
     if (mode !== 'thinking') return;
-    const interval = setInterval(() => { setThinkingAngle(Math.sin(Date.now() / 1000) * 3); }, 50);
+    const interval = setInterval(() => { setThinkingAngle(Math.sin(Date.now() / 1000) * 3); }, 100);
     return () => clearInterval(interval);
   }, [mode]);
 
@@ -58,8 +58,8 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
 
       {/* 头像层 */}
       {imageFailed ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-stone-700 to-stone-900">
-          <div className="w-full h-full rounded-t-3xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-[var(--color-surface-dark)] to-[var(--color-bg-dark)]">
+          <div className="w-full h-full rounded-t-3xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] flex items-center justify-center">
             <span className="text-8xl font-bold text-white drop-shadow-lg">{avatarInitial}</span>
           </div>
         </div>
@@ -225,7 +225,7 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
         {/* 思考时光效 */}
         {mode === 'thinking' && (
           <motion.div
-            className="absolute inset-0 bg-gradient-to-br from-amber-500/8 via-transparent to-transparent"
+            className="absolute inset-0 bg-gradient-to-br from-[var(--color-state-thinking)]/8 via-transparent to-transparent"
             animate={{ opacity: [0.1, 0.25, 0.1] }}
             transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
           />
@@ -233,14 +233,14 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
 
         {/* 倾听时光效 */}
         {mode === 'listening' && (
-          <div className="absolute inset-0 bg-gradient-to-t from-sky-500/6 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-state-listening)]/6 via-transparent to-transparent" />
         )}
       </motion.div>
 
       {/* 桌子前景 */}
-      <div className="absolute bottom-0 left-0 right-0 h-[22%] bg-gradient-to-t from-stone-800 via-stone-800/70 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-[22%] bg-gradient-to-t from-[var(--color-surface-dark)] via-[var(--color-surface-dark)]/70 to-transparent" />
 
-      {/* 状态指示器 */}
+      {/* 状态指示器 — 使用 state token */}
       <AnimatePresence mode="wait">
         <motion.div
           key={mode}
@@ -250,15 +250,15 @@ export function Interviewer2D({ avatarId, mode, mouthOpen, className = '' }: Int
           className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20"
         >
           <div className={`px-4 py-2 rounded-full border text-xs font-medium flex items-center gap-1.5 backdrop-blur-sm ${
-            mode === 'speaking'  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35'
-            : mode === 'listening' ? 'bg-sky-500/15 text-blue-300 border-blue-500/35'
-            : mode === 'thinking'  ? 'bg-amber-500/15 text-amber-300 border-amber-500/35'
-            : 'bg-stone-500/15 text-stone-400 border-stone-500/30'
+            mode === 'speaking'  ? 'bg-[var(--color-state-speaking)]/15 text-[var(--color-state-speaking)] border-[var(--color-state-speaking)]/35'
+            : mode === 'listening' ? 'bg-[var(--color-state-listening)]/15 text-[var(--color-state-listening)] border-[var(--color-state-listening)]/35'
+            : mode === 'thinking'  ? 'bg-[var(--color-state-thinking)]/15 text-[var(--color-state-thinking)] border-[var(--color-state-thinking)]/35'
+            : 'bg-[var(--color-text-muted)]/15 text-[var(--color-text-muted-dark)] border-[var(--color-text-muted)]/30'
           }`}>
             {mode === 'speaking'  && <><SpeakingIndicator />提问中</>}
             {mode === 'listening' && <><ListeningIndicator />倾听中</>}
             {mode === 'thinking'  && <><ThinkingIndicator />思考中</>}
-            {mode === 'idle'      && <><span className="w-1.5 h-1.5 rounded-full bg-stone-500" />待机</>}
+            {mode === 'idle'      && <><span className="w-1.5 h-1.5 rounded-full bg-[var(--color-text-muted-dark)]" />待机</>}
           </div>
         </motion.div>
       </AnimatePresence>
@@ -270,7 +270,7 @@ function SpeakingIndicator() {
   return (
     <div className="flex items-end gap-0.5 h-3">
       {[0, 1, 2].map(i => (
-        <motion.div key={i} className="w-0.5 bg-emerald-400 rounded-full"
+        <motion.div key={i} className="w-0.5 bg-[var(--color-state-speaking)] rounded-full"
           animate={{ height: ['3px', '10px', '3px'] }}
           transition={{ duration: 0.4, repeat: Infinity, delay: i * 0.12 }}
         />
@@ -281,7 +281,7 @@ function SpeakingIndicator() {
 
 function ListeningIndicator() {
   return (
-    <motion.div className="w-3 h-3 rounded-full border border-blue-400"
+    <motion.div className="w-3 h-3 rounded-full border border-[var(--color-state-listening)]"
       animate={{ scale: [1, 1.25, 1], opacity: [0.5, 1, 0.5] }}
       transition={{ duration: 1.5, repeat: Infinity }}
     />
@@ -291,7 +291,7 @@ function ListeningIndicator() {
 function ThinkingIndicator() {
   return (
     <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }} className="w-3 h-3">
-      <div className="w-full h-full rounded-full border border-amber-400 border-t-transparent" />
+      <div className="w-full h-full rounded-full border border-[var(--color-state-thinking)] border-t-transparent" />
     </motion.div>
   );
 }
