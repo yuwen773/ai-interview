@@ -111,3 +111,49 @@ app:
 
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174}
+
+  voice-interview:
+    llm-provider: dashscope
+    qwen:
+      asr:
+        model: qwen3-asr-flash-realtime
+        url: wss://dashscope.aliyuncs.com/api-ws/v1/realtime
+        language: zh
+        format: pcm
+        sample-rate: 16000
+        enable-turn-detection: true
+        turn-detection-type: server_vad
+        turn-detection-silence-duration-ms: 1000
+      tts:
+        model: qwen-tts-realtime
+        voice: Cherry
+        format: pcm
+        sample-rate: 24000
+        mode: commit
+        language-type: Chinese
+    phase:
+      intro:
+        min-duration: 3
+        suggested-duration: 5
+        max-duration: 8
+        min-questions: 2
+        max-questions: 5
+      tech:
+        min-duration: 8
+        suggested-duration: 10
+        max-duration: 15
+        min-questions: 3
+        max-questions: 8
+      project:
+        min-duration: 8
+        suggested-duration: 10
+        max-duration: 15
+        min-questions: 2
+        max-questions: 5
+      hr:
+        min-duration: 3
+        suggested-duration: 5
+        max-duration: 8
+        min-questions: 2
+        max-questions: 5
+    planned-duration: 30

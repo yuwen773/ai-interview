@@ -122,13 +122,19 @@ function ReportContent() {
           ))}
         </div>
         <div className="space-y-1.5">
-          <div className="px-2.5 py-1.5 rounded-md border-l-2 border-[var(--color-success)] bg-[var(--color-success)]/5">
-            <div className="text-[9px] font-semibold text-[var(--color-success)]">优势</div>
-            <div className="text-[9px] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">Java 基础扎实，项目表达清晰</div>
+          <div className="px-2.5 py-1.5 rounded-md bg-[var(--color-success)]/5 flex gap-2">
+            <div className="w-1 rounded-full bg-[var(--color-success)] flex-shrink-0" />
+            <div>
+              <div className="text-[9px] font-semibold text-[var(--color-success)]">优势</div>
+              <div className="text-[9px] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">Java 基础扎实，项目表达清晰</div>
+            </div>
           </div>
-          <div className="px-2.5 py-1.5 rounded-md border-l-2 border-[var(--color-primary)] bg-[var(--color-primary)]/5">
-            <div className="text-[9px] font-semibold text-[var(--color-primary)]">改进方向</div>
-            <div className="text-[9px] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">Redis 需加强，补充缓存实战</div>
+          <div className="px-2.5 py-1.5 rounded-md bg-[var(--color-primary)]/5 flex gap-2">
+            <div className="w-1 rounded-full bg-[var(--color-primary)] flex-shrink-0" />
+            <div>
+              <div className="text-[9px] font-semibold text-[var(--color-primary)]">改进方向</div>
+              <div className="text-[9px] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">Redis 需加强，补充缓存实战</div>
+            </div>
           </div>
         </div>
       </div>

@@ -11,7 +11,7 @@ export function useMouseParallax(intensity: number = 20): ParallaxOffset {
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    let rafId: number;
+    let rafId = 0;
     const handleMove = (e: MouseEvent) => {
       rafId = requestAnimationFrame(() => {
         setOffset({

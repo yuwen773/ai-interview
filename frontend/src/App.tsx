@@ -20,6 +20,8 @@ const KnowledgeBaseManagePage = lazy(() => import('./pages/KnowledgeBaseManagePa
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const KnowledgeGraphPage = lazy(() => import('./pages/KnowledgeGraphPage'));
 const LandingPage = lazy(() => import('./pages/landing'));
+const VoiceInterviewListPage = lazy(() => import('./pages/voiceinterview/VoiceInterviewListPage'));
+const VoiceInterviewPage = lazy(() => import('./pages/voiceinterview/VoiceInterviewPage'));
 
 // Loading component
 const Loading = () => (
@@ -224,6 +226,10 @@ function App() {
 
               {/* 知识图谱 */}
               <Route path="graph" element={<KnowledgeGraphPage />} />
+
+              {/* 语音面试 */}
+              <Route path="voice-interview" element={<VoiceInterviewListPage />} />
+              <Route path="voice-interview/:sessionId" element={<VoiceInterviewPage />} />
             </Route>
           </Routes>
         </Suspense>

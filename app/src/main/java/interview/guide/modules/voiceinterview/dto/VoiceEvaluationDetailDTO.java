@@ -1,0 +1,33 @@
+package interview.guide.modules.voiceinterview.dto;
+
+import lombok.*;
+import java.util.List;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class VoiceEvaluationDetailDTO {
+    private Long sessionId;
+    private int totalQuestions;
+    private int overallScore;
+    private String overallFeedback;
+    private List<String> strengths;
+    private List<String> improvements;
+    private List<AnswerDetail> answers;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AnswerDetail {
+        private int questionIndex;
+        private String question;
+        private String category;
+        private String userAnswer;
+        private int score;
+        private String feedback;
+        private String referenceAnswer;
+        private List<String> keyPoints;
+    }
+}

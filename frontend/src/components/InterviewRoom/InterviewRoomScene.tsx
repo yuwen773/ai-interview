@@ -35,7 +35,7 @@ export function InterviewRoomScene({
           className="w-full h-full object-cover"
         />
         {/* 背景遮罩 */}
-        <div className="absolute inset-0 bg-gradient-to-b from-stone-900/20 via-stone-900/10 to-stone-900/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-bg-dark)]/20 via-[var(--color-bg-dark)]/10 to-[var(--color-bg-dark)]/60" />
       </div>
 
       {/* 环境光效 */}
@@ -43,7 +43,7 @@ export function InterviewRoomScene({
         {/* 顶部柔和灯光 */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-40 bg-gradient-to-b from-white/5 to-transparent blur-3xl" />
         {/* 底部暗角 */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-stone-900/60 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[var(--color-bg-dark)]/60 to-transparent" />
       </div>
 
       {/* 面试官区域 */}
@@ -60,7 +60,7 @@ export function InterviewRoomScene({
 
       {/* 子元素（底部控制栏） */}
       {children && (
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-stone-900/90 to-transparent">
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[var(--color-bg-dark)]/90 via-[var(--color-bg-dark)]/40 to-transparent backdrop-blur-[2px]">
           {children}
         </div>
       )}

@@ -67,7 +67,12 @@ public enum ErrorCode {
     PROFILE_EXTRACTION_FAILED(9001, "画像提取失败"),
     PROFILE_SESSION_NOT_FOUND(9002, "画像会话不存在"),
     PROFILE_UPDATE_FAILED(9003, "画像更新失败"),
-    PROFILE_UPDATE_PARSE_FAILED(9004, "画像更新解析失败");
+    PROFILE_UPDATE_PARSE_FAILED(9004, "画像更新解析失败"),
+
+    // ========== 语音面试模块错误 10xxx ==========
+    VOICE_SESSION_NOT_FOUND(10001, "语音面试会话不存在"),
+    VOICE_EVALUATION_NOT_FOUND(10002, "语音面试评估结果不存在"),
+    VOICE_EVALUATION_FAILED(10003, "语音面试评估失败");
 
     private final Integer code;
     private final String message;
