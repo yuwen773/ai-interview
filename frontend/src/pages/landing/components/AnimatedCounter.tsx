@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface AnimatedCounterProps {
   target: number;
@@ -8,7 +8,6 @@ interface AnimatedCounterProps {
 }
 
 export default function AnimatedCounter({ target, suffix = '', prefix = '', decimal = false }: AnimatedCounterProps) {
-  const [count, setCount] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
   const hasAnimated = useRef(false);
 
@@ -25,7 +24,7 @@ export default function AnimatedCounter({ target, suffix = '', prefix = '', deci
             const progress = Math.min((now - start) / duration, 1);
             const eased = 1 - Math.pow(1 - progress, 3);
             const value = eased * target;
-            setCount(decimal ? parseFloat(value.toFixed(1)) : Math.round(value));
+            el.textContent = `${prefix}${decimal ? value.toFixed(1) : Math.round(value)}${suffix}`;
             if (progress < 1) requestAnimationFrame(animate);
           };
           requestAnimationFrame(animate);
@@ -35,13 +34,7 @@ export default function AnimatedCounter({ target, suffix = '', prefix = '', deci
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [target, decimal]);
+  }, [target, decimal, suffix, prefix]);
 
-  return (
-    <span ref={ref}>
-      {prefix}
-      {decimal ? count.toFixed(1) : count}
-      {suffix}
-    </span>
-  );
+  return <span ref={ref} />;
 }

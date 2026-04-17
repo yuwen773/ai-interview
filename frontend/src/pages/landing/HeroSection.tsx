@@ -1,9 +1,10 @@
-import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, ChevronDown, Target, Star, Clock } from 'lucide-react';
 import { useMouseParallax } from '../../hooks/useMouseParallax';
+import { useTheme } from '../../hooks/useTheme';
 import AnimatedCounter from './components/AnimatedCounter';
+import GridScan from '../../components/GridScan/GridScan';
 import {
   HERO_BADGE,
   HERO_TITLE_LINE1,
@@ -14,18 +15,22 @@ import {
   HERO_STATS,
 } from './data';
 
-// ============================================================================
-// Floating Mock Cards
-// ============================================================================
+const STAT_ICONS = [Target, Star, Clock] as const;
+
+function getScoreColor(score: number, max: number) {
+  const ratio = score / max;
+  if (ratio >= 0.8) return 'var(--color-success)';
+  if (ratio >= 0.6) return 'var(--color-primary)';
+  return 'var(--color-error)';
+}
 
 function ScoreBar({ label, score, max = 10 }: { label: string; score: number; max?: number }) {
-  const pct = (score / max) * 100;
-  const color = score >= 8 ? 'var(--color-success)' : score >= 6 ? 'var(--color-primary)' : 'var(--color-error)';
+  const color = getScoreColor(score, max);
   return (
     <div className="flex items-center gap-2 text-xs">
       <span className="w-14 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] truncate">{label}</span>
       <div className="flex-1 h-1.5 rounded-full bg-[var(--color-border)] dark:bg-[var(--color-border-dark)] overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: color }} />
+        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${(score / max) * 100}%`, background: color }} />
       </div>
       <span className="w-6 text-right font-medium" style={{ color }}>{score}</span>
     </div>
@@ -57,21 +62,17 @@ function MockResumeCard({ className = '' }: { className?: string }) {
     <div className={`bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-2xl p-4 shadow-xl w-[240px] ${className}`}>
       <div className="text-xs font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-2">简历分析结果</div>
       <div className="space-y-1.5 text-[11px]">
-        <div className="flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)]" />
-          <span className="text-[var(--color-text)] dark:text-[var(--color-text-dark)]">项目经历: </span>
-          <span className="font-medium text-[var(--color-success)]">8/10</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)]" />
-          <span className="text-[var(--color-text)] dark:text-[var(--color-text-dark)]">技术深度: </span>
-          <span className="font-medium text-[var(--color-primary)]">6/10</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)]" />
-          <span className="text-[var(--color-text)] dark:text-[var(--color-text-dark)]">表达清晰度: </span>
-          <span className="font-medium text-[var(--color-success)]">7/10</span>
-        </div>
+        {[
+          { label: '项目经历', score: 8, color: 'var(--color-success)' },
+          { label: '技术深度', score: 6, color: 'var(--color-primary)' },
+          { label: '表达清晰度', score: 7, color: 'var(--color-success)' },
+        ].map((item) => (
+          <div key={item.label} className="flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: item.color }} />
+            <span className="text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{item.label}: </span>
+            <span className="font-medium" style={{ color: item.color }}>{item.score}/10</span>
+          </div>
+        ))}
       </div>
       <div className="mt-3 pt-2 border-t border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
         <div className="text-[10px] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">AI 建议</div>
@@ -107,54 +108,40 @@ function MockChatCard({ className = '' }: { className?: string }) {
   );
 }
 
-// ============================================================================
-// Hero Section
-// ============================================================================
-
-function HeroStatIcon({ type }: { type: 'target' | 'star' | 'clock' }) {
-  const props = { className: 'w-4 h-4' };
-  switch (type) {
-    case 'target': return <Target {...props} />;
-    case 'star': return <Star {...props} />;
-    case 'clock': return <Clock {...props} />;
-  }
-}
-
 export default function HeroSection() {
   const navigate = useNavigate();
-  const { scrollY } = useScroll();
-  const y1 = useTransform(scrollY, [0, 400], [0, 100]);
-  const y2 = useTransform(scrollY, [0, 400], [0, -60]);
   const parallax = useMouseParallax(15);
-  const sectionRef = useRef<HTMLElement>(null);
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const scrollToHowItWorks = () => {
     document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
-    <section ref={sectionRef} className="relative min-h-screen flex items-center px-6 py-20 overflow-hidden">
-      {/* Ambient background */}
-      <div className="absolute inset-0" aria-hidden="true">
-        <motion.div
-          className="absolute w-[600px] h-[600px] rounded-full opacity-25 blur-[180px]"
-          style={{ background: 'radial-gradient(circle, var(--color-primary) 0%, transparent 70%)', top: '-15%', left: '-5%', y: y1 }}
-        />
-        <motion.div
-          className="absolute w-[500px] h-[500px] rounded-full opacity-15 blur-[150px]"
-          style={{ background: 'radial-gradient(circle, var(--color-primary-hover) 0%, transparent 70%)', bottom: '-10%', right: '-5%', y: y2 }}
-        />
-        <div
-          className="absolute inset-0 opacity-[0.015] dark:opacity-[0.02]"
-          style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)', backgroundSize: '32px 32px' }}
+    <section className="relative min-h-screen flex items-center px-6 py-20 overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        <GridScan
+          sensitivity={0}
+          lineThickness={1}
+          linesColor={isDark ? '#78350f' : '#d4a54a'}
+          gridScale={0.08}
+          scanColor={isDark ? '#f59e0b' : '#d97706'}
+          scanOpacity={isDark ? 0.5 : 0.35}
+          scanDirection="pingpong"
+          scanDuration={3}
+          scanDelay={1.5}
+          scanGlow={0.6}
+          scanSoftness={2}
+          lineJitter={0.05}
+          enablePost={false}
+          noiseIntensity={0.008}
+          className={isDark ? 'opacity-60' : 'opacity-30'}
         />
       </div>
 
-      {/* Content */}
       <div className="relative z-10 w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-12 lg:gap-8 items-center">
-        {/* Left: content */}
         <div>
-          {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -162,10 +149,9 @@ export default function HeroSection() {
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--color-primary-subtle)] dark:bg-[var(--color-primary-subtle-dark)] border border-[var(--color-primary-border)] dark:border-[var(--color-primary-border-dark)] text-[var(--color-primary)] text-sm font-medium mb-6"
           >
             <Sparkles className="w-4 h-4" />
-            <span>{HERO_BADGE}</span>
+            {HERO_BADGE}
           </motion.div>
 
-          {/* Title */}
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -179,7 +165,6 @@ export default function HeroSection() {
             </span>
           </motion.h1>
 
-          {/* Subtitle */}
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -189,7 +174,6 @@ export default function HeroSection() {
             {HERO_SUBTITLE}
           </motion.p>
 
-          {/* Dual CTA */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -200,7 +184,7 @@ export default function HeroSection() {
               onClick={() => navigate('/upload')}
               className="group inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-semibold shadow-lg shadow-[var(--color-primary)]/20 hover:shadow-xl hover:shadow-[var(--color-primary)]/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
             >
-              <span>{HERO_CTA_PRIMARY}</span>
+              {HERO_CTA_PRIMARY}
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </button>
             <button
@@ -211,30 +195,31 @@ export default function HeroSection() {
             </button>
           </motion.div>
 
-          {/* Stats */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.7 }}
             className="flex flex-wrap gap-8 sm:gap-12"
           >
-            {HERO_STATS.map((stat, i) => (
-              <div key={i} className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-[var(--color-primary-subtle)] dark:bg-[var(--color-primary-subtle-dark)] flex items-center justify-center text-[var(--color-primary)]">
-                  <HeroStatIcon type={i === 0 ? 'target' : i === 1 ? 'star' : 'clock'} />
-                </div>
-                <div>
-                  <div className="text-lg sm:text-xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
-                    {'raw' in stat ? stat.raw : <AnimatedCounter target={stat.value} suffix={'suffix' in stat ? stat.suffix : ''} decimal={'decimal' in stat ? stat.decimal : false} />}
+            {HERO_STATS.map((stat, i) => {
+              const Icon = STAT_ICONS[i];
+              return (
+                <div key={stat.label} className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--color-primary-subtle)] dark:bg-[var(--color-primary-subtle-dark)] flex items-center justify-center text-[var(--color-primary)]">
+                    <Icon className="w-4 h-4" />
                   </div>
-                  <div className="text-[11px] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">{stat.label}</div>
+                  <div>
+                    <div className="text-lg sm:text-xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
+                      {'raw' in stat ? stat.raw : <AnimatedCounter target={stat.value} suffix={'suffix' in stat ? stat.suffix : ''} decimal={'decimal' in stat ? stat.decimal : false} />}
+                    </div>
+                    <div className="text-[11px] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">{stat.label}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </motion.div>
         </div>
 
-        {/* Right: floating mock cards */}
         <div className="hidden lg:block relative h-[440px]">
           <motion.div
             initial={{ opacity: 0, x: 40 }}
@@ -266,7 +251,6 @@ export default function HeroSection() {
         </div>
       </div>
 
-      {/* Scroll indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

@@ -3,64 +3,34 @@ import { motion } from 'framer-motion';
 import SectionHeading from './components/SectionHeading';
 import { HOW_LABEL, HOW_TITLE, HOW_SUBTITLE, HOW_STEPS, LOOP_NODES, LOOP_DESCRIPTIONS, LOOP_CENTER_TEXT } from './data';
 
-// ============================================================================
-// OrbitalDiagram - interactive closed-loop training diagram
-// ============================================================================
+const LOOP_ARCS = LOOP_NODES.map((node, i) => {
+  const next = LOOP_NODES[(i + 1) % LOOP_NODES.length];
+  return { key: `${node.label}-${next.label}`, path: `M ${node.cx} ${node.cy} L ${next.cx} ${next.cy}` };
+});
 
 function OrbitalDiagram() {
   const [active, setActive] = useState<string | null>(null);
-
-  const arcs = LOOP_NODES.map((node, i) => {
-    const next = LOOP_NODES[(i + 1) % LOOP_NODES.length];
-    return { key: `${node.label}-${next.label}`, path: `M ${node.cx} ${node.cy} L ${next.cx} ${next.cy}` };
-  });
 
   return (
     <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
       <div className="relative w-[280px] h-[280px] flex-shrink-0">
         <svg viewBox="0 0 300 260" className="w-full h-full" aria-label="闭环训练流程图">
-          {arcs.map((arc) => (
-            <path
-              key={arc.key}
-              d={arc.path}
-              fill="none"
-              stroke="var(--color-primary)"
-              strokeWidth="2"
-              strokeDasharray="6 4"
-              opacity="0.3"
-            />
+          {LOOP_ARCS.map((arc) => (
+            <path key={arc.key} d={arc.path} fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeDasharray="6 4" opacity="0.3" />
           ))}
           <circle cx="150" cy="135" r="38" fill="var(--color-primary)" opacity="0.06" />
-          <text x="150" y="140" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--color-primary)">
-            {LOOP_CENTER_TEXT}
-          </text>
+          <text x="150" y="140" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--color-primary)">{LOOP_CENTER_TEXT}</text>
           {LOOP_NODES.map((node) => (
-            <g
-              key={node.label}
-              className="cursor-pointer"
-              onClick={() => setActive(active === node.label ? null : node.label)}
-              role="button"
-              tabIndex={0}
-              aria-label={node.label}
-            >
+            <g key={node.label} className="cursor-pointer" onClick={() => setActive(active === node.label ? null : node.label)} role="button" tabIndex={0} aria-label={node.label}>
               <circle
-                cx={node.cx}
-                cy={node.cy}
-                r="24"
-                fill={active === node.label ? 'var(--color-primary)' : 'var(--color-surface)'}
-                stroke="var(--color-primary)"
-                strokeWidth="2"
-                className="transition-all duration-500 dark:fill-[var(--color-surface-dark)]"
-                style={active === node.label ? { fill: 'var(--color-primary)' } : undefined}
+                cx={node.cx} cy={node.cy} r="24"
+                stroke="var(--color-primary)" strokeWidth="2"
+                className="transition-all duration-500"
+                style={{ fill: active === node.label ? 'var(--color-primary)' : 'var(--color-surface)' }}
               />
               <text
-                x={node.cx}
-                y={node.cy + 1}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize="11"
-                fontWeight="600"
-                className={active === node.label ? 'fill-white' : 'fill-[var(--color-text)] dark:fill-[var(--color-text-dark)]'}
+                x={node.cx} y={node.cy + 1} textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="600"
+                className={active === node.label ? 'fill-white' : 'fill-[var(--color-text)]'}
               >
                 {node.label}
               </text>
@@ -72,9 +42,7 @@ function OrbitalDiagram() {
         {active ? (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
             <h3 className="text-xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-2">{active}</h3>
-            <p className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] leading-relaxed text-sm">
-              {LOOP_DESCRIPTIONS[active]}
-            </p>
+            <p className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] leading-relaxed text-sm">{LOOP_DESCRIPTIONS[active]}</p>
           </motion.div>
         ) : (
           <p className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] italic text-sm">点击节点查看说明</p>
@@ -84,17 +52,11 @@ function OrbitalDiagram() {
   );
 }
 
-// ============================================================================
-// How It Works Section
-// ============================================================================
-
 export default function HowItWorksSection() {
   return (
     <section id="how-it-works" className="py-20 lg:py-28 px-6">
       <div className="max-w-5xl mx-auto">
         <SectionHeading label={HOW_LABEL} title={HOW_TITLE} subtitle={HOW_SUBTITLE} />
-
-        {/* 3 Steps */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {HOW_STEPS.map((step, i) => {
             const Icon = step.icon;
@@ -117,8 +79,6 @@ export default function HowItWorksSection() {
             );
           })}
         </div>
-
-        {/* Orbital Diagram */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

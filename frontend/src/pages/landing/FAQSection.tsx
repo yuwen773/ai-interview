@@ -4,10 +4,6 @@ import { ChevronDown } from 'lucide-react';
 import SectionHeading from './components/SectionHeading';
 import { FAQ_LABEL, FAQ_TITLE, FAQ_ITEMS, type FaqItem } from './data';
 
-// ============================================================================
-// FaqAccordionItem
-// ============================================================================
-
 function FaqAccordionItem({ item, isOpen, onToggle }: { item: FaqItem; isOpen: boolean; onToggle: () => void }) {
   return (
     <div className="border-b border-[var(--color-border)] dark:border-[var(--color-border-dark)] last:border-b-0">
@@ -40,10 +36,6 @@ function FaqAccordionItem({ item, isOpen, onToggle }: { item: FaqItem; isOpen: b
     </div>
   );
 }
-
-// ============================================================================
-// FAQ Section
-// ============================================================================
 
 export default function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
