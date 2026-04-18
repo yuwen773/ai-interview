@@ -49,11 +49,11 @@ function buildUrl(base: string, params: Record<string, string | undefined>): str
 }
 
 export const profileApi = {
-  getProfile: (userId: string = 'current') =>
+  getProfile: (userId: string = '0') =>
     request.get<UserProfileDto>(buildUrl('/api/profile', { userId })),
-  getDueReviews: (userId: string = 'current', topic?: string) =>
+  getDueReviews: (userId: string = '0', topic?: string) =>
     request.get<WeakPointDto[]>(buildUrl('/api/review/due', { userId, topic })),
-  getStrongPoints: (userId: string = 'current') =>
+  getStrongPoints: (userId: string = '0') =>
     request.get<StrongPointDto[]>(buildUrl('/api/profile/strong-points', { userId })),
   enrollWeakPoints: (userId: string, items: Record<string, unknown>[]) =>
     request.post('/api/review/enroll', { userId, items }),
