@@ -370,59 +370,62 @@ public class KnowledgeBaseQueryService {
      * - 命中无信息：立即输出固定模板并结束，防止长篇拒答
      * - 非无信息：尽快释放缓冲并继续实时透传
      */
+    // 探测窗口归一化已禁用，直接透传流式输出
+    // 原逻辑问题：probeBuffer 累积到 STREAM_PROBE_CHARS 才第一次输出，导致前端一直 pending
     private Flux<String> normalizeStreamOutput(Flux<String> rawFlux) {
-        return Flux.create(sink -> {
-            StringBuilder probeBuffer = new StringBuilder();
-            AtomicBoolean passthrough = new AtomicBoolean(false);
-            AtomicBoolean completed = new AtomicBoolean(false);
-            final Disposable[] disposableRef = new Disposable[1];
-
-            disposableRef[0] = rawFlux.subscribe(
-                chunk -> {
-                    if (completed.get() || sink.isCancelled()) {
-                        return;
-                    }
-                    if (passthrough.get()) {
-                        sink.next(chunk);
-                        return;
-                    }
-
-                    probeBuffer.append(chunk);
-                    String probeText = probeBuffer.toString();
-                    if (isNoResultLike(probeText)) {
-                        completed.set(true);
-                        sink.next(NO_RESULT_RESPONSE);
-                        sink.complete();
-                        if (disposableRef[0] != null) {
-                            disposableRef[0].dispose();
-                        }
-                        return;
-                    }
-
-                    if (probeBuffer.length() >= STREAM_PROBE_CHARS) {
-                        passthrough.set(true);
-                        sink.next(probeText);
-                        probeBuffer.setLength(0);
-                    }
-                },
-                sink::error,
-                () -> {
-                    if (completed.get() || sink.isCancelled()) {
-                        return;
-                    }
-                    if (!passthrough.get()) {
-                        sink.next(normalizeAnswer(probeBuffer.toString()));
-                    }
-                    sink.complete();
-                }
-            );
-
-            sink.onCancel(() -> {
-                if (disposableRef[0] != null) {
-                    disposableRef[0].dispose();
-                }
-            });
-        });
+        // return Flux.create(sink -> {
+        //     StringBuilder probeBuffer = new StringBuilder();
+        //     AtomicBoolean passthrough = new AtomicBoolean(false);
+        //     AtomicBoolean completed = new AtomicBoolean(false);
+        //     final Disposable[] disposableRef = new Disposable[1];
+        //
+        //     disposableRef[0] = rawFlux.subscribe(
+        //         chunk -> {
+        //             if (completed.get() || sink.isCancelled()) {
+        //                 return;
+        //             }
+        //             if (passthrough.get()) {
+        //                 sink.next(chunk);
+        //                 return;
+        //             }
+        //
+        //             probeBuffer.append(chunk);
+        //             String probeText = probeBuffer.toString();
+        //             if (isNoResultLike(probeText)) {
+        //                 completed.set(true);
+        //                 sink.next(NO_RESULT_RESPONSE);
+        //                 sink.complete();
+        //                 if (disposableRef[0] != null) {
+        //                     disposableRef[0].dispose();
+        //                 }
+        //                 return;
+        //             }
+        //
+        //             if (probeBuffer.length() >= STREAM_PROBE_CHARS) {
+        //                 passthrough.set(true);
+        //                 sink.next(probeText);
+        //                 probeBuffer.setLength(0);
+        //             }
+        //         },
+        //         sink::error,
+        //         () -> {
+        //             if (completed.get() || sink.isCancelled()) {
+        //                 return;
+        //             }
+        //             if (!passthrough.get()) {
+        //                 sink.next(normalizeAnswer(probeBuffer.toString()));
+        //             }
+        //             sink.complete();
+        //         }
+        //     );
+        //
+        //     sink.onCancel(() -> {
+        //         if (disposableRef[0] != null) {
+        //             disposableRef[0].dispose();
+        //         }
+        //     });
+        // });
+        return rawFlux;
     }
 
     private record SearchParams(int topK, double minScore) {
