@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import ForceGraph2D from 'react-force-graph-2d';
 import {
   ChevronLeft,
@@ -11,6 +12,8 @@ import {
   Maximize2,
   Target,
   X,
+  Network,
+  Sparkles,
 } from 'lucide-react';
 import { graphApi, type GraphData, type GraphNode } from '../api/graph';
 import { profileApi, type UserProfileDto } from '../api/profile';
@@ -20,6 +23,12 @@ function getScoreColor(score: number): string {
   if (score >= 70) return '#34d399';
   if (score >= 40) return '#fbbf24';
   return '#f87171';
+}
+
+function getScoreBadgeColor(score: number): string {
+  if (score >= 70) return 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800';
+  if (score >= 40) return 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800';
+  return 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800';
 }
 
 function getNodeRadius(score: number): number {
@@ -255,34 +264,88 @@ export default function KnowledgeGraphPage() {
   );
 
 
-  const renderEmptyState = (message: string, subtext?: string) => (
-    <div className="flex flex-col items-center justify-center h-full gap-3 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
-      <GitBranch className="w-12 h-12 opacity-30" />
-      <p className="text-lg font-medium">{message}</p>
-      {subtext && <p className="text-sm">{subtext}</p>}
-    </div>
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.08,
+        ease: [0.22, 1, 0.36, 1] as const,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 16 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const },
+    },
+  };
+
+  const renderEmptyState = (message: string, subtext?: string, icon?: React.ReactNode) => (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }}
+      className="flex flex-col items-center justify-center h-full gap-4"
+    >
+      {icon && (
+        <motion.div
+          animate={{ y: [0, -8, 0] }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] opacity-40"
+        >
+          {icon}
+        </motion.div>
+      )}
+      <div className="text-center">
+        <p className="text-lg font-medium text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{message}</p>
+        {subtext && (
+          <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mt-1.5">{subtext}</p>
+        )}
+      </div>
+    </motion.div>
   );
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="min-h-screen flex flex-col"
+    >
       {/* ---- Header ---- */}
-      <header className="flex items-center gap-4 mb-6 flex-shrink-0">
+      <motion.header
+        variants={itemVariants}
+        className="flex items-center gap-4 mb-6 flex-shrink-0"
+      >
         <button
           onClick={() => navigate(-1)}
-          className="p-2 rounded-lg hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] transition-colors"
+          className="p-2 rounded-xl hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] transition-colors group"
         >
-          <ChevronLeft className="w-5 h-5 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]" />
+          <ChevronLeft className="w-5 h-5 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] group-hover:text-[var(--color-text)] dark:group-hover:text-[var(--color-text-dark)] transition-colors" />
         </button>
-        <h1 className="text-2xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
-          知识图谱
-        </h1>
+
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] flex items-center justify-center shadow-md">
+            <Network className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)] tracking-tight">
+              知识图谱
+            </h1>
+            <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">可视化知识点关联网络</p>
+          </div>
+        </div>
 
         {/* Topic selector */}
-        <div className="relative ml-4">
+        <div className="relative ml-6">
           <select
             value={selectedTopic}
             onChange={(e) => setSelectedTopic(e.target.value)}
-            className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-[var(--color-border)] dark:border-[var(--color-border-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] cursor-pointer"
+            className="appearance-none pl-4 pr-10 py-2.5 rounded-xl border border-[var(--color-border)] dark:border-[var(--color-border-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] cursor-pointer transition-all hover:border-[var(--color-primary)]"
           >
             <option value="">选择主题...</option>
             {topics.map((t) => (
@@ -291,77 +354,108 @@ export default function KnowledgeGraphPage() {
               </option>
             ))}
           </select>
-          <GitBranch className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] pointer-events-none" />
+          <GitBranch className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] pointer-events-none" />
         </div>
 
         {/* Search */}
         <div className="relative ml-auto">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]" />
           <input
             type="text"
             placeholder="搜索题目..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-3 py-2 rounded-lg border border-[var(--color-border)] dark:border-[var(--color-border-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] w-56"
+            className="pl-10 pr-4 py-2.5 rounded-xl border border-[var(--color-border)] dark:border-[var(--color-border-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] w-64 transition-all"
           />
         </div>
-      </header>
+      </motion.header>
 
       {/* ---- Body ---- */}
-      <div className="flex flex-1 gap-4 min-h-0">
+      <motion.div
+        variants={itemVariants}
+        className="flex flex-1 gap-4 min-h-0"
+      >
         {/* -- Filter Panel -- */}
-        <aside className="w-56 flex-shrink-0 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl border border-[var(--color-border)] dark:border-[var(--color-border-dark)] p-4 flex flex-col gap-5">
+        <aside className="w-60 flex-shrink-0 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl border border-[var(--color-border)] dark:border-[var(--color-border-dark)] p-5 flex flex-col gap-6 shadow-sm">
           <div>
-            <h3 className="text-xs font-semibold text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] uppercase tracking-wider mb-3 flex items-center gap-2">
+            <h3 className="text-xs font-semibold text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] uppercase tracking-wider mb-4 flex items-center gap-2">
               <Filter className="w-3.5 h-3.5" />
-              筛选
+              筛选条件
             </h3>
 
             {/* Score range */}
-            <label className="block text-sm text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-2">
-              分数区间: {scoreRange[0]} - {scoreRange[1]}
-            </label>
-            <div className="flex gap-2 items-center">
-              <input
-                type="range"
-                min={0}
-                max={100}
-                value={scoreRange[0]}
-                onChange={(e) =>
-                  setScoreRange([Math.min(Number(e.target.value), scoreRange[1]), scoreRange[1]])
-                }
-                className="w-full accent-[var(--color-primary)]"
-              />
-            </div>
-            <div className="flex gap-2 items-center mt-1">
-              <input
-                type="range"
-                min={0}
-                max={100}
-                value={scoreRange[1]}
-                onChange={(e) =>
-                  setScoreRange([scoreRange[0], Math.max(Number(e.target.value), scoreRange[0])])
-                }
-                className="w-full accent-[var(--color-primary)]"
-              />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-[var(--color-text)] dark:text-[var(--color-text-dark)]">分数区间</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
+                  {scoreRange[0]} - {scoreRange[1]}
+                </span>
+              </div>
+              <div className="relative pt-1">
+                {/* Range slider track */}
+                <div className="relative h-1.5 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] rounded-full">
+                  {/* Active range */}
+                  <div
+                    className="absolute h-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-hover)] rounded-full"
+                    style={{
+                      left: `${scoreRange[0]}%`,
+                      width: `${scoreRange[1] - scoreRange[0]}%`,
+                    }}
+                  />
+                </div>
+                {/* Min slider */}
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={scoreRange[0]}
+                  onChange={(e) =>
+                    setScoreRange([Math.min(Number(e.target.value), scoreRange[1]), scoreRange[1]])
+                  }
+                  className="absolute top-0 w-full h-1.5 appearance-none bg-transparent cursor-pointer pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[var(--color-primary)] [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-125"
+                />
+                {/* Max slider */}
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={scoreRange[1]}
+                  onChange={(e) =>
+                    setScoreRange([scoreRange[0], Math.max(Number(e.target.value), scoreRange[0])])
+                  }
+                  className="absolute top-0 w-full h-1.5 appearance-none bg-transparent cursor-pointer pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[var(--color-primary)] [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-125"
+                />
+              </div>
             </div>
           </div>
 
           {/* Weak focus */}
-          <div>
-            <label className="flex items-center gap-2 cursor-pointer">
+          <div className="p-3 rounded-xl bg-gradient-to-br from-red-50 to-red-50/50 dark:from-red-900/20 dark:to-transparent border border-red-100 dark:border-red-900/50">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <motion.div
+                className={`w-10 h-6 rounded-full p-0.5 transition-colors ${focusWeak ? 'bg-red-400' : 'bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)]'}`}
+                whileTap={{ scale: 0.95 }}
+              >
+                <motion.div
+                  className="w-5 h-5 rounded-full bg-white shadow-sm"
+                  animate={{ x: focusWeak ? 16 : 0 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                />
+              </motion.div>
               <input
                 type="checkbox"
                 checked={focusWeak}
                 onChange={(e) => setFocusWeak(e.target.checked)}
-                className="accent-[var(--color-primary)]"
+                className="sr-only"
               />
-              <Target className="w-4 h-4 text-red-400" />
-              <span className="text-sm text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
-                弱项聚焦
-              </span>
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-red-500" />
+                <span className="text-sm font-medium text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
+                  弱项聚焦
+                </span>
+              </div>
             </label>
-            <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mt-1 ml-6">
+            <p className="text-xs text-red-600 dark:text-red-400/70 mt-2 ml-13">
               仅显示分数 &lt; 40 的节点
             </p>
           </div>
@@ -369,59 +463,71 @@ export default function KnowledgeGraphPage() {
           {/* Zoom controls */}
           <div>
             <h3 className="text-xs font-semibold text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] uppercase tracking-wider mb-3">
-              缩放
+              画布控制
             </h3>
             <div className="flex gap-2">
-              <button
-                onClick={handleZoomIn}
-                className="p-2 rounded-lg bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] hover:bg-[var(--color-border)] dark:hover:bg-[var(--color-border-dark)] transition-colors"
-                title="放大"
-              >
-                <ZoomIn className="w-4 h-4" />
-              </button>
-              <button
-                onClick={handleZoomOut}
-                className="p-2 rounded-lg bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] hover:bg-[var(--color-border)] dark:hover:bg-[var(--color-border-dark)] transition-colors"
-                title="缩小"
-              >
-                <ZoomOut className="w-4 h-4" />
-              </button>
-              <button
-                onClick={handleZoomFit}
-                className="p-2 rounded-lg bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] hover:bg-[var(--color-border)] dark:hover:bg-[var(--color-border-dark)] transition-colors"
-                title="适应画布"
-              >
-                <Maximize2 className="w-4 h-4" />
-              </button>
+              {[
+                { icon: ZoomIn, label: '放大', action: handleZoomIn },
+                { icon: ZoomOut, label: '缩小', action: handleZoomOut },
+                { icon: Maximize2, label: '适应画布', action: handleZoomFit },
+              ].map(({ icon: Icon, label, action }) => (
+                <motion.button
+                  key={label}
+                  onClick={action}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex-1 p-2.5 rounded-xl bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] hover:bg-[var(--color-border)] dark:hover:bg-[var(--color-border-dark)] transition-colors flex items-center justify-center group"
+                  title={label}
+                >
+                  <Icon className="w-4 h-4 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] group-hover:text-[var(--color-text)] dark:group-hover:text-[var(--color-text-dark)] transition-colors" />
+                </motion.button>
+              ))}
             </div>
           </div>
 
           {/* Legend */}
           <div>
             <h3 className="text-xs font-semibold text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] uppercase tracking-wider mb-3">
-              图例
+              节点图例
             </h3>
-            <div className="flex flex-col gap-2 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-emerald-400 inline-block" />
-                <span className="text-[var(--color-text)] dark:text-[var(--color-text-dark)]">掌握 (70+)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-amber-400 inline-block" />
-                <span className="text-[var(--color-text)] dark:text-[var(--color-text-dark)]">一般 (40-69)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-red-400 inline-block" />
-                <span className="text-[var(--color-text)] dark:text-[var(--color-text-dark)]">薄弱 (&lt;40)</span>
-              </div>
+            <div className="space-y-2.5">
+              {[
+                { color: 'bg-emerald-400', label: '掌握', range: '70+', shadow: 'shadow-emerald-400/50' },
+                { color: 'bg-amber-400', label: '一般', range: '40-69', shadow: 'shadow-amber-400/50' },
+                { color: 'bg-red-400', label: '薄弱', range: '<40', shadow: 'shadow-red-400/50' },
+              ].map(({ color, label, range, shadow }) => (
+                <div key={label} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <motion.div
+                      className={`w-3.5 h-3.5 rounded-full ${color} shadow-md ${shadow}`}
+                      whileHover={{ scale: 1.3 }}
+                      transition={{ type: 'spring', stiffness: 400 }}
+                    />
+                    <span className="text-sm text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{label}</span>
+                  </div>
+                  <span className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">({range})</span>
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Stats */}
           {graphData && (
-            <div className="mt-auto text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] space-y-1">
-              <p>节点: {filteredData?.nodes.length ?? 0}</p>
-              <p>连线: {filteredData?.links.length ?? 0}</p>
+            <div className="mt-auto pt-4 border-t border-[var(--color-border)] dark:border-[var(--color-border-dark)]">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center p-2.5 rounded-xl bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)]">
+                  <div className="text-lg font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
+                    {filteredData?.nodes.length ?? 0}
+                  </div>
+                  <div className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">节点</div>
+                </div>
+                <div className="text-center p-2.5 rounded-xl bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)]">
+                  <div className="text-lg font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
+                    {filteredData?.links.length ?? 0}
+                  </div>
+                  <div className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">连线</div>
+                </div>
+              </div>
             </div>
           )}
         </aside>
@@ -429,134 +535,257 @@ export default function KnowledgeGraphPage() {
         {/* -- Graph Canvas -- */}
         <div
           ref={containerRef}
-          className="flex-1 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl border border-[var(--color-border)] dark:border-[var(--color-border-dark)] overflow-hidden relative"
+          className="flex-1 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl border border-[var(--color-border)] dark:border-[var(--color-border-dark)] overflow-hidden relative shadow-sm"
         >
-          {!selectedTopic ? (
-            renderEmptyState('请选择一个主题', '从顶部下拉框中选择以加载知识图谱')
-          ) : loading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="w-10 h-10 border-3 border-[var(--color-border)] border-t-[var(--color-primary)] rounded-full animate-spin" />
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center h-full gap-3">
-              <p className="text-red-400">{error}</p>
-              <button
-                onClick={() => loadGraph(selectedTopic)}
-                className="px-4 py-2 text-sm bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors"
+          {/* Decorative background grid */}
+          <div
+            className="absolute inset-0 opacity-[0.03] dark:opacity-[0.02]"
+            style={{
+              backgroundImage: `
+                linear-gradient(var(--color-border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--color-border) 1px, transparent 1px)
+              `,
+              backgroundSize: '40px 40px',
+            }}
+          />
+
+          <AnimatePresence mode="wait">
+            {!selectedTopic ? (
+              <motion.div
+                key="empty-state"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
+                className="absolute inset-0 flex items-center justify-center"
               >
-                重试
-              </button>
-            </div>
-          ) : !graphData || graphData.nodes.length === 0 ? (
-            renderEmptyState('该主题暂无图谱数据', '请先完成该主题的面试以生成图谱')
-          ) : filteredData && filteredData.nodes.length === 0 ? (
-            renderEmptyState('筛选结果为空', '请调整筛选条件后重试')
-          ) : filteredData ? (
-            <ForceGraph2D
-              ref={fgRef}
-              width={dimensions.width}
-              height={dimensions.height}
-              graphData={filteredData}
-              nodeId="id"
-              linkSource="source"
-              linkTarget="target"
-              nodeCanvasObject={paintNode}
-              nodePointerAreaPaint={(node, color, ctx, _globalScale) => {
-                const radius = getNodeRadius(node.score ?? 50) * 1.5;
-                ctx.fillStyle = color;
-                ctx.beginPath();
-                ctx.arc(node.x!, node.y!, radius, 0, Math.PI * 2);
-                ctx.fill();
-              }}
-              linkCanvasObject={paintLink}
-              linkDirectionalArrowLength={0}
-              onNodeClick={(node) => {
-                if (selectedNode && String(selectedNode.id) === String(node.id)) {
-                  setSelectedNode(null);
-                } else {
-                  setSelectedNode({
-                    id: String(node.id),
-                    question: node.question ?? '',
-                    score: node.score ?? 0,
-                    topic: node.topic ?? '',
-                  });
-                }
-              }}
-              onNodeHover={(node) => {
-                if (node) {
-                  setHoverNode({
-                    id: String(node.id),
-                    question: node.question ?? '',
-                    score: node.score ?? 0,
-                    topic: node.topic ?? '',
-                  });
-                  containerRef.current?.style.setProperty('cursor', 'pointer');
-                } else {
-                  setHoverNode(null);
-                  containerRef.current?.style.setProperty('cursor', 'default');
-                }
-              }}
-              backgroundColor="transparent"
-              cooldownTicks={200}
-              enableNodeDrag={true}
-              enableZoomInteraction={true}
-              enablePanInteraction={true}
-            />
-          ) : null}
+                {renderEmptyState(
+                  '请选择一个主题',
+                  '从顶部下拉框中选择以加载知识图谱',
+                  <Sparkles className="w-16 h-16" />
+                )}
+              </motion.div>
+            ) : loading ? (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                <div className="flex flex-col items-center gap-4">
+                  <motion.div
+                    className="w-12 h-12 border-3 border-[var(--color-border)] border-t-[var(--color-primary)] rounded-full"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  />
+                  <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">正在加载图谱数据...</p>
+                </div>
+              </motion.div>
+            ) : error ? (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="absolute inset-0 flex flex-col items-center justify-center"
+              >
+                <div className="text-center">
+                  <p className="text-red-500 dark:text-red-400 mb-4">{error}</p>
+                  <motion.button
+                    onClick={() => loadGraph(selectedTopic)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="px-5 py-2.5 text-sm bg-[var(--color-primary)] text-white rounded-xl hover:bg-[var(--color-primary-hover)] transition-colors shadow-md"
+                  >
+                    重试
+                  </motion.button>
+                </div>
+              </motion.div>
+            ) : !graphData || graphData.nodes.length === 0 ? (
+              <motion.div
+                key="no-data"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="absolute inset-0"
+              >
+                {renderEmptyState(
+                  '该主题暂无图谱数据',
+                  '请先完成该主题的面试以生成图谱',
+                  <Network className="w-16 h-16" />
+                )}
+              </motion.div>
+            ) : filteredData && filteredData.nodes.length === 0 ? (
+              <motion.div
+                key="filtered-empty"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="absolute inset-0"
+              >
+                {renderEmptyState(
+                  '筛选结果为空',
+                  '请调整筛选条件后重试',
+                  <Filter className="w-16 h-16" />
+                )}
+              </motion.div>
+            ) : filteredData ? (
+              <motion.div
+                key="graph"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ForceGraph2D
+                  ref={fgRef}
+                  width={dimensions.width}
+                  height={dimensions.height}
+                  graphData={filteredData}
+                  nodeId="id"
+                  linkSource="source"
+                  linkTarget="target"
+                  nodeCanvasObject={paintNode}
+                  nodePointerAreaPaint={(node, color, ctx, _globalScale) => {
+                    const radius = getNodeRadius(node.score ?? 50) * 1.5;
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.arc(node.x!, node.y!, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                  }}
+                  linkCanvasObject={paintLink}
+                  linkDirectionalArrowLength={0}
+                  onNodeClick={(node) => {
+                    if (selectedNode && String(selectedNode.id) === String(node.id)) {
+                      setSelectedNode(null);
+                    } else {
+                      setSelectedNode({
+                        id: String(node.id),
+                        question: node.question ?? '',
+                        score: node.score ?? 0,
+                        topic: node.topic ?? '',
+                      });
+                    }
+                  }}
+                  onNodeHover={(node) => {
+                    if (node) {
+                      setHoverNode({
+                        id: String(node.id),
+                        question: node.question ?? '',
+                        score: node.score ?? 0,
+                        topic: node.topic ?? '',
+                      });
+                      containerRef.current?.style.setProperty('cursor', 'pointer');
+                    } else {
+                      setHoverNode(null);
+                      containerRef.current?.style.setProperty('cursor', 'default');
+                    }
+                  }}
+                  backgroundColor="transparent"
+                  cooldownTicks={200}
+                  enableNodeDrag={true}
+                  enableZoomInteraction={true}
+                  enablePanInteraction={true}
+                />
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
 
       {/* ---- Node Detail Panel ---- */}
-      {selectedNode && (
-        <div className="mt-4 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl border border-[var(--color-border)] dark:border-[var(--color-border-dark)] p-5 flex-shrink-0">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <span
-                  className="w-3 h-3 rounded-full inline-block flex-shrink-0"
-                  style={{ backgroundColor: getScoreColor(selectedNode.score) }}
-                />
-                <h3 className="text-sm font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
-                  节点详情
-                </h3>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
-                  {selectedNode.topic}
-                </span>
+      <AnimatePresence>
+        {selectedNode && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.98 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] as const }}
+            className="mt-4 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl border border-[var(--color-border)] dark:border-[var(--color-border-dark)] p-5 flex-shrink-0 shadow-sm overflow-hidden"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-3">
+                  <motion.div
+                    className={`w-3 h-3 rounded-full shadow-lg`}
+                    style={{ backgroundColor: getScoreColor(selectedNode.score) }}
+                    whileHover={{ scale: 1.4 }}
+                    transition={{ type: 'spring', stiffness: 400 }}
+                  />
+                  <h3 className="text-sm font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
+                    节点详情
+                  </h3>
+                  <span className={`text-xs px-2.5 py-1 rounded-full border ${getScoreBadgeColor(selectedNode.score)}`}>
+                    {selectedNode.topic}
+                  </span>
+                </div>
+
+                <motion.p
+                  className="text-[var(--color-text)] dark:text-[var(--color-text-dark)] text-sm leading-relaxed mb-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  {selectedNode.question}
+                </motion.p>
+
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">掌握分数</span>
+                    <motion.span
+                      className="text-lg font-bold"
+                      style={{ color: getScoreColor(selectedNode.score) }}
+                      initial={{ scale: 0.8 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.15, type: 'spring' }}
+                    >
+                      {selectedNode.score.toFixed(1)}
+                    </motion.span>
+                  </div>
+
+                  <div className="h-4 w-px bg-[var(--color-border)] dark:bg-[var(--color-border-dark)]" />
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">关联节点</span>
+                    <span className="text-sm font-medium text-[var(--color-text)] dark:text-[var(--color-text-dark)]">
+                      {graphData
+                        ? graphData.links.filter(
+                            (l) =>
+                              String(l.source) === String(selectedNode.id) ||
+                              String(l.target) === String(selectedNode.id)
+                          ).length
+                        : 0}
+                    </span>
+                  </div>
+
+                  {/* Score bar visualization */}
+                  <div className="flex items-center gap-2 ml-auto">
+                    <div className="w-24 h-1.5 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: getScoreColor(selectedNode.score) }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${selectedNode.score}%` }}
+                        transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] as const }}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
-              <p className="text-[var(--color-text)] dark:text-[var(--color-text-dark)] text-sm leading-relaxed mb-3">
-                {selectedNode.question}
-              </p>
-              <div className="flex items-center gap-4 text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
-                <span>
-                  分数:{' '}
-                  <strong
-                    className="text-sm"
-                    style={{ color: getScoreColor(selectedNode.score) }}
-                  >
-                    {selectedNode.score.toFixed(1)}
-                  </strong>
-                </span>
-                <span>
-                  关联节点:{' '}
-                  {graphData
-                    ? graphData.links.filter(
-                        (l) =>
-                          String(l.source) === String(selectedNode.id) ||
-                          String(l.target) === String(selectedNode.id)
-                      ).length
-                    : 0}
-                </span>
-              </div>
+
+              <motion.button
+                onClick={() => setSelectedNode(null)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="p-2 rounded-xl hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] transition-colors"
+              >
+                <X className="w-4 h-4 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]" />
+              </motion.button>
             </div>
-            <button
-              onClick={() => setSelectedNode(null)}
-              className="p-1 rounded-lg hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)] transition-colors"
-            >
-              <X className="w-4 h-4 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]" />
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
