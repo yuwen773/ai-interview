@@ -227,7 +227,10 @@ export default function FilePreviewModal({
     if (meta.previewType === 'pdf') return 'pdf';
     if (meta.previewType === 'text') {
       const ct = meta.contentType.toLowerCase();
-      if (ct.includes('markdown') || ct.includes('md')) return 'markdown';
+      const filename = (meta.filename ?? '').toLowerCase();
+      if (ct.includes('markdown') || ct.includes('md') || filename.endsWith('.md') || filename.endsWith('.markdown')) {
+        return 'markdown';
+      }
       return 'text';
     }
     return 'unsupported';

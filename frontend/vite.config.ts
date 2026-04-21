@@ -30,8 +30,10 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'localhost:8080',
+        target: 'http://localhost:8080',
         changeOrigin: true,
+        // http-proxy 选项：确保二进制响应完整转发
+        timeout: 30000,
       },
     },
   },
