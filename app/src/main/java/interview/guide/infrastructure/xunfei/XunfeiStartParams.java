@@ -21,4 +21,7 @@ public class XunfeiStartParams {
     private int pitch = 50;
     private int volume = 50;
     private String requestId = java.util.UUID.randomUUID().toString();
+    /** 背景：type 可选 "url" 或 "res_key"，data 为对应值 */
+    private String backgroundType;
+    private String backgroundData;
 }

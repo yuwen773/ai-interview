@@ -84,6 +84,12 @@ public class XunfeiWebSocketClient {
             .fluentPut("height", params.getHeight())
             .fluentPut("stream", stream);
 
+        if (params.getBackgroundType() != null && params.getBackgroundData() != null) {
+            avatar.put("background", new JSONObject()
+//                .fluentPut("type", params.getBackgroundType())
+                .fluentPut("data", params.getBackgroundData()));
+        }
+
         JSONObject parameter = new JSONObject()
             .fluentPut("avatar", avatar);
 

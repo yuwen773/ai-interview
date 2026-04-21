@@ -47,4 +47,10 @@ public class XunfeiAvatarProperties {
 
     /** 音量 [0-100] */
     private int volume = 50;
+
+    /** 背景类型：url 或 res_key */
+    private String backgroundType;
+
+    /** 背景数据：图片地址或 res_key 值 */
+    private String backgroundData;
 }

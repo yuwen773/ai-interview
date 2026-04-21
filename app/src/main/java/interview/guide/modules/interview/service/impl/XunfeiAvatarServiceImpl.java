@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import jakarta.annotation.PreDestroy;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 讯飞虚拟人服务实现
@@ -26,6 +27,9 @@ public class XunfeiAvatarServiceImpl implements XunfeiAvatarService {
 
     // 多会话管理：interviewSessionId -> 会话上下文
     private final Map<String, SessionContext> sessions = new ConcurrentHashMap<>();
+
+    // 防止同一 interviewSessionId 并发创建会话
+    private final Map<String, ReentrantLock> sessionLocks = new ConcurrentHashMap<>();
 
     @PreDestroy
     public void shutdown() {
@@ -51,6 +55,25 @@ public class XunfeiAvatarServiceImpl implements XunfeiAvatarService {
 
     @Override
     public XunfeiStreamInfo createSession(String interviewSessionId) {
+        // 加锁防止同一 sessionId 并发创建
+        ReentrantLock lock = sessionLocks.computeIfAbsent(interviewSessionId, k -> new ReentrantLock());
+        lock.lock();
+        try {
+            return doCreateSession(interviewSessionId);
+        } finally {
+            lock.unlock();
+            sessionLocks.remove(interviewSessionId);
+        }
+    }
+
+    private XunfeiStreamInfo doCreateSession(String interviewSessionId) {
+        // 如果已有就绪会话，直接复用
+        SessionContext existing = sessions.get(interviewSessionId);
+        if (existing != null && existing.ready && existing.client != null && existing.client.isConnected()) {
+            log.info("[XunfeiAvatar] Reusing existing session: {}", interviewSessionId);
+            return new XunfeiStreamInfo(existing.streamUrl, existing.streamExtend, existing.client.getStreamCid());
+        }
+
         // 关闭旧会话（如有）
         destroySession(interviewSessionId);
 
@@ -102,6 +125,8 @@ public class XunfeiAvatarServiceImpl implements XunfeiAvatarService {
         params.setSpeed(properties.getSpeed());
         params.setPitch(properties.getPitch());
         params.setVolume(properties.getVolume());
+        params.setBackgroundType(properties.getBackgroundType());
+        params.setBackgroundData(properties.getBackgroundData());
 
         try {
             ctx.client.sendStart(params);
