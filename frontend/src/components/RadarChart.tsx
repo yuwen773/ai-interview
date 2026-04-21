@@ -24,20 +24,20 @@ interface RadarChartProps {
  * 雷达图组件（自动归一化到统一比例）
  */
 export default function RadarChart({ data, height = 320, className = '' }: RadarChartProps) {
-  // 归一化数据：将所有维度归一化到最大满分
+  // 归一化数据：将所有维度归一化到统一比例
   const normalizedData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
     const maxFullMark = Math.max(...data.map(item => item.fullMark));
 
-    // 计算所有归一化后的分数，找出最大值（可能超过maxFullMark）
-      const normalizedScores = data.map(item =>
+    // 归一化每个维度到 maxFullMark 比例
+    const normalizedScores = data.map(item =>
       normalizeScore(item.score, item.fullMark, maxFullMark)
     );
-    const maxNormalizedScore = Math.max(...normalizedScores, maxFullMark);
+    const actualMaxScore = Math.max(...normalizedScores, 0);
 
-    // 使用实际的最大值作为domain，但至少是maxFullMark
-    const chartMax = Math.max(maxFullMark, maxNormalizedScore);
+    // chartMax 至少为 1，确保 Radar 有绘制范围
+    const chartMax = Math.max(actualMaxScore, Math.min(maxFullMark, 10));
 
     return data.map(item => ({
       subject: item.subject,
@@ -67,7 +67,7 @@ export default function RadarChart({ data, height = 320, className = '' }: Radar
           />
           <PolarRadiusAxis
             angle={90}
-            domain={[0, normalizedData.length > 0 ? normalizedData[0].fullMark : 40]}
+            domain={[0, Math.max(normalizedData[0]?.fullMark || 1, 1)]}
             tick={{fill: tickColor, fontSize: 10}}
             tickFormatter={(value) => value.toString()}
           />
