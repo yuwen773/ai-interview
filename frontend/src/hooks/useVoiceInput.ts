@@ -6,6 +6,60 @@ interface UseVoiceInputOptions {
   onError?: (error: string) => void;
 }
 
+async function convertToWav16k(blob: Blob): Promise<Blob> {
+  const arrayBuffer = await blob.arrayBuffer();
+  const audioContext = new AudioContext();
+  try {
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    const targetSampleRate = 16000;
+    const numSamples = Math.ceil(audioBuffer.duration * targetSampleRate);
+    const offlineContext = new OfflineAudioContext(1, numSamples, targetSampleRate);
+    const source = offlineContext.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(offlineContext.destination);
+    source.start(0);
+    const resampled = await offlineContext.startRendering();
+    return encodeWav(resampled);
+  } finally {
+    await audioContext.close();
+  }
+}
+
+function encodeWav(audioBuffer: AudioBuffer): Blob {
+  const channelData = audioBuffer.getChannelData(0);
+  const sampleRate = audioBuffer.sampleRate;
+  const dataLength = channelData.length * 2;
+  const buffer = new ArrayBuffer(44 + dataLength);
+  const view = new DataView(buffer);
+
+  const writeStr = (off: number, s: string) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i));
+  };
+
+  writeStr(0, 'RIFF');
+  view.setUint32(4, 36 + dataLength, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, 'data');
+  view.setUint32(40, dataLength, true);
+
+  let off = 44;
+  for (let i = 0; i < channelData.length; i++) {
+    const s = Math.max(-1, Math.min(1, channelData[i]));
+    view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+    off += 2;
+  }
+
+  return new Blob([buffer], { type: 'audio/wav' });
+}
+
 export function useVoiceInput({ onResult, onError }: UseVoiceInputOptions) {
   const [isListening, setIsListening] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -64,7 +118,9 @@ export function useVoiceInput({ onResult, onError }: UseVoiceInputOptions) {
 
         setIsTranscribing(true);
         try {
-          const { text } = await audioApi.asr(blob);
+          // DashScope ASR 不支持 WebM 容器，转成 16kHz 单声道 WAV
+          const wavBlob = await convertToWav16k(blob);
+          const { text } = await audioApi.asr(wavBlob);
           if (text.trim()) onResultRef.current(text.trim());
         } catch (err) {
           onErrorRef.current?.(err instanceof Error ? err.message : '语音识别失败');
