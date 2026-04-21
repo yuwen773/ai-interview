@@ -99,15 +99,41 @@ export const interviewApi = {
    * 导出面试报告PDF
    */
   async exportReport(sessionId: string): Promise<string> {
-    const filePath = await Taro.downloadFile({
+    console.log('[exportReport] start, sessionId:', sessionId);
+    const downloadRes = await Taro.downloadFile({
       url: `${baseURL}/api/interview/sessions/${sessionId}/export`,
-    }).then(res => {
-      if (res.statusCode !== 200) {
+    });
+    console.log('[exportReport] downloadRes:', downloadRes.statusCode, downloadRes.tempFilePath);
+    if (downloadRes.statusCode !== 200) {
+      throw new Error('下载失败');
+    }
+    const tmp = downloadRes.tempFilePath || '';
+    // Windows mp 环境下 tempFilePath 可能返回 HTTP URL，改用 request 获取 arrayBuffer 再写入本地
+    if (tmp.includes('://')) {
+      console.log('[exportReport] using arrayBuffer approach for HTTP URL');
+      const arrayBufferRes = await Taro.request({
+        url: `${baseURL}/api/interview/sessions/${sessionId}/export`,
+        responseType: 'arraybuffer',
+      });
+      console.log('[exportReport] arrayBufferRes status:', arrayBufferRes.statusCode, 'data type:', typeof arrayBufferRes.data);
+      if (arrayBufferRes.statusCode !== 200) {
         throw new Error('下载失败');
       }
-      return Taro.saveFile({ tempFilePath: res.tempFilePath }).then(saveRes => saveRes.savedFilePath);
-    });
-    return filePath;
+      const fm = Taro.getFileSystemManager();
+      const localPath = `${Taro.env.USER_DATA_PATH}/interview_report_${Date.now()}.pdf`;
+      console.log('[exportReport] writing to:', localPath);
+      await fm.writeFile({
+        filePath: localPath,
+        data: arrayBufferRes.data as ArrayBuffer,
+        encoding: 'binary',
+      });
+      console.log('[exportReport] write success, returning:', localPath);
+      return localPath;
+    }
+    console.log('[exportReport] using saveFile approach, tmp:', tmp);
+    const saveRes = await Taro.saveFile({ tempFilePath: tmp });
+    console.log('[exportReport] saveRes:', saveRes.savedFilePath);
+    return saveRes.savedFilePath;
   },
 
   async getGrowthCurve(resumeId: number): Promise<GrowthCurve> {

@@ -110,10 +110,12 @@ export default function InterviewReportPage() {
     }
 
     try {
+      console.log('[handleExportPdf] calling exportReport, sessionId:', sessionId);
       const filePath = await interviewApi.exportReport(sessionId);
+      console.log('[handleExportPdf] exportReport returned:', filePath);
       await Taro.openDocument({ filePath, fileType: 'pdf' });
     } catch (error) {
-      console.error('导出面试报告失败', error);
+      console.error('[handleExportPdf] error:', error);
       Taro.showToast({ title: '导出失败', icon: 'none' });
     }
   };

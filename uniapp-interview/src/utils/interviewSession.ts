@@ -17,5 +17,12 @@ export function isInterviewCompleted(session: InterviewCompletionState) {
 }
 
 export function isInterviewOngoing(session: InterviewCompletionState) {
-  return session.status === 'CREATED' || session.status === 'IN_PROGRESS';
+  if (session.status === 'CREATED' || session.status === 'IN_PROGRESS') {
+    return true;
+  }
+  // 面试答完但评估未开始（COMPLETED 且 evaluateStatus 非 COMPLETED），也算进行中
+  if (session.status === 'COMPLETED' && session.evaluateStatus !== 'COMPLETED') {
+    return true;
+  }
+  return false;
 }
