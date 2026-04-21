@@ -11,7 +11,6 @@ import {useQuestionVoicePrefetch} from '../hooks/useQuestionVoicePrefetch';
 import {useQuestionVoicePlayer} from '../hooks/useQuestionVoicePlayer';
 import {useLipSync} from '../hooks/useLipSync';
 import type {
-  CandidateInputMode,
   InterviewPackageOption,
   InterviewQuestion,
   InterviewSession,
@@ -87,11 +86,11 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const [currentQuestion, setCurrentQuestion] = useState<InterviewQuestion | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [answer, setAnswer] = useState('');
-  const [candidateInputMode, setCandidateInputMode] = useState<CandidateInputMode>('text');
-  const [questionVoiceEnabled, setQuestionVoiceEnabled] = useState(false);
-  const [xunfeiEnabled, setXunfeiEnabled] = useState(false);
+  const [questionVoiceEnabled, setQuestionVoiceEnabled] = useState(true);
+  const [xunfeiEnabled, setXunfeiEnabled] = useState<boolean | null>(null);
   const [xunfeiDegraded, setXunfeiDegraded] = useState(false);
   const [xunfeiError, setXunfeiError] = useState<string | null>(null);
+  const [xunfeiAvatarReady, setXunfeiAvatarReady] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRecognizing] = useState(false);
   const [error, setError] = useState('');
@@ -100,7 +99,6 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const [unfinishedSession, setUnfinishedSession] = useState<InterviewSession | null>(null);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [forceCreateNew, setForceCreateNew] = useState(false);
-  const [voiceJustRecognized, setVoiceJustRecognized] = useState(false);
   const { isRecording, clearRecording } = useRecording();
   const { mouthOpen, setAudioContext, _analyzeSource } = useLipSync();
   const lastAutoPlayedQuestionRef = useRef<string | null>(null);
@@ -228,7 +226,6 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     lastAutoPlayedQuestionRef.current = null;
     setSession(sessionToRestore);
     setError('');
-    setCandidateInputMode('text');
     resetVoiceAnswer();
 
         // 恢复当前问题
@@ -266,7 +263,6 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     setError('');
     stopQuestionAudio();
     lastAutoPlayedQuestionRef.current = null;
-    setCandidateInputMode('text');
     resetVoiceAnswer();
 
     try {
@@ -335,6 +331,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   const handleRestoreXunfei = useCallback(() => {
     setXunfeiDegraded(false);
     setXunfeiError(null);
+    setXunfeiAvatarReady(false);
   }, []);
 
   const handleSubmitAnswer = async () => {
@@ -364,7 +361,6 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       });
 
       setAnswer('');
-      setVoiceJustRecognized(false);
       resetVoiceAnswer();
 
       if (response.hasNextQuestion && response.nextQuestion) {
@@ -463,13 +459,17 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
       return;
     }
 
-    lastAutoPlayedQuestionRef.current = questionKey;
     if (!session) {
       return;
     }
 
+    // xunfei 状态未确定时，等一等再播报（避免先走普通 TTS 再切讯飞）
+    if (xunfeiEnabled === null) return;
+
     if (xunfeiEnabled && !xunfeiDegraded) {
-      // 讯飞数字人模式：使用讯飞 TTS 播报，数字人会自动驱动口型
+      // 讯飞数字人模式：等数字人加载就绪后再播报
+      if (!xunfeiAvatarReady) return;
+      lastAutoPlayedQuestionRef.current = questionKey;
       void xunfeiApi.sendQuestion(session.sessionId, currentQuestion.question)
         .catch(() => {
           // 讯飞播报失败，标记降级，下次自动使用普通模式
@@ -478,6 +478,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
         });
     } else {
       // 普通模式：使用前端 TTS 播报
+      lastAutoPlayedQuestionRef.current = questionKey;
       void playQuestion(currentQuestion.question, {
         sessionId: session.sessionId,
         questionIndex: currentQuestion.questionIndex,
@@ -488,6 +489,9 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     currentQuestion?.questionIndex,
     currentQuestion?.question,
     questionVoiceEnabled,
+    xunfeiEnabled,
+    xunfeiDegraded,
+    xunfeiAvatarReady,
     playQuestion,
     stopQuestionAudio
   ]);
@@ -542,97 +546,52 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     );
 
     return (
-      <div className="flex gap-6 h-[calc(100vh-100px)]">
-        {/* 左侧：场景区域 */}
-        <div className="flex-1 relative rounded-xl overflow-hidden">
-          {xunfeiEnabled && session && !xunfeiDegraded ? (
-            <XunfeiAvatarPlayer
-              interviewSessionId={session.sessionId}
-              className="w-full h-full"
-              onError={handleXunfeiError}
-              silent={!!xunfeiError}
-            >
-              <InterviewControlPanel
-                mode={interviewerMode}
-                candidateInputMode={candidateInputMode}
-                isRecording={isRecording}
-                isRecognizing={isRecognizing}
-                isSubmitting={isSubmitting}
-                audioLevel={0}
-                answer={answer}
-                onAnswerChange={(text) => {
-                  setAnswer(text);
-                  if (voiceJustRecognized && text !== answer) {
-                    setVoiceJustRecognized(false);
-                  }
-                }}
-                onSubmit={handleSubmitAnswer}
-                onStopInterview={handleCompleteEarly}
-                onCandidateInputModeChange={(mode) => {
-                  setCandidateInputMode(mode);
-                  if (mode === 'voice') setVoiceJustRecognized(false);
-                }}
-                onReRecordVoice={() => {
-                  setAnswer('');
-                  setVoiceJustRecognized(false);
-                  setCandidateInputMode('voice');
-                }}
-                voiceJustRecognized={voiceJustRecognized}
-                error={error}
+      <div className="flex gap-6 pt-4 h-[calc(100vh-100px)]">
+        {/* 左侧：场景 + 控制栏（纵向排列） */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* 场景区域 */}
+          <div className="flex-1 relative rounded-xl overflow-hidden min-h-0">
+            {xunfeiEnabled && session && !xunfeiDegraded ? (
+              <XunfeiAvatarPlayer
+                interviewSessionId={session.sessionId}
+                className="absolute inset-0"
+                onError={handleXunfeiError}
+                silent={!!xunfeiError}
+                onReady={() => setXunfeiAvatarReady(true)}
               />
-            </XunfeiAvatarPlayer>
-          ) : (
-            <>
-            <InterviewRoomScene avatarId={selectedJobRole ? (JOB_AVATAR_MAP[selectedJobRole] ?? 'navtalk.Ethan') : 'navtalk.Ethan'} mode={interviewerMode} mouthOpen={mouthOpen}>
-              {/* 底部控制栏作为 children */}
-              <InterviewControlPanel
-                mode={interviewerMode}
-                candidateInputMode={candidateInputMode}
-                isRecording={isRecording}
-                isRecognizing={isRecognizing}
-                isSubmitting={isSubmitting}
-                audioLevel={0}
-                answer={answer}
-                onAnswerChange={(text) => {
-                  setAnswer(text);
-                  // Clear the "just recognized" flag if user manually edits the text
-                  if (voiceJustRecognized && text !== answer) {
-                    setVoiceJustRecognized(false);
-                  }
-                }}
-                onSubmit={handleSubmitAnswer}
-                onStopInterview={handleCompleteEarly}
-                onCandidateInputModeChange={(mode) => {
-                  setCandidateInputMode(mode);
-                  if (mode === 'voice') setVoiceJustRecognized(false);
-                }}
-                onReRecordVoice={() => {
-                  setAnswer('');
-                  setVoiceJustRecognized(false);
-                  setCandidateInputMode('voice');
-                }}
-                voiceJustRecognized={voiceJustRecognized}
-                error={error}
-              />
-            </InterviewRoomScene>
+            ) : (
+              <>
+                <InterviewRoomScene avatarId={selectedJobRole ? (JOB_AVATAR_MAP[selectedJobRole] ?? 'navtalk.Ethan') : 'navtalk.Ethan'} mode={interviewerMode} mouthOpen={mouthOpen} />
 
-            {/* 讯飞降级提示 */}
-            {xunfeiDegraded && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 bg-[var(--color-primary)]/95 text-white px-5 py-3 rounded-xl shadow-lg shadow-[var(--color-primary)]/30">
-                <span className="text-sm font-medium">数字人暂时不可用，已切换到普通模式</span>
-                <button
-                  onClick={handleRestoreXunfei}
-                  className="bg-white/95 text-[var(--color-primary-hover)] px-3.5 py-1.5 rounded-md text-[13px] font-semibold hover:bg-white transition-colors cursor-pointer"
-                >
-                  重试数字人
-                </button>
-              </div>
+                {/* 讯飞降级提示 */}
+                {xunfeiDegraded && (
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 bg-[var(--color-primary)]/95 text-white px-5 py-3 rounded-xl shadow-lg shadow-[var(--color-primary)]/30">
+                    <span className="text-sm font-medium">数字人暂时不可用，已切换到普通模式</span>
+                    <button
+                      onClick={handleRestoreXunfei}
+                      className="bg-white/95 text-[var(--color-primary-hover)] px-3.5 py-1.5 rounded-md text-[13px] font-semibold hover:bg-white transition-colors cursor-pointer"
+                    >
+                      重试数字人
+                    </button>
+                  </div>
+                )}
+              </>
             )}
-            </>
-          )}
+          </div>
+
+          {/* 控制栏（和场景同宽，独立于场景） */}
+          <InterviewControlPanel
+            mode={interviewerMode}
+            isSubmitting={isSubmitting}
+            answer={answer}
+            onAnswerChange={setAnswer}
+            onSubmit={handleSubmitAnswer}
+            onStopInterview={handleCompleteEarly}
+            error={error}
+          />
         </div>
 
-        {/* 右侧：对话侧边栏 */}
+        {/* 右侧：对话侧边栏（高度 = 场景 + 控制栏） */}
         <div className="w-[380px] hidden lg:block">
           <InterviewSubtitlePanel
             session={session}
@@ -660,7 +619,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
   };
 
     return (
-    <div className={stage === 'interview' ? '-mt-6' : 'pb-10'}>
+    <div className={stage === 'interview' ? '' : 'pb-10'}>
       {/* 页面头部：面试阶段隐藏，节省纵向空间 */}
       {stage !== 'interview' && (
         <motion.div
