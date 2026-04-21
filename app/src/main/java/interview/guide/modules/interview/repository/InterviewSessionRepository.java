@@ -76,6 +76,13 @@ public interface InterviewSessionRepository extends JpaRepository<InterviewSessi
     List<InterviewSessionEntity> findAllWithResumeOrderByCreatedAtDesc();
 
     /**
+     * 根据ID查找会话，同时预加载 answers 集合，避免懒加载异常。
+     * 用于异步消费者等无活动 Session 的场景。
+     */
+    @Query("SELECT s FROM InterviewSessionEntity s LEFT JOIN FETCH s.answers WHERE s.id = :id")
+    Optional<InterviewSessionEntity> findByIdWithAnswers(@Param("id") Long id);
+
+    /**
      * 查询成长曲线所需的已完成面试，并预加载答案，避免后续按会话逐条查询。
      */
     @Query("""

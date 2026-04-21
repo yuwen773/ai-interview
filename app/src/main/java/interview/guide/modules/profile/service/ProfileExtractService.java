@@ -68,7 +68,7 @@ public class ProfileExtractService {
      * @return 提取的弱项和强项列表
      */
     public ProfileExtractResult extractFromSession(Long sessionId, String userId) {
-        InterviewSessionEntity session = sessionRepo.findById(sessionId)
+        InterviewSessionEntity session = sessionRepo.findByIdWithAnswers(sessionId)
             .orElseThrow(() -> new BusinessException(ErrorCode.PROFILE_SESSION_NOT_FOUND,
                 "Interview session not found: " + sessionId));
 
