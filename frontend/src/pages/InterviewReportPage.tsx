@@ -114,9 +114,9 @@ export default function InterviewReportPage({ onBack }: InterviewReportPageProps
         {/* 动画区域 */}
         <div className="relative flex flex-col items-center">
           {/* 外圈旋转 */}
-          <div className="w-28 h-28 rounded-full border-4 border-[var(--color-border)] dark:border-[(var(--color-border-dark))] border-t-[var(--color-primary)] animate-spin" />
+          <div className="w-28 h-28 rounded-full border-4 border-[var(--color-border)] dark:border-[var(--color-border-dark)] border-t-[var(--color-primary)] animate-spin" />
           {/* 内圈反向 */}
-          <div className="absolute inset-2 rounded-full border-4 border-[var(--color-border)] dark:border-[(var(--color-border-dark))] border-t-[var(--color-primary-hover)] animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.8s' }} />
+          <div className="absolute inset-2 rounded-full border-4 border-[var(--color-border)] dark:border-[var(--color-border-dark)] border-t-[var(--color-primary-hover)] animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.8s' }} />
           {/* 中心图标 */}
           <div className="absolute inset-0 flex items-center justify-center">
             <svg className="w-10 h-10 text-[var(--color-primary)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
