@@ -267,7 +267,8 @@ function InterviewHistoryWrapper() {
   };
 
   const handleStartInterview = () => {
-    navigate('/interview');
+    // 需要先上传简历才能开始面试，跳转到上传页面
+    navigate('/upload');
   };
 
   return <InterviewHistoryPage onBack={handleBack} onViewInterview={handleViewInterview} onStartInterview={handleStartInterview} />;
