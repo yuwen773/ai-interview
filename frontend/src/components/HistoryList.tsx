@@ -363,7 +363,7 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
                     </td>
                     <td className="px-6 py-4">
                       {resume.interviewCount > 0 ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-full text-sm font-medium border border-emerald-200 dark:border-emerald-800">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[var(--color-success-subtle)] text-[var(--color-success)] rounded-full text-sm font-medium border border-[var(--color-success)]/30 dark:border-[var(--color-success)]/20">
                           <CheckCircle2 className="w-4 h-4" />
                           {resume.interviewCount} 次
                         </span>
@@ -398,7 +398,7 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
                         <button
                           onClick={(e) => handleDeleteClick(resume, e)}
                           disabled={deletingId === resume.id}
-                          className="p-2 text-red-700 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 rounded-lg transition-colors disabled:opacity-50"
+                          className="p-2 text-[var(--color-error)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-subtle)] rounded-lg transition-colors disabled:opacity-50"
                           title="删除"
                         >
                           <Trash2 className="w-4 h-4" />

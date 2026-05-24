@@ -177,7 +177,7 @@ export default function FileUploadCard({
                     <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">{formatFileSize(selectedFile.size)}</p>
                   </div>
                   <button
-                      className="w-8 h-8 bg-[var(--color-error-subtle)] dark:bg-[var(--color-error-subtle-dark)] text-[var(--color-error)] dark:text-[var(--color-error)] rounded-lg hover:bg-[var(--color-error-subtle)] dark:hover:bg-[var(--color-error-subtle-dark)] transition-colors flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[var(--color-error)] focus-visible:outline-none"
+                      className="error-icon-btn"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedFile(null);
@@ -239,7 +239,7 @@ export default function FileUploadCard({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={namePlaceholder}
-            className="w-full px-4 py-3 border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)] placeholder-[var(--color-text-placeholder)] dark:placeholder-[var(--color-text-placeholder-dark)]"
+            className="form-input"
             disabled={uploading}
             onClick={(e) => e.stopPropagation()}
           />

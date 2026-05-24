@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [
     react(),
   ],
+  optimizePackageImports: ['lucide-react'],
   assetsInclude: ['**/*.glb'],
   resolve: {
     dedupe: ['three'],

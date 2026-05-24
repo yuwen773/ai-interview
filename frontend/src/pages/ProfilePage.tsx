@@ -1,78 +1,28 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Brain, Target, CheckCircle, Clock } from 'lucide-react';
-import { profileApi, type UserProfileDto, type TopicMasteryDto, type WeakPointDto, type StrongPointDto } from '../api/profile';
+import { profileApi, type UserProfileDto, type WeakPointDto, type StrongPointDto } from '../api/profile';
+import ScoreTrendChart from '../components/ScoreTrendChart';
 import { getErrorMessage } from '../api/request';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 
 type FilterTab = 'weak' | 'improved' | 'due' | 'strong';
 
 const MASTERY_ZONES = [
-  { min: 70, label: '稳固', zone: 'Strong', color: 'text-green-500 bg-green-50 dark:bg-green-900/20', barColor: 'bg-green-500' },
-  { min: 40, label: '建设中', zone: 'Build', color: 'text-amber-500 bg-amber-50 dark:bg-amber-900/20', barColor: 'bg-amber-500' },
-  { min: 0,  label: '集中突破', zone: 'Focus', color: 'text-red-500 bg-red-50 dark:bg-red-900/20', barColor: 'bg-red-500' },
+  { min: 70, label: '稳固', zone: 'Strong', color: 'text-[var(--color-success)] bg-[var(--color-success-subtle)] dark:bg-[var(--color-success-subtle-dark)]', barColor: 'bg-[var(--color-success)]' },
+  { min: 40, label: '建设中', zone: 'Build', color: 'text-[var(--color-warning)] bg-[var(--color-warning-subtle)] dark:bg-[var(--color-warning-subtle-dark)]', barColor: 'bg-[var(--color-warning)]' },
+  { min: 0,  label: '集中突破', zone: 'Focus', color: 'text-[var(--color-error)] bg-[var(--color-error-subtle)] dark:bg-[var(--color-error-subtle-dark)]', barColor: 'bg-[var(--color-error)]' },
 ] as const;
+
+const STATS_CARDS_META = [
+  { icon: <Target className="w-5 h-5" />, label: '总练习次数', color: 'text-[var(--color-stats-sessions)]', bg: 'bg-[var(--color-stats-sessions-bg)] dark:bg-[var(--color-stats-sessions-bg-dark)]' },
+  { icon: <CheckCircle className="w-5 h-5" />, label: '综合均分', color: 'text-[var(--color-stats-score)]', bg: 'bg-[var(--color-stats-score-bg)] dark:bg-[var(--color-stats-score-bg-dark)]' },
+  { icon: <Clock className="w-5 h-5" />, label: '待复习', color: 'text-[var(--color-stats-reviews)]', bg: 'bg-[var(--color-stats-reviews-bg)] dark:bg-[var(--color-stats-reviews-bg-dark)]' },
+  { icon: <Brain className="w-5 h-5" />, label: '技能覆盖', color: 'text-[var(--color-stats-coverage)]', bg: 'bg-[var(--color-stats-coverage-bg)] dark:bg-[var(--color-stats-coverage-bg-dark)]' },
+];
 
 function getZone(score: number) {
   return MASTERY_ZONES.find(z => score >= z.min) ?? MASTERY_ZONES[MASTERY_ZONES.length - 1];
-}
-
-function ScoreTrendChart({ masteries }: { masteries: TopicMasteryDto[] }) {
-  if (masteries.length === 0) return null;
-
-  const data = masteries.map(m => ({ label: m.topic, score: m.score }));
-  const width = 600;
-  const height = 200;
-  const padding = { top: 20, right: 20, bottom: 40, left: 40 };
-  const chartW = width - padding.left - padding.right;
-  const chartH = height - padding.top - padding.bottom;
-
-  const points = data.map((d, i) => ({
-    x: padding.left + (data.length === 1 ? chartW / 2 : (i / (data.length - 1)) * chartW),
-    y: padding.top + chartH - (d.score / 100) * chartH,
-    ...d,
-  }));
-
-  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-  const areaPath = linePath + ` L ${points[points.length - 1].x} ${padding.top + chartH} L ${points[0].x} ${padding.top + chartH} Z`;
-
-  return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
-      <defs>
-        <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      {[0, 25, 50, 75, 100].map(v => (
-        <g key={v}>
-          <line
-            x1={padding.left}
-            y1={padding.top + chartH - (v / 100) * chartH}
-            x2={width - padding.right}
-            y2={padding.top + chartH - (v / 100) * chartH}
-            stroke="var(--color-border)"
-            strokeWidth="0.5"
-            strokeDasharray="4 4"
-          />
-          <text x={padding.left - 8} y={padding.top + chartH - (v / 100) * chartH + 4} textAnchor="end" fontSize="10" fill="var(--color-text-muted)">
-            {v}
-          </text>
-        </g>
-      ))}
-      <path d={areaPath} fill="url(#scoreGradient)" />
-      <path d={linePath} fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      {points.map((p, i) => (
-        <g key={i}>
-          <circle cx={p.x} cy={p.y} r="4" fill="var(--color-primary)" stroke="white" strokeWidth="2" />
-          <text x={p.x} y={height - 10} textAnchor="middle" fontSize="10" fill="var(--color-text-muted)">
-            {p.label.length > 6 ? p.label.slice(0, 6) + '\u2026' : p.label}
-          </text>
-          <title>{`${p.label}: ${p.score.toFixed(1)}`}</title>
-        </g>
-      ))}
-    </svg>
-  );
 }
 
 export default function ProfilePage() {
@@ -157,18 +107,18 @@ export default function ProfilePage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {[
-          { icon: <Target className="w-5 h-5" />, label: '总练习次数', value: totalSessions, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20' },
-          { icon: <CheckCircle className="w-5 h-5" />, label: '综合均分', value: parseFloat(avgScore.toFixed(1)), color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-900/20' },
-          { icon: <Clock className="w-5 h-5" />, label: '待复习', value: profile.dueReviewCount, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20' },
-          { icon: <Brain className="w-5 h-5" />, label: '技能覆盖', value: profile.topicMasteries.length, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20' },
-        ].map((card, i) => (
+        {STATS_CARDS_META.map((card, i) => (
           <div key={card.label} className="reveal-item" style={{ '--reveal-delay': `${i * 100}ms` } as React.CSSProperties}>
             <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-2xl p-5">
               <div className={`w-9 h-9 rounded-xl ${card.bg} flex items-center justify-center mb-3`}>
                 <span className={card.color}>{card.icon}</span>
               </div>
-              <div className="text-2xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{card.value}</div>
+              <div className="text-2xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{
+                card.label === '总练习次数' ? totalSessions :
+                card.label === '综合均分' ? parseFloat(avgScore.toFixed(1)) :
+                card.label === '待复习' ? profile.dueReviewCount :
+                profile.topicMasteries.length
+              }</div>
               <div className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mt-0.5">{card.label}</div>
             </div>
           </div>
@@ -262,7 +212,7 @@ export default function ProfilePage() {
                 }, {} as Record<string, StrongPointDto[]>)
               ).map(([topic, points]) => (
                 <div key={topic}>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-900/20 text-blue-500">{topic}</span>
+                  <span className="text-xs font-medium px-2 py-0.5 rounded bg-[var(--color-badge-topic-bg)] dark:bg-[var(--color-badge-topic-bg-dark)] text-[var(--color-badge-topic)]">{topic}</span>
                   <ul className="mt-1 ml-4 space-y-1">
                     {points.map(p => (
                       <li key={p.id} className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">- {p.description}</li>
@@ -288,11 +238,11 @@ export default function ProfilePage() {
               <div key={wp.id} className="p-4 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] rounded-xl border border-[var(--color-border-subtle)] dark:border-[var(--color-border-subtle-dark)]">
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="flex gap-2">
-                    <span className="text-xs font-medium px-2 py-0.5 rounded bg-red-50 dark:bg-red-900/20 text-red-500">{wp.topic}</span>
+                    <span className="text-xs font-medium px-2 py-0.5 rounded bg-[var(--color-badge-weak-bg)] dark:bg-[var(--color-badge-weak-bg-dark)] text-[var(--color-badge-weak)]">{wp.topic}</span>
                     {wp.isImproved && (
-                      <span className="text-xs font-medium px-2 py-0.5 rounded bg-green-50 dark:bg-green-900/20 text-green-500">
+                      <span className="text-xs font-medium px-2 py-0.5 rounded bg-[var(--color-badge-improved-bg)] dark:bg-[var(--color-badge-improved-bg-dark)] text-[var(--color-badge-improved)]">
                         已改善
-                        <span className="inline-block animate-bounce-in text-green-500 ml-1">&uarr;</span>
+                        <span className="inline-block animate-bounce-in text-[var(--color-badge-improved)] ml-1">&uarr;</span>
                       </span>
                     )}
                   </div>

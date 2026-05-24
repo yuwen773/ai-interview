@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import * as THREE from 'three';
 import { VRMLoaderPlugin } from '@pixiv/three-vrm';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -6,7 +6,7 @@ import { LipSyncController } from './LipSync';
 import { AvatarAnimations } from './AvatarAnimations';
 import type { InterviewAvatarProps } from './types';
 
-export function InterviewAvatar({
+export const InterviewAvatar = memo(function InterviewAvatar({
   modelUrl = '/models/avatar.vrm',
   isSpeaking = false,
   expression = 'neutral',
@@ -113,4 +113,4 @@ export function InterviewAvatar({
       <audio ref={audioRef} />
     </div>
   );
-}
+});

@@ -112,7 +112,7 @@ export default function InterviewConfigPanel({
               <div className="flex gap-3">
                 <motion.button
                   onClick={onContinueUnfinished}
-                  className="flex-1 rounded-lg bg-amber-500 px-4 py-2.5 font-medium text-white transition-colors hover:bg-amber-600"
+                  className="flex-1 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 font-medium text-white transition-colors hover:bg-[var(--color-primary-hover)]"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >

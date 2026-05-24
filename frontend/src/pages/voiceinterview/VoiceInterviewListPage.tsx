@@ -29,7 +29,7 @@ export default function VoiceInterviewListPage() {
       <h1 className="text-2xl font-bold mb-6">语音面试</h1>
       <button
         onClick={() => navigate('/voice-interview/new')}
-        className="mb-4 px-4 py-2 bg-blue-500 text-white rounded"
+        className="mb-4 px-4 py-2 bg-[var(--color-primary)] text-white rounded hover:brightness-110 dark:bg-[var(--color-primary)]"
       >
         开始新面试
       </button>

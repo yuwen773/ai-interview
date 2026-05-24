@@ -50,15 +50,50 @@
   --color-success:         #34d399;   /* emerald-400 */
   --color-success-subtle:  #d1fae5;
   --color-error:           #f87171;  /* red-400 */
-  --color-error-subtle:    #fee2e2;
+  --color-error-dark:      #dc2626;  /* red-600 */
+  --color-error-subtle:    #fee2e2; /* red-50 */
+  --color-error-subtle-dark: #7f1d1d; /* red-950 */
   --color-warning:         #fbbf24;   /* amber-400 */
+  --color-warning-subtle:  #fef3c7;
+  --color-warning-subtle-dark: #451a03;
   --color-info:            #38bdf8;   /* sky-400 */
+  --color-info-subtle:     #e0f2fe;
+  --color-info-subtle-dark:    #0c4a6e;
+
+  /* === Topic Badge Colors === */
+  --color-badge-topic:     #3b82f6;   /* blue-500 */
+  --color-badge-topic-bg:  #eff6ff;
+  --color-badge-topic-bg-dark: #1e3a5f;
+  --color-badge-weak:      #ef4444;   /* red-500 */
+  --color-badge-weak-bg:   #fef2f2;
+  --color-badge-weak-bg-dark: #450a0a;
+  --color-badge-improved:  #22c55e;   /* green-500 */
+  --color-badge-improved-bg: #f0fdf4;
+  --color-badge-improved-bg-dark: #14532d;
+
+  /* === Stats Card Colors === */
+  --color-stats-sessions:     #3b82f6; /* blue-500 */
+  --color-stats-sessions-bg:  #eff6ff;
+  --color-stats-sessions-bg-dark: #1e3a5f;
+  --color-stats-score:        #22c55e; /* green-500 */
+  --color-stats-score-bg:     #f0fdf4;
+  --color-stats-score-bg-dark: #14532d;
+  --color-stats-reviews:      #f97316; /* orange-500 */
+  --color-stats-reviews-bg:   #fff7ed;
+  --color-stats-reviews-bg-dark: #431407;
+  --color-stats-coverage:     #a855f7; /* purple-500 */
+  --color-stats-coverage-bg:  #faf5ff;
+  --color-stats-coverage-bg-dark: #3b0764;
 
   /* === 状态色（面试场景） === */
   --color-state-thinking:  #fbbf24;
   --color-state-speaking:  #34d399;
   --color-state-listening: #38bdf8;
   --color-state-recording: #f87171;
+  --color-state-thinking-dark:  #fbbf24;
+  --color-state-speaking-dark:  #34d399;
+  --color-state-listening-dark: #38bdf8;
+  --color-state-recording-dark: #f87171;
 
   /* === 消息气泡 === */
   --color-bubble-interviewer: #ffffff;
@@ -77,6 +112,34 @@
   --color-primary-700: #b45309;
   --color-primary-800: #92400e;
   --color-primary-900: #78350f;
+
+  /* === 优先级色 === */
+  --color-priority-high-subtle: #fee2e2;
+  --color-priority-high-subtle-dark: #7f1d1d;
+  --color-priority-high-text: #f87171;
+  --color-priority-medium-subtle: #fffbeb;
+  --color-priority-medium-subtle-dark: #451a03;
+  --color-priority-medium-text: #d97706;
+  --color-priority-low-subtle: #eff6ff;
+  --color-priority-low-subtle-dark: #1e3a5f;
+  --color-priority-low-text: #2563eb;
+
+  /* === 类别色 === */
+  --color-category-project-subtle: #f3e8ff;
+  --color-category-project-subtle-dark: #581c87;
+  --color-category-project-text: #7c3aed;
+  --color-category-skill-subtle: #e0e7ff;
+  --color-category-skill-subtle-dark: #3730a3;
+  --color-category-skill-text: #4f46e5;
+  --color-category-format-subtle: #fce7f3;
+  --color-category-format-subtle-dark: #831843;
+  --color-category-format-text: #db2777;
+  --color-category-structure-subtle: #cffafe;
+  --color-category-structure-subtle-dark: #164e63;
+  --color-category-structure-text: #0891b2;
+  --color-category-expression-subtle: #ffedd5;
+  --color-category-expression-subtle-dark: #7c2d12;
+  --color-category-expression-text: #ea580c;
 
   /* === 字体 === */
   --font-sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
@@ -119,7 +182,7 @@
 
   /* 全局 focus-visible 样式 - 确保键盘导航时焦点可见 */
   *:focus-visible {
-    outline: 2px solid var(--color-primary-400);
+    outline: 2px solid var(--color-primary);
     outline-offset: 2px;
   }
 
@@ -129,7 +192,7 @@
   input:focus-visible,
   textarea:focus-visible,
   select:focus-visible {
-    outline: 2px solid var(--color-primary-400);
+    outline: 2px solid var(--color-primary);
     outline-offset: 2px;
   }
 
@@ -295,6 +358,27 @@
   .dark .skeleton {
     background: linear-gradient(90deg, var(--color-surface-dark) 25%, var(--color-border-dark) 50%, var(--color-surface-dark) 75%);
     background-size: 200% 100%;
+  }
+
+  /* 表单输入框 */
+  .form-input {
+    @apply w-full px-4 py-3 border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-xl
+           focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent
+           bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]
+           text-[var(--color-text)] dark:text-[var(--color-text-dark)]
+           placeholder-[var(--color-text-placeholder)] dark:placeholder-[var(--color-text-placeholder-dark)];
+  }
+
+  /* 错误图标按钮 */
+  .error-icon-btn {
+    @apply w-8 h-8 rounded-lg transition-colors flex items-center justify-center
+           focus-visible:ring-2 focus-visible:ring-[var(--color-error)] focus-visible:outline-none;
+    @apply bg-[var(--color-error-subtle)] dark:bg-[var(--color-error-subtle-dark)]
+           text-[var(--color-error)] dark:text-[var(--color-error)];
+  }
+
+  .error-icon-btn:hover {
+    @apply bg-[var(--color-error-subtle)] dark:bg-[var(--color-error-subtle-dark)];
   }
 }
 

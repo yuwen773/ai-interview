@@ -88,11 +88,11 @@ export default function AnalysisPanel({
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case '高':
-        return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400';
+        return 'bg-[var(--color-error-subtle)] dark:bg-[var(--color-error-subtle-dark)] border-[var(--color-error-subtle)] dark:border-[var(--color-error-dark)] text-[var(--color-error)] dark:text-[var(--color-error-dark)]';
       case '中':
-        return 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400';
+        return 'bg-[var(--color-priority-medium-subtle)] dark:bg-[var(--color-priority-medium-subtle-dark)] border-[var(--color-priority-medium-subtle)] dark:border-[var(--color-priority-medium-subtle-dark)] text-[var(--color-priority-medium-text)] dark:text-[var(--color-warning)]';
       case '低':
-        return 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400';
+        return 'bg-[var(--color-priority-low-subtle)] dark:bg-[var(--color-priority-low-subtle-dark)] border-[var(--color-priority-low-subtle)] dark:border-[var(--color-priority-low-subtle-dark)] text-[var(--color-priority-low-text)] dark:text-[var(--color-info)]';
       default:
         return 'bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] border-[var(--color-border)] dark:border-[var(--color-border-dark)] text-[var(--color-text)] dark:text-[var(--color-text-muted-dark)]';
     }
@@ -101,11 +101,11 @@ export default function AnalysisPanel({
   const getPriorityBadgeColor = (priority: string) => {
     switch (priority) {
       case '高':
-        return 'bg-red-500 text-white';
+        return 'bg-[var(--color-error)] text-white';
       case '中':
-        return 'bg-amber-500 text-white';
+        return 'bg-[var(--color-warning)] text-white';
       case '低':
-        return 'bg-blue-500 text-white';
+        return 'bg-[var(--color-info)] text-white';
       default:
         return 'bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-white';
     }
@@ -113,12 +113,12 @@ export default function AnalysisPanel({
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
-      '项目': 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300',
-      '技能': 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300',
-      '内容': 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300',
-      '格式': 'bg-pink-100 dark:bg-pink-900/50 text-pink-700 dark:text-pink-300',
-      '结构': 'bg-cyan-100 dark:bg-cyan-900/50 text-cyan-700 dark:text-cyan-300',
-      '表达': 'bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300'
+      '项目': 'bg-[var(--color-category-project-subtle)] dark:bg-[var(--color-category-project-subtle-dark)] text-[var(--color-category-project-text)] dark:text-[var(--color-category-project-text)]',
+      '技能': 'bg-[var(--color-category-skill-subtle)] dark:bg-[var(--color-category-skill-subtle-dark)] text-[var(--color-category-skill-text)] dark:text-[var(--color-category-skill-text)]',
+      '内容': 'bg-[var(--color-success-subtle)] dark:bg-[var(--color-success-subtle-dark)] text-[var(--color-success)] dark:text-[var(--color-success)]',
+      '格式': 'bg-[var(--color-category-format-subtle)] dark:bg-[var(--color-category-format-subtle-dark)] text-[var(--color-category-format-text)] dark:text-[var(--color-category-format-text)]',
+      '结构': 'bg-[var(--color-category-structure-subtle)] dark:bg-[var(--color-category-structure-subtle-dark)] text-[var(--color-category-structure-text)] dark:text-[var(--color-category-structure-text)]',
+      '表达': 'bg-[var(--color-category-expression-subtle)] dark:bg-[var(--color-category-expression-subtle-dark)] text-[var(--color-category-expression-text)] dark:text-[var(--color-category-expression-text)]'
     };
     return colors[category] || 'bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text)] dark:text-[var(--color-text-muted-dark)]';
   };
@@ -172,15 +172,15 @@ export default function AnalysisPanel({
     return (
         <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl p-12 text-center">
           <div
-              className="w-16 h-16 mx-auto mb-6 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center">
-            <AlertCircle className="w-8 h-8 text-red-500 dark:text-red-400"/>
+              className="w-16 h-16 mx-auto mb-6 bg-[var(--color-error-subtle)] dark:bg-[var(--color-error-subtle-dark)] rounded-full flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-[var(--color-error)] dark:text-[var(--color-error)]"/>
         </div>
           <h3 className="text-xl font-semibold text-[var(--color-text)] dark:text-[var(--color-text-muted-dark)] mb-2">分析失败</h3>
           <p className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] mb-4">AI 服务暂时不可用，请稍后重试</p>
         {(analyzeError || analysis?.summary) && (
             <div
-                className="mt-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-left mb-4">
-              <p className="text-sm text-red-600 dark:text-red-400">{analyzeError || analysis.summary}</p>
+                className="mt-4 p-4 bg-[var(--color-error-subtle)] dark:bg-[var(--color-error-subtle-dark)] border border-[var(--color-error-subtle)] dark:border-[var(--color-error-dark)] rounded-lg text-left mb-4">
+              <p className="text-sm text-[var(--color-error)] dark:text-[var(--color-error-dark)]">{analyzeError || analysis.summary}</p>
           </div>
         )}
         {onReanalyze && (
@@ -234,20 +234,20 @@ export default function AnalysisPanel({
           </div>
 
           <div
-              className="bg-gradient-to-br from-emerald-50 dark:from-emerald-900/30 to-green-50 dark:to-[var(--color-surface-dark)] rounded-xl p-6">
+              className="bg-gradient-to-br from-[var(--color-success-subtle)] dark:from-[var(--color-success-subtle-dark)] to-[var(--color-surface-dark)] rounded-xl p-6">
             <p className="text-lg text-[var(--color-text)] dark:text-[var(--color-text-dark)] leading-relaxed mb-6">
               {analysis.summary || '候选人具备扎实的技术基础，有大型项目架构经验。'}
             </p>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl p-5">
-                <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 block mb-2">总分</span>
+                <span className="text-sm font-semibold text-[var(--color-success)] dark:text-[var(--color-success)] block mb-2">总分</span>
                 <span className="text-4xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{analysis.overallScore || 0}</span>
                 <span className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">/ 100</span>
               </div>
               <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl p-5">
                 <span
-                    className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 block mb-2">分析时间</span>
+                    className="text-sm font-semibold text-[var(--color-success)] dark:text-[var(--color-success)] block mb-2">分析时间</span>
                 <span className="text-sm text-[var(--color-text)] dark:text-[var(--color-text-muted-dark)]">
                   {formatDateTime(analysis.analyzedAt)}
                 </span>
@@ -258,11 +258,11 @@ export default function AnalysisPanel({
             {analysis.strengths && analysis.strengths.length > 0 && (
                 <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-xl p-4">
                   <span
-                      className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 block mb-3">优势亮点</span>
+                      className="text-sm font-semibold text-[var(--color-success)] dark:text-[var(--color-success)] block mb-3">优势亮点</span>
                 <div className="flex flex-wrap gap-2">
                   {analysis.strengths.map((s: string, i: number) => (
                       <span key={i}
-                            className="px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-lg text-sm font-medium">
+                            className="px-3 py-1.5 bg-[var(--color-success-subtle)] dark:bg-[var(--color-success-subtle-dark)] text-[var(--color-success)] dark:text-[var(--color-success)] border-[var(--color-success-subtle)] rounded-lg text-sm font-medium">
                       {s}
                     </span>
                   ))}
@@ -307,7 +307,7 @@ export default function AnalysisPanel({
               label="内容完整性"
               score={contentScore}
               maxScore={15}
-              color="bg-emerald-500"
+              color="bg-[var(--color-success)]"
               delay={0.5}
             />
             <ScoreProgressBar
@@ -407,19 +407,19 @@ function SuggestionSection({
 }) {
   const priorityColors: Record<string, { bg: string; text: string; border: string }> = {
     '高': {
-      bg: 'bg-red-100 dark:bg-red-900/50',
-      text: 'text-red-700 dark:text-red-300',
-      border: 'bg-red-100 dark:bg-red-900/50'
+      bg: 'bg-[var(--color-error-subtle)] dark:bg-[var(--color-error-subtle-dark)]',
+      text: 'text-[var(--color-error)] dark:text-[var(--color-error)]',
+      border: 'bg-[var(--color-error-subtle)] dark:bg-[var(--color-error-subtle-dark)]'
     },
     '中': {
-      bg: 'bg-amber-100 dark:bg-amber-900/50',
-      text: 'text-amber-700 dark:text-amber-300',
-      border: 'bg-amber-100 dark:bg-amber-900/50'
+      bg: 'bg-[var(--color-priority-medium-subtle)] dark:bg-[var(--color-priority-medium-subtle-dark)]',
+      text: 'text-[var(--color-priority-medium-text)] dark:text-[var(--color-warning)]',
+      border: 'bg-[var(--color-priority-medium-subtle)] dark:bg-[var(--color-priority-medium-subtle-dark)]'
     },
     '低': {
-      bg: 'bg-blue-100 dark:bg-blue-900/50',
-      text: 'text-blue-700 dark:text-blue-300',
-      border: 'bg-blue-100 dark:bg-blue-900/50'
+      bg: 'bg-[var(--color-priority-low-subtle)] dark:bg-[var(--color-priority-low-subtle-dark)]',
+      text: 'text-[var(--color-priority-low-text)] dark:text-[var(--color-info)]',
+      border: 'bg-[var(--color-priority-low-subtle)] dark:bg-[var(--color-priority-low-subtle-dark)]'
     }
   };
 

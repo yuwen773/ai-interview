@@ -30,9 +30,9 @@ export default function ConfirmDialog({
   if (!open) return null;
 
   const variantStyles = {
-    danger: 'bg-red-500 hover:bg-red-600 text-white',
-    primary: 'bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white',
-    warning: 'bg-amber-500 hover:bg-amber-600 text-white'
+    danger: 'bg-[var(--color-error)] hover:brightness-110 text-white dark:hover:brightness-125',
+    primary: 'bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white dark:hover:brightness-110',
+    warning: 'bg-[var(--color-warning)] hover:brightness-110 text-white dark:hover:brightness-125'
   };
 
   return (
@@ -55,7 +55,7 @@ export default function ConfirmDialog({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl shadow-2xl max-w-md w-full p-6"
+              className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl shadow-2xl max-w-md w-full p-4 md:p-6"
             >
               {/* 标题 */}
                 <h3 className="text-xl font-bold text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-4">

@@ -317,7 +317,7 @@ export default function Interview({ resumeText, resumeId, onBack, onInterviewCom
     // 每次进入面试或切换会话时，重置讯飞状态（允许重新尝试）
     setXunfeiDegraded(false);
     setXunfeiError(null);
-    isXunfeiEnabled().then(setXunfeiEnabled);
+    void isXunfeiEnabled().then(setXunfeiEnabled).catch(err => console.error(err));
   }, [stage, session?.sessionId]);
 
   /** 讯飞数字人出错时的回调：触发降级 */

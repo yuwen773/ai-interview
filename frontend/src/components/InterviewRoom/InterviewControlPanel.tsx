@@ -95,7 +95,7 @@ export function InterviewControlPanel({
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -8 }}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${voiceInput.isListening ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : `${status.bgColor} ${status.borderColor}`}`}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${voiceInput.isListening ? 'bg-[var(--color-error-subtle)] dark:bg-[var(--color-error-subtle-dark)] border-[var(--color-error)] dark:border-[var(--color-error-dark)]' : `${status.bgColor} ${status.borderColor}`}`}
                 >
                   {voiceInput.isListening ? (
                     <>
@@ -159,7 +159,7 @@ export function InterviewControlPanel({
                   aria-label={voiceInput.isListening ? '停止录音' : '语音输入'}
                   className={`relative w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-xl transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:outline-none ${
                     voiceInput.isListening
-                      ? 'bg-red-500 hover:bg-red-600 text-white shadow-sm'
+                      ? 'bg-[var(--color-error)] hover:bg-[var(--color-error)]/80 text-white shadow-sm'
                       : voiceInput.isTranscribing
                         ? 'bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-primary)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)]'
                         : 'bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] hover:text-[var(--color-primary)] hover:border-[var(--color-primary)]/30 border border-[var(--color-border)] dark:border-[var(--color-border-dark)] disabled:opacity-50 disabled:cursor-not-allowed'

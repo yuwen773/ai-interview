@@ -295,12 +295,12 @@ function InterviewItemCard({
         <button
           onClick={onDelete}
           disabled={deleting}
-          className="p-2 text-red-700 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2 text-[var(--color-error)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-subtle)] dark:hover:bg-[var(--color-error)]/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           title="删除面试记录"
         >
           {deleting ? (
             <motion.div
-              className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full"
+              className="w-5 h-5 border-2 border-[var(--color-error)] border-t-transparent rounded-full"
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
             />

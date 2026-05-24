@@ -11,7 +11,7 @@ const variants = {
   ghost:
     'text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)]',
   destructive:
-    'bg-red-500 hover:bg-red-600 text-white shadow-sm',
+    'bg-[var(--color-error)] hover:bg-[var(--color-error)]/90 text-white dark:bg-[var(--color-error)] dark:hover:bg-[var(--color-error)]/80 shadow-sm',
   outline:
     'border border-[var(--color-border)] dark:border-[var(--color-border-dark)] text-[var(--color-text)] dark:text-[var(--color-text-dark)] hover:bg-[var(--color-surface-raised)] dark:hover:bg-[var(--color-surface-raised-dark)]',
 } as const;
@@ -35,7 +35,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         className={cn(
           'inline-flex items-center justify-center font-medium transition-all duration-200',
-          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary-400)]',
+          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]',
           'disabled:opacity-50 disabled:pointer-events-none',
           'active:scale-[0.97]',
           variants[variant],

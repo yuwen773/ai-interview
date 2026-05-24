@@ -204,7 +204,7 @@ export default function InterviewChatPanel({
 
           {/* 错误提示 */}
           {error && (
-            <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 px-4 py-3 text-sm text-red-600 dark:text-red-400 space-y-3">
+            <div className="rounded-xl border border-[var(--color-error)]/30 dark:border-[var(--color-error)]/40 bg-[var(--color-error-subtle)] dark:bg-[var(--color-error-subtle-dark)] px-4 py-3 text-sm text-[var(--color-error)] dark:text-[var(--color-error)] space-y-3">
               <p>{error}</p>
               {candidateInputMode === 'voice' && !isRecording && (
                 <div className="flex gap-2 flex-wrap">
@@ -212,7 +212,7 @@ export default function InterviewChatPanel({
                     type="button"
                     onClick={onRetryVoiceAnswer}
                     disabled={isBusy}
-                    className="px-3 py-2 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-200 transition-colors hover:bg-red-200 dark:hover:bg-red-900/60 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-2 rounded-lg bg-[var(--color-error-subtle)] dark:bg-[var(--color-error-subtle-dark)] text-[var(--color-error)] dark:text-[var(--color-error)] transition-colors hover:bg-[var(--color-error)]/20 dark:hover:bg-[var(--color-error)]/30 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     重试语音
                   </button>
@@ -325,7 +325,7 @@ export default function InterviewChatPanel({
                     {isRecording ? (
                       <motion.button
                         onClick={onStopRecording}
-                        className="px-5 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors flex items-center gap-2"
+                        className="px-5 py-3 bg-[var(--color-error)] text-white rounded-xl font-medium hover:bg-[var(--color-error)]/90 transition-colors flex items-center gap-2"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
