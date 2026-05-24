@@ -17,4 +17,7 @@ public interface UserStrongPointRepository extends JpaRepository<UserStrongPoint
 
     /** 根据用户ID和主题查询强项 */
     List<UserStrongPointEntity> findByUserIdAndTopic(String userId, String topic);
+
+    /** 根据用户ID、主题和描述检查强项是否已存在（用于去重） */
+    boolean existsByUserIdAndTopicAndDescription(String userId, String topic, String description);
 }

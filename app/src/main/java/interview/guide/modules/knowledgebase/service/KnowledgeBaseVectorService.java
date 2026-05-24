@@ -170,12 +170,10 @@ public class KnowledgeBaseVectorService {
      * @return
      */
     private String buildKbFilterExpression(List<Long> knowledgeBaseIds) {
-        String values = knowledgeBaseIds.stream()
+        return knowledgeBaseIds.stream()
             .filter(Objects::nonNull)
-            .map(String::valueOf)
-            .map(id -> "'" + id + "'")
-            .collect(Collectors.joining(", "));
-        return "kb_id in [" + values + "]";
+            .map(id -> "kb_id = '" + id + "'")
+            .collect(Collectors.joining(" OR "));
     }
     
     /**

@@ -166,6 +166,10 @@ public class ProfileUpdateService {
         }
 
         for (var strong : extraction.strengths()) {
+            if (strongPointRepo.existsByUserIdAndTopicAndDescription(userId, strong.topic(), strong.description())) {
+                log.debug("Strong point already exists, skipping: {} - {}", strong.topic(), strong.description());
+                continue;
+            }
             UserStrongPointEntity entity = new UserStrongPointEntity();
             entity.setUserId(userId);
             entity.setTopic(strong.topic());
@@ -185,7 +189,7 @@ public class ProfileUpdateService {
         log.info("ADD weak point: {} - {}", op.topic(), op.point());
     }
 
-    /** 更新已有弱项（合并回答摘要，重置SR状态） */
+    /** 更新已有弱项（合并回答摘要，保留 ease_factor，重置 repetitions 和 interval） */
     private void applyWeakUpdate(List<UserWeakPointEntity> existing, ProfileUpdateResult.WeakPointOp op) {
         if (op.index() == null || op.index() < 0 || op.index() >= existing.size()) {
             log.warn("UPDATE index out of bounds: {}", op.index());
@@ -199,9 +203,16 @@ public class ProfileUpdateService {
             entity.setAnswerSummary(op.newAnswerSummary());
         }
         entity.recordSeen();
+        // 保留 ease_factor，只重置 repetitions 和 interval_days，复习积累不丢失
+        Map<String, Object> srState = entity.getSrState();
+        double ef = 2.5;
+        if (srState != null && srState.get("ease_factor") != null) {
+            ef = ((Number) srState.get("ease_factor")).doubleValue();
+        }
         entity.setSrState(SpacedRepetitionService.buildInitialSrState(5.0));
+        entity.getSrState().put("ease_factor", ef);
         weakPointRepo.save(entity);
-        log.info("UPDATE weak point [{}]: {} -> {}", op.index(), oldText, op.newPoint());
+        log.info("UPDATE weak point [{}]: {} -> {} (preserve EF={})", op.index(), oldText, op.newPoint(), ef);
     }
 
     /** 新增强项 */
