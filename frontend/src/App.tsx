@@ -5,6 +5,7 @@ import { historyApi } from './api/history';
 import type { UploadKnowledgeBaseResponse } from './api/knowledgebase';
 import { TaskStatusProvider } from './contexts/TaskStatusContext';
 import { TaskNotification } from './components/TaskNotification';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 
 // Lazy load components
 const UploadPage = lazy(() => import('./pages/UploadPage'));
@@ -185,8 +186,9 @@ function App() {
   return (
     <BrowserRouter>
       <TaskStatusProvider>
-        <Suspense fallback={<Loading />}>
-          <Routes>
+        <ErrorBoundary>
+          <Suspense fallback={<Loading />}>
+            <Routes>
             {/* 着陆页 — 独立路由，不显示侧边栏 */}
             <Route path="/" element={<LandingPage />} />
 
@@ -233,6 +235,7 @@ function App() {
             </Route>
           </Routes>
         </Suspense>
+        </ErrorBoundary>
         <TaskNotification />
       </TaskStatusProvider>
     </BrowserRouter>
