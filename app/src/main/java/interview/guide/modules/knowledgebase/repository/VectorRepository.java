@@ -39,12 +39,11 @@ public class VectorRepository {
         String sql = """
             DELETE FROM vector_store
             WHERE metadata->>'kb_id' = ?
-               OR (metadata->>'kb_id_long' IS NOT NULL AND (metadata->>'kb_id_long')::bigint = ?)
             """;
         
         try {
-            // 第一个参数转为 String 匹配 kb_id，第二个参数保持 Long 匹配 kb_id_long
-            int deletedRows = jdbcTemplate.update(sql, knowledgeBaseId.toString(), knowledgeBaseId);
+            // 只使用 kb_id，参数转为 String 匹配
+            int deletedRows = jdbcTemplate.update(sql, knowledgeBaseId.toString());
             
             if (deletedRows > 0) {
                 log.info("成功删除知识库向量数据: kbId={}, 删除行数={}", knowledgeBaseId, deletedRows);

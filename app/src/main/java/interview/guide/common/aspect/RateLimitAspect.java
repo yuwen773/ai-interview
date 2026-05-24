@@ -90,13 +90,33 @@ public class RateLimitAspect {
                 UUID.randomUUID().toString()               // ARGV[5]: 请求唯一标识
         };
 
-        Object resultObj = script.evalSha(
-                RScript.Mode.READ_WRITE,
-                luaScriptSha,
-                RScript.ReturnType.VALUE,
-                keysList,
-                args
-        );
+        Object resultObj;
+        try {
+            resultObj = script.evalSha(
+                    RScript.Mode.READ_WRITE,
+                    luaScriptSha,
+                    RScript.ReturnType.VALUE,
+                    keysList,
+                    args
+            );
+        } catch (Exception e) {
+            // NOSCRIPT 或脚本缓存失效时，重新 LOAD 脚本并重试
+            if (e.getMessage() != null && e.getMessage().contains("NOSCRIPT")) {
+                log.warn("限流 Lua 脚本缓存失效，重新加载: {}", e.getMessage());
+                RScript newScript = redissonClient.getScript(StringCodec.INSTANCE);
+                this.luaScriptSha = newScript.scriptLoad(LUA_SCRIPT);
+                log.info("限流 Lua 脚本重新加载完成, SHA1: {}", luaScriptSha);
+                resultObj = newScript.evalSha(
+                        RScript.Mode.READ_WRITE,
+                        luaScriptSha,
+                        RScript.ReturnType.VALUE,
+                        keysList,
+                        args
+                );
+            } else {
+                throw e;
+            }
+        }
 
         // 将结果转换为 Long
         Long result = convertToLong(resultObj);

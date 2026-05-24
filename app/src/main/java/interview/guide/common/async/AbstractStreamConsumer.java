@@ -102,13 +102,20 @@ public abstract class AbstractStreamConsumer<T> {
         } catch (Exception e) {
             log.error("{}任务失败: {}, error={}", taskDisplayName(), payloadIdentifier(payload), e.getMessage(), e);
             if (retryCount < AsyncTaskStreamConstants.MAX_RETRY_COUNT) {
-                retryMessage(payload, retryCount + 1);
+                // 先发送重试消息，成功后再 ACK 原始消息
+                // 避免重试消息发送失败时原始消息已被 ACK 而丢失
+                try {
+                    retryMessage(payload, retryCount + 1);
+                    ackMessage(messageId);
+                } catch (Exception retryEx) {
+                    log.error("重试消息发送失败，保留原始消息待后续重试: messageId={}, error={}", messageId, retryEx.getMessage(), retryEx);
+                }
             } else {
                 markFailed(payload, truncateError(
                     taskDisplayName() + "失败(已重试" + retryCount + "次): " + e.getMessage()
                 ));
+                ackMessage(messageId);
             }
-            ackMessage(messageId);
         }
     }
 

@@ -135,6 +135,10 @@ public class EvaluateStreamConsumer extends AbstractStreamConsumer<EvaluateStrea
 
         List<interview.guide.modules.interview.model.InterviewAnswerEntity> answers =
             persistenceService.findAnswersBySessionId(sessionId);
+        if (questions == null) {
+            log.error("会话问题解析失败，无法进行评估: sessionId={}", sessionId);
+            return;
+        }
         for (interview.guide.modules.interview.model.InterviewAnswerEntity answer : answers) {
             int index = answer.getQuestionIndex();
             if (index >= 0 && index < questions.size()) {

@@ -107,6 +107,10 @@ public class ResumeGradingService {
                     log
                 );
                 log.debug("AI响应解析成功: overallScore={}", dto.overallScore());
+            } catch (BusinessException e) {
+                // 保留原始错误码，尤其是临时故障，让调用方可以重试
+                log.error("简历分析AI调用失败: code={}, error={}", e.getCode(), e.getMessage(), e);
+                throw e;
             } catch (Exception e) {
                 log.error("简历分析AI调用失败: {}", e.getMessage(), e);
                 throw new BusinessException(ErrorCode.RESUME_ANALYSIS_FAILED, "简历分析失败：" + e.getMessage());
@@ -118,6 +122,18 @@ public class ResumeGradingService {
             
             return result;
             
+        } catch (BusinessException e) {
+            // 区分临时故障与终态失败：临时故障抛出让调用方重试
+            int codeVal = e.getCode();
+            if (codeVal == ErrorCode.AI_SERVICE_UNAVAILABLE.getCode()
+                    || codeVal == ErrorCode.AI_SERVICE_TIMEOUT.getCode()
+                    || codeVal == ErrorCode.AI_RATE_LIMIT_EXCEEDED.getCode()) {
+                log.warn("简历分析遇到临时故障，需重试: code={}, error={}", codeVal, e.getMessage());
+                throw e; // 临时故障，抛出让调用方重试
+            }
+            // 终态失败（如简历解析错误、AI调用格式错误等），返回错误响应而非掩盖
+            log.error("简历分析终态失败: code={}, error={}", codeVal, e.getMessage(), e);
+            return createErrorResponse(resumeText, e.getMessage());
         } catch (Exception e) {
             log.error("简历分析失败: {}", e.getMessage(), e);
             return createErrorResponse(resumeText, e.getMessage());

@@ -128,6 +128,7 @@ public class ProfileUpdateService {
     public void applyFallback(String userId, ProfileExtractResult extraction, Long sessionId) {
         log.info("Using fallback semantic profile update for user: {}", userId);
         List<UserWeakPointEntity> existingWeak = weakPointRepo.findByUserIdAndIsImprovedFalse(userId);
+        List<UserWeakPointEntity> newlyCreatedEntities = new ArrayList<>();
 
         for (var weak : extraction.weakPoints()) {
             // 先尝试精确匹配
@@ -160,13 +161,25 @@ public class ProfileUpdateService {
                         userId, weak.topic(), weak.question(), weak.answerSummary(), weak.score(), sessionId);
                     weakPointRepo.save(entity);
                     existingWeak.add(entity);
-                    semanticService.storeEmbedding(entity.getId(), weak.question());
+                    newlyCreatedEntities.add(entity);
                 }
             }
         }
 
+        // 批量存储新实体的 embedding，消除 N+1
+        semanticService.batchStoreEmbeddings(newlyCreatedEntities);
+
+        // 按 topic 分组，批量查询已存在的描述，消除 N+1
+        Map<String, Set<String>> existingByTopic = extraction.strengths().stream()
+            .map(ProfileExtractResult.StrengthInsight::topic)
+            .distinct()
+            .collect(java.util.stream.Collectors.toMap(
+                topic -> topic,
+                topic -> new java.util.HashSet<>(strongPointRepo.findDescriptionsByUserIdAndTopic(userId, topic))
+            ));
+
         for (var strong : extraction.strengths()) {
-            if (strongPointRepo.existsByUserIdAndTopicAndDescription(userId, strong.topic(), strong.description())) {
+            if (existingByTopic.getOrDefault(strong.topic(), java.util.Collections.emptySet()).contains(strong.description())) {
                 log.debug("Strong point already exists, skipping: {} - {}", strong.topic(), strong.description());
                 continue;
             }
@@ -209,8 +222,9 @@ public class ProfileUpdateService {
         if (srState != null && srState.get("ease_factor") != null) {
             ef = ((Number) srState.get("ease_factor")).doubleValue();
         }
-        entity.setSrState(SpacedRepetitionService.buildInitialSrState(5.0));
-        entity.getSrState().put("ease_factor", ef);
+        Map<String, Object> newState = SpacedRepetitionService.buildInitialSrState(5.0);
+        newState.put("ease_factor", ef);
+        entity.setSrState(newState);
         weakPointRepo.save(entity);
         log.info("UPDATE weak point [{}]: {} -> {} (preserve EF={})", op.index(), oldText, op.newPoint(), ef);
     }

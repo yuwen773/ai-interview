@@ -53,7 +53,7 @@ public class InterviewSessionService {
             }
         }
 
-        String sessionId = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        String sessionId = UUID.randomUUID().toString().replace("-", "");
 
         log.info("创建新面试会话: {}, 题目数量: {}, resumeId: {}, jobRole: {}",
             sessionId, request.questionCount(), request.resumeId(), request.jobRole());

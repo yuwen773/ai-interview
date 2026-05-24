@@ -16,6 +16,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -84,30 +85,67 @@ public class FileStorageService {
     }
 
     /**
-     * 通用文件上传方法
+     * 通用文件上传方法（带重试机制）
      */
     private String uploadFile(MultipartFile file, String prefix) {
         String originalFilename = file.getOriginalFilename();
         String fileKey = generateFileKey(originalFilename, prefix);
 
-        try {
-            PutObjectRequest putRequest = PutObjectRequest.builder()
-                    .bucket(storageConfig.getBucket())
-                    .key(fileKey)
-                    .contentType(file.getContentType())
-                    .contentLength(file.getSize())
-                    .build();
+        int maxRetries = 3;
+        Exception lastException = null;
 
-            s3Client.putObject(putRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
-            log.info("文件上传成功: {} -> {}", originalFilename, fileKey);
-            return fileKey;
+        // 缓存文件内容，避免 MultipartFile.getInputStream() 只能读取一次的问题
+        byte[] fileBytes;
+        try {
+            fileBytes = file.getBytes();
         } catch (IOException e) {
             log.error("读取上传文件失败: {}", e.getMessage(), e);
             throw new BusinessException(ErrorCode.STORAGE_UPLOAD_FAILED, "文件读取失败");
-        } catch (S3Exception e) {
-            log.error("上传文件到RustFS失败: {}", e.getMessage(), e);
-            throw new BusinessException(ErrorCode.STORAGE_UPLOAD_FAILED, "文件存储失败: " + e.getMessage());
         }
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                PutObjectRequest putRequest = PutObjectRequest.builder()
+                        .bucket(storageConfig.getBucket())
+                        .key(fileKey)
+                        .contentType(file.getContentType())
+                        .contentLength(file.getSize())
+                        .build();
+
+                s3Client.putObject(putRequest, RequestBody.fromInputStream(new ByteArrayInputStream(fileBytes), file.getSize()));
+                log.info("文件上传成功: {} -> {}", originalFilename, fileKey);
+                return fileKey;
+            } catch (IOException e) {
+                lastException = e;
+                log.warn("文件上传失败 (尝试 {}/{}): {}", attempt, maxRetries, e.getMessage());
+                if (attempt == maxRetries) {
+                    log.error("读取上传文件失败: {}", e.getMessage(), e);
+                    throw new BusinessException(ErrorCode.STORAGE_UPLOAD_FAILED, "文件读取失败: " + e.getMessage());
+                }
+            } catch (S3Exception e) {
+                lastException = e;
+                log.warn("S3上传失败 (尝试 {}/{}): {}", attempt, maxRetries, e.getMessage());
+                if (attempt == maxRetries) {
+                    log.error("上传文件到S3失败: {}", e.getMessage(), e);
+                    throw new BusinessException(ErrorCode.STORAGE_UPLOAD_FAILED, "文件存储失败: " + e.getMessage());
+                }
+            }
+
+            // 指数退避: 1s, 2s, 4s
+            if (attempt < maxRetries) {
+                long backoffMs = (long) Math.pow(2, attempt - 1) * 1000;
+                log.info("等待 {}ms 后重试...", backoffMs);
+                try {
+                    Thread.sleep(backoffMs);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new BusinessException(ErrorCode.STORAGE_UPLOAD_FAILED, "上传被中断");
+                }
+            }
+        }
+
+        // 理论上不会走到这里，但为完整性处理
+        throw new BusinessException(ErrorCode.STORAGE_UPLOAD_FAILED, "文件存储失败: " + (lastException != null ? lastException.getMessage() : "未知错误"));
     }
 
     /**

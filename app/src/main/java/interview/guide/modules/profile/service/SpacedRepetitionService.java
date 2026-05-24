@@ -45,9 +45,18 @@ public class SpacedRepetitionService {
         return new Sm2Result(interval, ef, reps, LocalDate.now().plusDays(interval));
     }
 
-    /** 将0-10评分映射到SM-2质量等级（0-5） */
+    /** 将0-10评分映射到SM-2质量等级（0-5）
+     * <p>SM-2质量等级标准：
+     * - 0: 完全忘记
+     * - 1: 错误但改后记住
+     * - 2: 正确但有困难
+     * - 3: 正确且容易
+     * - 4: 完美
+     * - 5: 太简单
+     */
     private int mapScoreToQuality(double score) {
         if (score <= 2) return 0;
+        if (score <= 3) return 1;  // 错误但改后记住
         if (score <= 4) return 2;
         if (score <= 5) return 3;
         if (score <= 7) return 4;

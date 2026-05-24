@@ -76,6 +76,39 @@ public class ProfileSemanticService {
     }
 
     /**
+     * 批量为弱项计算并存储 embedding 向量（解决 N+1 问题）。
+     * 使用 JdbcTemplate.batchUpdate 一次性执行多条 UPDATE。
+     * @return 计算好的 embedding map（key: weakPointId, value: embedding）
+     */
+    public Map<Long, float[]> batchStoreEmbeddings(List<UserWeakPointEntity> weakPoints) {
+        Map<Long, float[]> result = new HashMap<>();
+        if (weakPoints.isEmpty()) return result;
+
+        List<Object[]> batch = weakPoints.stream()
+            .map(wp -> {
+                try {
+                    float[] embedding = computeEmbedding(wp.getQuestionText());
+                    if (embedding == null) return null;
+                    result.put(wp.getId(), embedding);
+                    return new Object[]{serializeFloats(embedding), wp.getId()};
+                } catch (Exception e) {
+                    log.warn("Failed to compute embedding for weak point {}: {}", wp.getId(), e.getMessage());
+                    return null;
+                }
+            })
+            .filter(pair -> pair != null)
+            .toList();
+
+        if (!batch.isEmpty()) {
+            jdbcTemplate.batchUpdate(
+                "UPDATE user_weak_points SET embedding = ? WHERE id = ?",
+                batch
+            );
+        }
+        return result;
+    }
+
+    /**
      * 为弱项计算并存储 embedding 向量。
      */
     public void storeEmbedding(Long weakPointId, String text) {
@@ -131,14 +164,13 @@ public class ProfileSemanticService {
         Map<Long, float[]> embeddingMap = batchLoadEmbeddings(candidates);
 
         // For any missing embeddings, compute lazily
-        for (UserWeakPointEntity candidate : candidates) {
-            if (!embeddingMap.containsKey(candidate.getId())) {
-                float[] emb = computeEmbedding(candidate.getQuestionText());
-                if (emb != null) {
-                    storeEmbedding(candidate.getId(), candidate.getQuestionText());
-                    embeddingMap.put(candidate.getId(), emb);
-                }
-            }
+        List<UserWeakPointEntity> missingEmbeddings = candidates.stream()
+            .filter(wp -> !embeddingMap.containsKey(wp.getId()))
+            .toList();
+
+        if (!missingEmbeddings.isEmpty()) {
+            Map<Long, float[]> computed = batchStoreEmbeddings(missingEmbeddings);
+            embeddingMap.putAll(computed);
         }
 
         UserWeakPointEntity bestMatch = null;

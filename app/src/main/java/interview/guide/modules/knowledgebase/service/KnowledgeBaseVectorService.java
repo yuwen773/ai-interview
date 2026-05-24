@@ -3,7 +3,6 @@ package interview.guide.modules.knowledgebase.service;
 import interview.guide.modules.knowledgebase.repository.VectorRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -27,13 +26,10 @@ public class KnowledgeBaseVectorService {
      */
     private static final int MAX_BATCH_SIZE = 10;
     private final VectorStore vectorStore;
-    private final TextSplitter textSplitter;
     private final VectorRepository vectorRepository;
     public KnowledgeBaseVectorService(VectorStore vectorStore, VectorRepository vectorRepository) {
         this.vectorStore = vectorStore;
         this.vectorRepository = vectorRepository;
-        // 使用TokenTextSplitter，每个chunk约500 tokens，重叠50 tokens
-        this.textSplitter = new TokenTextSplitter();
     }
     /**
      * 将知识库内容向量化并存储
@@ -47,8 +43,8 @@ public class KnowledgeBaseVectorService {
             // 1. 先删除该知识库的旧向量数据
             deleteByKnowledgeBaseId(knowledgeBaseId);
             
-            // 2. 将文本分块
-            List<Document> chunks = textSplitter.apply(
+            // 2. 将文本分块（每次调用创建新实例，避免线程安全问题）
+            List<Document> chunks = new TokenTextSplitter().apply(
                 List.of(new Document(content))
             );
             
@@ -170,10 +166,11 @@ public class KnowledgeBaseVectorService {
      * @return
      */
     private String buildKbFilterExpression(List<Long> knowledgeBaseIds) {
-        return knowledgeBaseIds.stream()
+        String values = knowledgeBaseIds.stream()
             .filter(Objects::nonNull)
-            .map(id -> "kb_id = '" + id + "'")
-            .collect(Collectors.joining(" OR "));
+            .map(String::valueOf)
+            .collect(Collectors.joining(", "));
+        return "kb_id in [" + values + "]";
     }
     
     /**

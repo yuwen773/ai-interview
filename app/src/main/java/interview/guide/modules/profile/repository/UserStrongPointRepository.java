@@ -2,6 +2,7 @@ package interview.guide.modules.profile.repository;
 
 import interview.guide.modules.profile.entity.UserStrongPointEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -20,4 +21,8 @@ public interface UserStrongPointRepository extends JpaRepository<UserStrongPoint
 
     /** 根据用户ID、主题和描述检查强项是否已存在（用于去重） */
     boolean existsByUserIdAndTopicAndDescription(String userId, String topic, String description);
+
+    /** 批量查询用户指定主题下已存在的描述（用于去重） */
+    @Query("SELECT s.description FROM UserStrongPointEntity s WHERE s.userId = :userId AND s.topic = :topic")
+    List<String> findDescriptionsByUserIdAndTopic(String userId, String topic);
 }
