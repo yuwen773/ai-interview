@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Brain, Target, CheckCircle, Clock } from 'lucide-react';
-import { profileApi, type UserProfileDto, type WeakPointDto, type StrongPointDto } from '../api/profile';
+import { ChevronLeft, Brain, Target, CheckCircle, Clock, Lightbulb, Layers3 } from 'lucide-react';
+import {
+  profileApi,
+  type UserProfileDto,
+  type WeakPointDto,
+  type StrongPointDto,
+  type BehaviorSignalDto,
+  type ProfilePatternDto,
+  type ProfileRecommendationDto,
+} from '../api/profile';
 import ScoreTrendChart from '../components/ScoreTrendChart';
 import { getErrorMessage } from '../api/request';
 import { useScrollReveal } from '../hooks/useScrollReveal';
@@ -21,8 +29,31 @@ const STATS_CARDS_META = [
   { icon: <Brain className="w-5 h-5" />, label: '技能覆盖', color: 'text-[var(--color-stats-coverage)]', bg: 'bg-[var(--color-stats-coverage-bg)] dark:bg-[var(--color-stats-coverage-bg-dark)]' },
 ];
 
+const SIGNAL_NAMESPACE_LABELS: Record<string, string> = {
+  communication: '表达沟通',
+  reasoning: '推理分析',
+  narrative: '项目叙事',
+  metacognition: '自我校准',
+};
+
 function getZone(score: number) {
   return MASTERY_ZONES.find(z => score >= z.min) ?? MASTERY_ZONES[MASTERY_ZONES.length - 1];
+}
+
+function getSignalTone(signal: BehaviorSignalDto): string {
+  if (signal.polarity === 'POSITIVE') {
+    return 'bg-[var(--color-success-subtle)] dark:bg-[var(--color-success-subtle-dark)] text-[var(--color-success)]';
+  }
+  if (signal.status === 'IMPROVING' || signal.polarity === 'NEUTRAL') {
+    return 'bg-[var(--color-warning-subtle)] dark:bg-[var(--color-warning-subtle-dark)] text-[var(--color-warning)]';
+  }
+  return 'bg-[var(--color-error-subtle)] dark:bg-[var(--color-error-subtle-dark)] text-[var(--color-error)]';
+}
+
+function getRecommendationTone(priority: number): string {
+  if (priority <= 1) return 'border-[var(--color-error)]/30 bg-[var(--color-error-subtle)] dark:bg-[var(--color-error-subtle-dark)]';
+  if (priority === 2) return 'border-[var(--color-warning)]/30 bg-[var(--color-warning-subtle)] dark:bg-[var(--color-warning-subtle-dark)]';
+  return 'border-[var(--color-border-subtle)] dark:border-[var(--color-border-subtle-dark)] bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)]';
 }
 
 export default function ProfilePage() {
@@ -30,8 +61,13 @@ export default function ProfilePage() {
   const skillsRef = useScrollReveal<HTMLDivElement>();
   const weakPointsRef = useScrollReveal<HTMLDivElement>();
   const [profile, setProfile] = useState<UserProfileDto | null>(null);
-  const [dueReviews, setDueReviews] = useState<WeakPointDto[]>([]);
+  const [activeWeakPoints, setActiveWeakPoints] = useState<WeakPointDto[]>([]);
+  const [dueWeakPoints, setDueWeakPoints] = useState<WeakPointDto[]>([]);
+  const [improvedWeakPoints, setImprovedWeakPoints] = useState<WeakPointDto[]>([]);
   const [strongPoints, setStrongPoints] = useState<StrongPointDto[]>([]);
+  const [behaviorSignals, setBehaviorSignals] = useState<BehaviorSignalDto[]>([]);
+  const [patterns, setPatterns] = useState<ProfilePatternDto[]>([]);
+  const [recommendations, setRecommendations] = useState<ProfileRecommendationDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterTab, setFilterTab] = useState<FilterTab>('weak');
@@ -40,14 +76,34 @@ export default function ProfilePage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [profileData, reviewsData, strongData] = await Promise.all([
+      const [
+        profileData,
+        activeWeakData,
+        dueWeakData,
+        improvedWeakData,
+        strongData,
+        behaviorSignalData,
+        patternData,
+        recommendationData,
+      ] = await Promise.all([
         profileApi.getProfile(),
-        profileApi.getDueReviews(),
+        profileApi.getWeakPoints('default', 'ACTIVE'),
+        profileApi.getWeakPoints('default', 'DUE'),
+        profileApi.getWeakPoints('default', 'IMPROVED'),
         profileApi.getStrongPoints(),
+        profileApi.getBehaviorSignals(),
+        profileApi.getPatterns(),
+        profileApi.getRecommendations(),
       ]);
       setProfile(profileData);
-      setDueReviews(reviewsData);
+      setActiveWeakPoints(activeWeakData);
+      setDueWeakPoints(dueWeakData);
+      setImprovedWeakPoints(improvedWeakData);
       setStrongPoints(strongData);
+      setBehaviorSignals(behaviorSignalData);
+      setPatterns(patternData);
+      setRecommendations(recommendationData);
+      setError(null);
     } catch (e) {
       setError(getErrorMessage(e));
     } finally {
@@ -57,9 +113,19 @@ export default function ProfilePage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const improvedPoints = useMemo(() => dueReviews.filter(w => w.isImproved), [dueReviews]);
-  const weakPoints = useMemo(() => dueReviews.filter(w => !w.isImproved), [dueReviews]);
-  const topics = useMemo(() => [...new Set(dueReviews.map(w => w.topic))].sort(), [dueReviews]);
+  const topics = useMemo(() => [...new Set([
+    ...activeWeakPoints.map(w => w.topic),
+    ...dueWeakPoints.map(w => w.topic),
+    ...improvedWeakPoints.map(w => w.topic),
+    ...strongPoints.map(sp => sp.topic),
+  ])].sort(), [activeWeakPoints, dueWeakPoints, improvedWeakPoints, strongPoints]);
+
+  const groupedBehaviorSignals = useMemo(() => {
+    return behaviorSignals.reduce((acc, signal) => {
+      (acc[signal.namespace] = acc[signal.namespace] || []).push(signal);
+      return acc;
+    }, {} as Record<string, BehaviorSignalDto[]>);
+  }, [behaviorSignals]);
 
   const totalSessions = useMemo(
     () => profile?.topicMasteries.reduce((sum, m) => sum + m.sessionCount, 0) ?? 0,
@@ -176,9 +242,9 @@ export default function ProfilePage() {
         </div>
         <div className="flex gap-4 border-b border-[var(--color-border)] dark:border-[var(--color-border-dark)] mb-4">
           {[
-            { key: 'weak' as FilterTab, label: '弱项', count: weakPoints.filter(w => !topicFilter || w.topic === topicFilter).length },
-            { key: 'due' as FilterTab, label: '待复习', count: dueReviews.filter(w => !topicFilter || w.topic === topicFilter).length },
-            { key: 'improved' as FilterTab, label: '已改善', count: improvedPoints.filter(w => !topicFilter || w.topic === topicFilter).length },
+            { key: 'weak' as FilterTab, label: '弱项', count: activeWeakPoints.filter(w => !topicFilter || w.topic === topicFilter).length },
+            { key: 'due' as FilterTab, label: '待复习', count: dueWeakPoints.filter(w => !topicFilter || w.topic === topicFilter).length },
+            { key: 'improved' as FilterTab, label: '已改善', count: improvedWeakPoints.filter(w => !topicFilter || w.topic === topicFilter).length },
             { key: 'strong' as FilterTab, label: '强项', count: strongPoints.filter(sp => !topicFilter || sp.topic === topicFilter).length },
           ].map(tab => (
             <button
@@ -222,7 +288,7 @@ export default function ProfilePage() {
               ));
             }
 
-            const list = (filterTab === 'weak' ? weakPoints : filterTab === 'due' ? dueReviews : improvedPoints)
+            const list = (filterTab === 'weak' ? activeWeakPoints : filterTab === 'due' ? dueWeakPoints : improvedWeakPoints)
               .filter(w => !topicFilter || w.topic === topicFilter);
 
             if (list.length === 0) {
@@ -260,6 +326,95 @@ export default function ProfilePage() {
               </div>
             ));
           })()}
+        </div>
+      </div>
+
+      {/* Behavior Signals */}
+      <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-2xl p-6 mt-6">
+        <h3 className="font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)] mb-4">表现画像</h3>
+        {behaviorSignals.length === 0 ? (
+          <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] text-center py-8">暂无表现画像，完成一次面试后会自动沉淀</p>
+        ) : (
+          <div className="space-y-5">
+            {Object.entries(groupedBehaviorSignals).map(([namespace, signals]) => (
+              <div key={namespace}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded bg-[var(--color-badge-topic-bg)] dark:bg-[var(--color-badge-topic-bg-dark)] text-[var(--color-badge-topic)]">
+                    {SIGNAL_NAMESPACE_LABELS[namespace] ?? namespace}
+                  </span>
+                  <span className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">{signals.length} 条</span>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {signals.map(signal => (
+                    <div key={signal.id} className="p-4 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] rounded-xl border border-[var(--color-border-subtle)] dark:border-[var(--color-border-subtle-dark)]">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded ${getSignalTone(signal)}`}>{signal.status}</span>
+                        <span className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">已见{signal.timesSeen}次</span>
+                      </div>
+                      <p className="text-sm text-[var(--color-text)] dark:text-[var(--color-text-dark)] leading-relaxed">{signal.statement}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Patterns and Recommendations */}
+      <div className="grid md:grid-cols-2 gap-6 mt-6">
+        <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-2xl p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Layers3 className="w-4 h-4 text-[var(--color-primary)]" />
+            <h3 className="font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">长期模式</h3>
+          </div>
+          {patterns.length === 0 ? (
+            <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] text-center py-8">暂无长期模式</p>
+          ) : (
+            <div className="space-y-3">
+              {patterns.map(pattern => (
+                <div key={pattern.id} className="p-4 bg-[var(--color-surface-raised)] dark:bg-[var(--color-surface-raised-dark)] rounded-xl border border-[var(--color-border-subtle)] dark:border-[var(--color-border-subtle-dark)]">
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <h4 className="text-sm font-medium text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{pattern.title}</h4>
+                    <span className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">{Math.round(pattern.confidence * 100)}%</span>
+                  </div>
+                  <p className="text-xs leading-relaxed text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">{pattern.summary}</p>
+                  {pattern.relatedTopics.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {pattern.relatedTopics.map(topic => (
+                        <span key={topic} className="text-xs px-2 py-0.5 rounded bg-[var(--color-badge-topic-bg)] dark:bg-[var(--color-badge-topic-bg-dark)] text-[var(--color-badge-topic)]">{topic}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-border)] dark:border-[var(--color-border-dark)] rounded-2xl p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Lightbulb className="w-4 h-4 text-[var(--color-primary)]" />
+            <h3 className="font-semibold text-[var(--color-text)] dark:text-[var(--color-text-dark)]">推荐行动</h3>
+          </div>
+          {recommendations.length === 0 ? (
+            <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] text-center py-8">暂无推荐行动</p>
+          ) : (
+            <div className="space-y-3">
+              {recommendations.map((recommendation, index) => (
+                <div key={`${recommendation.type}-${recommendation.title}-${index}`} className={`p-4 rounded-xl border ${getRecommendationTone(recommendation.priority)}`}>
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <h4 className="text-sm font-medium text-[var(--color-text)] dark:text-[var(--color-text-dark)]">{recommendation.title}</h4>
+                    <span className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">P{recommendation.priority}</span>
+                  </div>
+                  <p className="text-xs leading-relaxed text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">{recommendation.reason}</p>
+                  {recommendation.topic && (
+                    <span className="inline-flex mt-3 text-xs px-2 py-0.5 rounded bg-[var(--color-badge-topic-bg)] dark:bg-[var(--color-badge-topic-bg-dark)] text-[var(--color-badge-topic)]">{recommendation.topic}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
