@@ -19,6 +19,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -142,8 +143,17 @@ public class QwenAsrService {
             Consumer<String> onFinal,
             Consumer<String> onPartial,
             Consumer<Throwable> onError) {
+        startTranscription(sessionId, onFinal, onPartial, null, onError);
+    }
+
+    public void startTranscription(
+            String sessionId,
+            Consumer<String> onFinal,
+            Consumer<String> onPartial,
+            Runnable onReady,
+            Consumer<Throwable> onError) {
         synchronized (lockForSession(sessionId)) {
-            startTranscriptionLocked(sessionId, onFinal, onPartial, onError);
+            startTranscriptionLocked(sessionId, onFinal, onPartial, onReady, onError);
         }
     }
 
@@ -154,6 +164,7 @@ public class QwenAsrService {
             String sessionId,
             Consumer<String> onFinal,
             Consumer<String> onPartial,
+            Runnable onReady,
             Consumer<Throwable> onError) {
         synchronized (lockForSession(sessionId)) {
             log.info("[Session: {}] Restarting DashScope ASR (stop + start)", sessionId);
@@ -163,7 +174,7 @@ public class QwenAsrService {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-            startTranscriptionLocked(sessionId, onFinal, onPartial, onError);
+            startTranscriptionLocked(sessionId, onFinal, onPartial, onReady, onError);
 
             // Verify reconnection succeeded
             for (int attempt = 0; attempt < 10; attempt++) {
@@ -189,6 +200,7 @@ public class QwenAsrService {
             String sessionId,
             Consumer<String> onFinal,
             Consumer<String> onPartial,
+            Runnable onReady,
             Consumer<Throwable> onError) {
         if (sessions.containsKey(sessionId)) {
             throw new IllegalStateException("Session already exists: " + sessionId);
@@ -260,6 +272,15 @@ public class QwenAsrService {
 
                     // Update session with configuration
                     conversation.updateSession(config);
+                    AsrSession asrSession = sessions.get(sessionId);
+                    if (asrSession == null || asrSession.getConversation() != conversation) {
+                        log.debug("[Session: {}] Ignoring stale ASR connection ready callback", sessionId);
+                        return;
+                    }
+                    asrSession.markReady();
+                    if (onReady != null) {
+                        onReady.run();
+                    }
 
                     log.info("[Session: {}] Transcription session started successfully", sessionId);
 
@@ -559,6 +580,7 @@ public class QwenAsrService {
         private final Consumer<String> onFinal;
         private final Consumer<String> onPartial;
         private final Consumer<Throwable> onError;
+        private final CountDownLatch readyLatch = new CountDownLatch(1);
 
         AsrSession(
                 OmniRealtimeConversation conversation,
@@ -578,6 +600,19 @@ public class QwenAsrService {
         public Consumer<Throwable> getOnError() {
             return onError;
         }
+
+        void markReady() {
+            readyLatch.countDown();
+        }
+
+        boolean isReady() {
+            return readyLatch.getCount() == 0;
+        }
+    }
+
+    public boolean isReady(String sessionId) {
+        AsrSession session = sessions.get(sessionId);
+        return session != null && session.isReady();
     }
 
     // Setter methods for configuration (used by Spring @Value injection or tests)

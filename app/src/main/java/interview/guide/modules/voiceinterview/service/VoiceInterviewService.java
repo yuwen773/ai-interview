@@ -262,6 +262,24 @@ public class VoiceInterviewService {
         log.info("Deleted voice interview session: {}", sessionId);
     }
 
+    public int cleanupStaleSessions() {
+        try {
+            LocalDateTime threshold = LocalDateTime.now().minusMinutes(30);
+            List<VoiceInterviewSessionEntity> staleSessions = sessionRepository
+                .findByStatusAndUpdatedAtBefore(VoiceInterviewSessionStatus.IN_PROGRESS, threshold);
+            for (VoiceInterviewSessionEntity session : staleSessions) {
+                session.setStatus(VoiceInterviewSessionStatus.PAUSED);
+                session.setPausedAt(LocalDateTime.now());
+                sessionRepository.save(session);
+                invalidateSessionCache(session.getId());
+            }
+            return staleSessions.size();
+        } catch (Exception e) {
+            log.error("Error cleaning up stale sessions", e);
+            return 0;
+        }
+    }
+
     private VoiceInterviewSessionEntity.InterviewPhase determineFirstPhase(CreateSessionRequest request) {
         if (request.getIntroEnabled() != null && request.getIntroEnabled()) return VoiceInterviewSessionEntity.InterviewPhase.INTRO;
         if (request.getTechEnabled() != null && request.getTechEnabled()) return VoiceInterviewSessionEntity.InterviewPhase.TECH;

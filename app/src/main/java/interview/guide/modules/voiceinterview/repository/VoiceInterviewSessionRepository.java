@@ -5,6 +5,7 @@ import interview.guide.modules.voiceinterview.model.VoiceInterviewSessionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,4 +14,5 @@ public interface VoiceInterviewSessionRepository extends JpaRepository<VoiceInte
     List<VoiceInterviewSessionEntity> findByUserIdOrderByCreatedAtDesc(String userId);
     List<VoiceInterviewSessionEntity> findByUserIdAndStatusOrderByCreatedAtDesc(String userId, VoiceInterviewSessionStatus status);
     Optional<VoiceInterviewSessionEntity> findByIdAndUserId(Long id, String userId);
+    List<VoiceInterviewSessionEntity> findByStatusAndUpdatedAtBefore(VoiceInterviewSessionStatus status, LocalDateTime threshold);
 }
