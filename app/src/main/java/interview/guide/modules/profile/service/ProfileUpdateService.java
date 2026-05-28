@@ -130,7 +130,7 @@ public class ProfileUpdateService {
         List<UserWeakPointEntity> existingWeak = weakPointRepo.findByUserIdAndIsImprovedFalse(userId);
         List<UserWeakPointEntity> newlyCreatedEntities = new ArrayList<>();
 
-        for (var weak : extraction.weakPoints()) {
+        for (var weak : safeList(extraction.weakPoints())) {
             // 先尝试精确匹配
             UserWeakPointEntity exactMatch = null;
             for (UserWeakPointEntity e : existingWeak) {
@@ -170,7 +170,7 @@ public class ProfileUpdateService {
         semanticService.batchStoreEmbeddings(newlyCreatedEntities);
 
         // 按 topic 分组，批量查询已存在的描述，消除 N+1
-        Map<String, Set<String>> existingByTopic = extraction.strengths().stream()
+        Map<String, Set<String>> existingByTopic = safeList(extraction.strengths()).stream()
             .map(ProfileExtractResult.StrengthInsight::topic)
             .distinct()
             .collect(java.util.stream.Collectors.toMap(
@@ -178,7 +178,7 @@ public class ProfileUpdateService {
                 topic -> new java.util.HashSet<>(strongPointRepo.findDescriptionsByUserIdAndTopic(userId, topic))
             ));
 
-        for (var strong : extraction.strengths()) {
+        for (var strong : safeList(extraction.strengths())) {
             if (existingByTopic.getOrDefault(strong.topic(), java.util.Collections.emptySet()).contains(strong.description())) {
                 log.debug("Strong point already exists, skipping: {} - {}", strong.topic(), strong.description());
                 continue;
@@ -280,5 +280,9 @@ public class ProfileUpdateService {
             sb.append("- [").append(sp.topic()).append("] ").append(sp.description()).append("\n");
         }
         return sb.toString();
+    }
+
+    private static <T> List<T> safeList(List<T> items) {
+        return items != null ? items : List.of();
     }
 }

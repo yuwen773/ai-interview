@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * 画像更新编排服务
  * Mem0 式画像更新：两阶段流水线（提取 + 更新），从面试会话中提取弱项和强项并更新用户画像
@@ -20,14 +22,17 @@ public class ProfileMemoryService {
     private final InterviewSessionRepository sessionRepo;
     private final ProfileExtractService extractService;
     private final ProfileUpdateService updateService;
+    private final BehaviorSignalService behaviorSignalService;
 
     public ProfileMemoryService(
             InterviewSessionRepository sessionRepo,
             ProfileExtractService extractService,
-            ProfileUpdateService updateService) {
+            ProfileUpdateService updateService,
+            BehaviorSignalService behaviorSignalService) {
         this.sessionRepo = sessionRepo;
         this.extractService = extractService;
         this.updateService = updateService;
+        this.behaviorSignalService = behaviorSignalService;
     }
 
     /**
@@ -48,15 +53,17 @@ public class ProfileMemoryService {
         ProfileExtractResult extraction;
         try {
             extraction = extractService.extractFromSession(numericSessionId, userId);
-            log.info("Stage 1 Extract complete: {} weak points, {} strong points",
-                extraction.weakPoints().size(), extraction.strengths().size());
+            log.info("Stage 1 Extract complete: {} weak points, {} strong points, {} behavior signals",
+                sizeOf(extraction.weakPoints()), sizeOf(extraction.strengths()), sizeOf(extraction.behaviorSignals()));
         } catch (Exception e) {
             log.error("Stage 1 Extract failed: {}", e.getMessage(), e);
             return;
         }
 
-        if ((extraction.weakPoints() == null || extraction.weakPoints().isEmpty())
-            && (extraction.strengths() == null || extraction.strengths().isEmpty())) {
+        boolean noWeak = extraction.weakPoints() == null || extraction.weakPoints().isEmpty();
+        boolean noStrong = extraction.strengths() == null || extraction.strengths().isEmpty();
+        boolean noSignals = extraction.behaviorSignals() == null || extraction.behaviorSignals().isEmpty();
+        if (noWeak && noStrong && noSignals) {
             log.info("No insights extracted, skipping update");
             return;
         }
@@ -72,6 +79,17 @@ public class ProfileMemoryService {
             updateService.applyFallback(userId, extraction, numericSessionId);
         }
 
+        try {
+            int signalCount = behaviorSignalService.applyInsights(
+                userId,
+                extraction.behaviorSignals() != null ? extraction.behaviorSignals() : List.of(),
+                numericSessionId
+            );
+            log.info("Behavior signal update complete: {} signals", signalCount);
+        } catch (Exception e) {
+            log.warn("Behavior signal update failed, weak/strong profile already applied: {}", e.getMessage(), e);
+        }
+
         log.info("Mem0 profile update complete: sessionId={}", sessionId);
     }
 
@@ -80,5 +98,9 @@ public class ProfileMemoryService {
         return sessionRepo.findBySessionId(sessionId)
             .map(InterviewSessionEntity::getId)
             .orElse(null);
+    }
+
+    private static int sizeOf(List<?> items) {
+        return items != null ? items.size() : 0;
     }
 }

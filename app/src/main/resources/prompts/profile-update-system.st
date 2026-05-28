@@ -15,6 +15,8 @@
 
 # 决策规则
 
+表现信号 behaviorSignals 由系统确定性合并，不需要在本阶段输出更新操作。
+
 对每个新弱项，输出一个操作：
 - ADD: 全新发现，没有语义相似的已有弱项。需提供 point、topic、answerSummary、score。
 - UPDATE: 和已有弱项[index]描述同一知识盲区，合并为更准确的描述。需提供 index、newPoint、newAnswerSummary。
