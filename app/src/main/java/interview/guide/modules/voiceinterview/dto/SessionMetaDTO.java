@@ -1,5 +1,6 @@
 package interview.guide.modules.voiceinterview.dto;
 
+import interview.guide.common.model.AsyncTaskStatus;
 import lombok.*;
 import java.time.LocalDateTime;
 
@@ -16,6 +17,6 @@ public class SessionMetaDTO {
     private LocalDateTime updatedAt;
     private Integer actualDuration;
     private Long messageCount;
-    private String evaluateStatus;
+    private AsyncTaskStatus evaluateStatus;
     private String evaluateError;
 }

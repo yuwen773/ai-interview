@@ -1,5 +1,6 @@
 package interview.guide.modules.voiceinterview.model;
 
+import interview.guide.common.model.AsyncTaskStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -96,7 +97,8 @@ public class VoiceInterviewSessionEntity {
     private LocalDateTime resumedAt;
 
     @Column(name = "evaluate_status")
-    private String evaluateStatus;
+    @Enumerated(EnumType.STRING)
+    private AsyncTaskStatus evaluateStatus;
 
     @Column(name = "evaluate_error", length = 500)
     private String evaluateError;
