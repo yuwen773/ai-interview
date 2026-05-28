@@ -3,6 +3,7 @@ package interview.guide.modules.profile.controller;
 import interview.guide.common.result.Result;
 import interview.guide.modules.profile.model.WeakPointStatus;
 import interview.guide.modules.profile.model.dto.*;
+import interview.guide.modules.profile.service.BehaviorSignalService;
 import interview.guide.modules.profile.service.ProfileExtractService;
 import interview.guide.modules.profile.service.UserProfileService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class ProfileController {
 
     private final UserProfileService profileService;
     private final ProfileExtractService extractService;
+    private final BehaviorSignalService behaviorSignalService;
 
     /**
      * 获取用户画像
@@ -53,6 +55,14 @@ public class ProfileController {
             @RequestParam(defaultValue = "ACTIVE") WeakPointStatus status,
             @RequestParam(required = false) String topic) {
         return Result.success(profileService.getWeakPointDtos(userId, status, topic));
+    }
+
+    @GetMapping("/behavior-signals")
+    public Result<List<BehaviorSignalDto>> getBehaviorSignals(
+            @RequestParam(defaultValue = "default") String userId,
+            @RequestParam(required = false) String namespace,
+            @RequestParam(required = false) String status) {
+        return Result.success(behaviorSignalService.getSignals(userId, namespace, status));
     }
 
     /**
