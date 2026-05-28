@@ -10,6 +10,7 @@ import interview.guide.modules.interview.model.InterviewQuestionDTO;
 import interview.guide.modules.interview.model.InterviewReportDTO;
 import interview.guide.modules.interview.model.InterviewSessionDTO;
 import interview.guide.modules.interview.model.JobRole;
+import interview.guide.modules.interview.model.TrainingContext;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -21,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -37,6 +40,7 @@ class InterviewSessionServiceTest {
         InterviewPersistenceService persistenceService = mock(InterviewPersistenceService.class);
         InterviewSessionCache sessionCache = mock(InterviewSessionCache.class);
         EvaluateStreamProducer evaluateStreamProducer = mock(EvaluateStreamProducer.class);
+        TrainingContextService trainingContextService = mock(TrainingContextService.class);
         ObjectMapper objectMapper = new ObjectMapper();
         InterviewSessionService service = new InterviewSessionService(
             questionService,
@@ -44,7 +48,8 @@ class InterviewSessionServiceTest {
             persistenceService,
             sessionCache,
             objectMapper,
-            evaluateStreamProducer
+            evaluateStreamProducer,
+            trainingContextService
         );
 
         InterviewSessionCache.CachedSession cachedSession = new InterviewSessionCache.CachedSession(
@@ -77,6 +82,7 @@ class InterviewSessionServiceTest {
         InterviewPersistenceService persistenceService = mock(InterviewPersistenceService.class);
         InterviewSessionCache sessionCache = mock(InterviewSessionCache.class);
         EvaluateStreamProducer evaluateStreamProducer = mock(EvaluateStreamProducer.class);
+        TrainingContextService trainingContextService = mock(TrainingContextService.class);
         ObjectMapper objectMapper = new ObjectMapper();
         InterviewSessionService service = new InterviewSessionService(
             questionService,
@@ -84,7 +90,8 @@ class InterviewSessionServiceTest {
             persistenceService,
             sessionCache,
             objectMapper,
-            evaluateStreamProducer
+            evaluateStreamProducer,
+            trainingContextService
         );
 
         InterviewSessionCache.CachedSession cachedSession = new InterviewSessionCache.CachedSession(
@@ -109,7 +116,75 @@ class InterviewSessionServiceTest {
         assertEquals(JobRole.JAVA_BACKEND, dto.jobRole());
         assertEquals("Java 后端", dto.jobLabel());
         verify(questionService, never()).generateQuestions(any(), any(), anyInt(), any());
+        verify(questionService, never()).generateQuestionsWithContext(any(), any(), anyInt(), any(), any());
+        verify(trainingContextService, never()).buildForInterview(any(), any(), any());
         verify(persistenceService, never()).saveSession(any(), any(), any(), any(), anyInt(), any());
+    }
+
+    @Test
+    @DisplayName("创建新会话时应带训练上下文生成题目")
+    void shouldGenerateQuestionsWithTrainingContextWhenCreatingSession() {
+        InterviewQuestionService questionService = mock(InterviewQuestionService.class);
+        AnswerEvaluationService evaluationService = mock(AnswerEvaluationService.class);
+        InterviewPersistenceService persistenceService = mock(InterviewPersistenceService.class);
+        InterviewSessionCache sessionCache = mock(InterviewSessionCache.class);
+        EvaluateStreamProducer evaluateStreamProducer = mock(EvaluateStreamProducer.class);
+        TrainingContextService trainingContextService = mock(TrainingContextService.class);
+        ObjectMapper objectMapper = new ObjectMapper();
+        InterviewSessionService service = new InterviewSessionService(
+            questionService,
+            evaluationService,
+            persistenceService,
+            sessionCache,
+            objectMapper,
+            evaluateStreamProducer,
+            trainingContextService
+        );
+        List<String> historicalQuestions = List.of("历史问题");
+        TrainingContext context = new TrainingContext(
+            List.of("- [弱项] Redis: 缓存一致性"),
+            List.of(),
+            List.of(),
+            List.of(),
+            List.of()
+        );
+        List<InterviewQuestionDTO> questions = List.of(
+            InterviewQuestionDTO.create(0, "介绍项目", InterviewQuestionDTO.QuestionType.PROJECT, "项目经历")
+        );
+        when(sessionCache.findUnfinishedSessionId(1L)).thenReturn(Optional.empty());
+        when(persistenceService.getHistoricalQuestionsByResumeId(1L)).thenReturn(historicalQuestions);
+        when(trainingContextService.buildForInterview("default", JobRole.JAVA_BACKEND, 1L)).thenReturn(context);
+        when(questionService.generateQuestionsWithContext(
+            eq(JobRole.JAVA_BACKEND),
+            eq("resume-text"),
+            eq(3),
+            same(historicalQuestions),
+            same(context)
+        )).thenReturn(questions);
+
+        InterviewSessionDTO dto = service.createSession(
+            new CreateInterviewRequest("resume-text", 3, 1L, JobRole.JAVA_BACKEND, false)
+        );
+
+        assertEquals(1, dto.totalQuestions());
+        verify(trainingContextService).buildForInterview("default", JobRole.JAVA_BACKEND, 1L);
+        verify(questionService).generateQuestionsWithContext(
+            eq(JobRole.JAVA_BACKEND),
+            eq("resume-text"),
+            eq(3),
+            same(historicalQuestions),
+            same(context)
+        );
+        verify(sessionCache).saveSession(
+            any(),
+            eq("resume-text"),
+            eq(1L),
+            eq(JobRole.JAVA_BACKEND),
+            eq("Java 后端"),
+            same(questions),
+            eq(0),
+            eq(InterviewSessionDTO.SessionStatus.CREATED)
+        );
     }
 
     @Test
@@ -120,6 +195,7 @@ class InterviewSessionServiceTest {
         InterviewPersistenceService persistenceService = mock(InterviewPersistenceService.class);
         InterviewSessionCache sessionCache = mock(InterviewSessionCache.class);
         EvaluateStreamProducer evaluateStreamProducer = mock(EvaluateStreamProducer.class);
+        TrainingContextService trainingContextService = mock(TrainingContextService.class);
         ObjectMapper objectMapper = new ObjectMapper();
         InterviewSessionService service = new InterviewSessionService(
             questionService,
@@ -127,7 +203,8 @@ class InterviewSessionServiceTest {
             persistenceService,
             sessionCache,
             objectMapper,
-            evaluateStreamProducer
+            evaluateStreamProducer,
+            trainingContextService
         );
 
         InterviewSessionCache.CachedSession cachedSession = new InterviewSessionCache.CachedSession(
@@ -174,6 +251,7 @@ class InterviewSessionServiceTest {
         InterviewPersistenceService persistenceService = mock(InterviewPersistenceService.class);
         InterviewSessionCache sessionCache = mock(InterviewSessionCache.class);
         EvaluateStreamProducer evaluateStreamProducer = mock(EvaluateStreamProducer.class);
+        TrainingContextService trainingContextService = mock(TrainingContextService.class);
         ObjectMapper objectMapper = new ObjectMapper();
         InterviewSessionService service = new InterviewSessionService(
             questionService,
@@ -181,7 +259,8 @@ class InterviewSessionServiceTest {
             persistenceService,
             sessionCache,
             objectMapper,
-            evaluateStreamProducer
+            evaluateStreamProducer,
+            trainingContextService
         );
 
         List<InterviewQuestionDTO> questions = List.of(
@@ -230,6 +309,7 @@ class InterviewSessionServiceTest {
         InterviewPersistenceService persistenceService = mock(InterviewPersistenceService.class);
         InterviewSessionCache sessionCache = mock(InterviewSessionCache.class);
         EvaluateStreamProducer evaluateStreamProducer = mock(EvaluateStreamProducer.class);
+        TrainingContextService trainingContextService = mock(TrainingContextService.class);
         ObjectMapper objectMapper = new ObjectMapper();
         InterviewSessionService service = new InterviewSessionService(
             questionService,
@@ -237,7 +317,8 @@ class InterviewSessionServiceTest {
             persistenceService,
             sessionCache,
             objectMapper,
-            evaluateStreamProducer
+            evaluateStreamProducer,
+            trainingContextService
         );
 
         InterviewSessionCache.CachedSession cachedSession = new InterviewSessionCache.CachedSession(
@@ -284,6 +365,7 @@ class InterviewSessionServiceTest {
         InterviewPersistenceService persistenceService = mock(InterviewPersistenceService.class);
         InterviewSessionCache sessionCache = mock(InterviewSessionCache.class);
         EvaluateStreamProducer evaluateStreamProducer = mock(EvaluateStreamProducer.class);
+        TrainingContextService trainingContextService = mock(TrainingContextService.class);
         ObjectMapper objectMapper = new ObjectMapper();
         InterviewSessionService service = new InterviewSessionService(
             questionService,
@@ -291,7 +373,8 @@ class InterviewSessionServiceTest {
             persistenceService,
             sessionCache,
             objectMapper,
-            evaluateStreamProducer
+            evaluateStreamProducer,
+            trainingContextService
         );
 
         InterviewSessionCache.CachedSession cachedSession = new InterviewSessionCache.CachedSession(
