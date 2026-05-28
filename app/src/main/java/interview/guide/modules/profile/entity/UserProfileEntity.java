@@ -25,6 +25,9 @@ public class UserProfileEntity {
     @Column(name = "target_role", length = 128)
     private String targetRole;
 
+    @Column(name = "last_consolidated_at")
+    private LocalDateTime lastConsolidatedAt;
+
     // 最后更新时间（自动更新）
     @UpdateTimestamp
     @Column(name = "updated_at")
@@ -53,6 +56,14 @@ public class UserProfileEntity {
 
     public void setTargetRole(String targetRole) {
         this.targetRole = targetRole;
+    }
+
+    public LocalDateTime getLastConsolidatedAt() {
+        return lastConsolidatedAt;
+    }
+
+    public void setLastConsolidatedAt(LocalDateTime lastConsolidatedAt) {
+        this.lastConsolidatedAt = lastConsolidatedAt;
     }
 
     public LocalDateTime getUpdatedAt() {
