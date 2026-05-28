@@ -38,15 +38,15 @@ public class UserProfilePatternEntity {
     private String summary;
 
     @Type(JsonType.class)
-    @Column(name = "related_topics", nullable = false, columnDefinition = "jsonb")
+    @Column(name = "related_topics", nullable = false, columnDefinition = "JSONB")
     private List<String> relatedTopics = new ArrayList<>();
 
     @Type(JsonType.class)
-    @Column(name = "related_signal_ids", nullable = false, columnDefinition = "jsonb")
+    @Column(name = "related_signal_ids", nullable = false, columnDefinition = "JSONB")
     private List<Long> relatedSignalIds = new ArrayList<>();
 
     @Type(JsonType.class)
-    @Column(name = "evidence_json", nullable = false, columnDefinition = "jsonb")
+    @Column(name = "evidence_json", nullable = false, columnDefinition = "JSONB")
     private List<Map<String, Object>> evidenceJson = new ArrayList<>();
 
     @Column(name = "confidence", precision = 4, scale = 3)

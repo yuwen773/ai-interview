@@ -260,6 +260,10 @@ public class LlmProviderConfigService {
     }
 
     private String decryptApiKey(LlmProviderEntity provider) {
+        if (provider.getApiKeyNonce() == null || provider.getApiKeyNonce().isBlank()
+            || provider.getApiKeyCiphertext() == null || provider.getApiKeyCiphertext().isBlank()) {
+            return "";
+        }
         return encryptionService.decrypt(provider.getApiKeyNonce(), provider.getApiKeyCiphertext());
     }
 

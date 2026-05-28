@@ -58,6 +58,7 @@ public class AsrService {
 
             DashScopeAudioTranscriptionOptions transcriptionOptions = DashScopeAudioTranscriptionOptions.builder()
                     .model(DashScopeModel.AudioModel.PARAFORMER_V1.getValue())
+                    .format(format)
                     .languageHints(List.of("zh", "en"))
                     .disfluencyRemovalEnabled(false)
                     .punctuationPredictionEnabled(true)

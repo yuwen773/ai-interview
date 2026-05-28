@@ -47,7 +47,7 @@ public class UserBehaviorSignalEntity {
     private String statement;
 
     @Type(JsonType.class)
-    @Column(name = "evidence_json", nullable = false, columnDefinition = "jsonb")
+    @Column(name = "evidence_json", nullable = false, columnDefinition = "JSONB")
     private List<Map<String, Object>> evidenceJson = new ArrayList<>();
 
     @Column(name = "source_type", length = 32)

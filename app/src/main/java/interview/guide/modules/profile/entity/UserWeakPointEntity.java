@@ -55,9 +55,9 @@ public class UserWeakPointEntity {
     @Column(name = "session_id")
     private Long sessionId;
 
-    // SM-2间隔重复状态（JSONB：interval_days, ease_factor, repetitions, next_review, last_score）
+    // SM-2间隔重复状态（JSON：interval_days, ease_factor, repetitions, next_review, last_score）
     @Type(JsonType.class)
-    @Column(name = "sr_state", columnDefinition = "jsonb")
+    @Column(name = "sr_state", columnDefinition = "JSONB")
     private Map<String, Object> srState = new HashMap<>(Map.of(
         "interval_days", 1,
         "ease_factor", 2.5,
@@ -66,9 +66,9 @@ public class UserWeakPointEntity {
         "last_score", 0
     ));
 
-    // 操作历史记录（JSONB数组，记录每次状态变更）
+    // 操作历史记录（JSON数组，记录每次状态变更）
     @Type(JsonType.class)
-    @Column(name = "history", columnDefinition = "jsonb")
+    @Column(name = "history", columnDefinition = "JSONB")
     private List<Map<String, String>> history = new ArrayList<>();
 
     // 是否已改善

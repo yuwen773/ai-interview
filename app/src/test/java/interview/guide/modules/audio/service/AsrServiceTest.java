@@ -2,15 +2,13 @@ package interview.guide.modules.audio.service;
 
 import com.alibaba.cloud.ai.dashscope.audio.transcription.DashScopeAudioTranscriptionModel;
 import com.alibaba.cloud.ai.dashscope.audio.transcription.DashScopeAudioTranscriptionOptions;
-import com.alibaba.cloud.ai.dashscope.audio.transcription.RecognitionResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.ai.audio.transcription.AudioTranscription;
+import org.springframework.ai.audio.transcription.AudioTranscriptionPrompt;
+import org.springframework.ai.audio.transcription.AudioTranscriptionResponse;
 import org.springframework.mock.web.MockMultipartFile;
-import reactor.core.publisher.Flux;
-
-import java.nio.ByteBuffer;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,38 +20,29 @@ import static org.mockito.Mockito.when;
 class AsrServiceTest {
 
     @Test
-    @DisplayName("转录时应返回最后一段非空识别结果")
-    void shouldReturnLatestRecognitionText() {
+    @DisplayName("转录时应返回模型识别结果")
+    void shouldReturnRecognitionText() {
         DashScopeAudioTranscriptionModel model = mock(DashScopeAudioTranscriptionModel.class);
-        RecognitionResult partial = mock(RecognitionResult.class);
-        RecognitionResult completed = mock(RecognitionResult.class);
-        when(partial.getText()).thenReturn("识别");
-        when(completed.getText()).thenReturn("识别结果");
-        when(model.streamRecognition(any(), any(DashScopeAudioTranscriptionOptions.class)))
-                .thenReturn(Flux.just(partial, completed));
+        when(model.call(any(AudioTranscriptionPrompt.class)))
+            .thenReturn(new AudioTranscriptionResponse(new AudioTranscription("识别结果")));
         AsrService asrService = new AsrService(model, mock(VoiceMetrics.class));
         MockMultipartFile file = new MockMultipartFile("file", "speech.wav", "audio/wav", new byte[] {1, 2, 3});
 
         String result = asrService.transcribe(file);
 
         assertEquals("识别结果", result);
-        ArgumentCaptor<Flux<ByteBuffer>> audioCaptor = ArgumentCaptor.forClass(Flux.class);
-        ArgumentCaptor<DashScopeAudioTranscriptionOptions> optionsCaptor =
-                ArgumentCaptor.forClass(DashScopeAudioTranscriptionOptions.class);
-        verify(model).streamRecognition(audioCaptor.capture(), optionsCaptor.capture());
-        List<ByteBuffer> frames = audioCaptor.getValue().collectList().block();
-        assertEquals(1, frames == null ? 0 : frames.size());
-        assertEquals("wav", optionsCaptor.getValue().getFormat());
+        ArgumentCaptor<AudioTranscriptionPrompt> promptCaptor =
+            ArgumentCaptor.forClass(AudioTranscriptionPrompt.class);
+        verify(model).call(promptCaptor.capture());
+        assertEquals("wav", ((DashScopeAudioTranscriptionOptions) promptCaptor.getValue().getOptions()).getFormat());
     }
 
     @Test
-    @DisplayName("浏览器 webm opus 录音应映射为 opus 格式")
-    void shouldMapBrowserWebmOpusToOpusFormat() {
+    @DisplayName("浏览器 webm opus 录音应映射为 webm 格式")
+    void shouldMapBrowserWebmOpusToWebmFormat() {
         DashScopeAudioTranscriptionModel model = mock(DashScopeAudioTranscriptionModel.class);
-        RecognitionResult response = mock(RecognitionResult.class);
-        when(response.getText()).thenReturn("测试");
-        when(model.streamRecognition(any(), any(DashScopeAudioTranscriptionOptions.class)))
-                .thenReturn(Flux.just(response));
+        when(model.call(any(AudioTranscriptionPrompt.class)))
+            .thenReturn(new AudioTranscriptionResponse(new AudioTranscription("测试")));
         AsrService asrService = new AsrService(model, mock(VoiceMetrics.class));
         MockMultipartFile file = new MockMultipartFile(
                 "file",
@@ -64,32 +53,24 @@ class AsrServiceTest {
 
         asrService.transcribe(file);
 
-        ArgumentCaptor<DashScopeAudioTranscriptionOptions> optionsCaptor =
-                ArgumentCaptor.forClass(DashScopeAudioTranscriptionOptions.class);
-        verify(model).streamRecognition(any(), optionsCaptor.capture());
-        assertEquals("opus", optionsCaptor.getValue().getFormat());
+        ArgumentCaptor<AudioTranscriptionPrompt> promptCaptor =
+            ArgumentCaptor.forClass(AudioTranscriptionPrompt.class);
+        verify(model).call(promptCaptor.capture());
+        assertEquals("webm", ((DashScopeAudioTranscriptionOptions) promptCaptor.getValue().getOptions()).getFormat());
     }
 
     @Test
-    @DisplayName("大音频应拆分为多个 websocket 帧")
-    void shouldSplitLargeAudioIntoMultipleFrames() {
+    @DisplayName("空识别结果应返回空字符串")
+    void shouldReturnEmptyStringForEmptyRecognitionResult() {
         DashScopeAudioTranscriptionModel model = mock(DashScopeAudioTranscriptionModel.class);
-        when(model.streamRecognition(any(), any(DashScopeAudioTranscriptionOptions.class)))
-                .thenReturn(Flux.empty());
+        when(model.call(any(AudioTranscriptionPrompt.class)))
+            .thenReturn(new AudioTranscriptionResponse(null));
         AsrService asrService = new AsrService(model, mock(VoiceMetrics.class));
-        MockMultipartFile file = new MockMultipartFile(
-                "file",
-                "speech.wav",
-                "audio/wav",
-                new byte[200_000]
-        );
+        MockMultipartFile file = new MockMultipartFile("file", "speech.wav", "audio/wav", new byte[] {1, 2, 3});
 
-        asrService.transcribe(file);
+        String result = asrService.transcribe(file);
 
-        ArgumentCaptor<Flux<ByteBuffer>> audioCaptor = ArgumentCaptor.forClass(Flux.class);
-        verify(model).streamRecognition(audioCaptor.capture(), any(DashScopeAudioTranscriptionOptions.class));
-        List<ByteBuffer> frames = audioCaptor.getValue().collectList().block();
-        assertEquals(4, frames == null ? 0 : frames.size());
+        assertEquals("", result);
     }
 
     @Test
