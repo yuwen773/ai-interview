@@ -15,6 +15,7 @@ public class LlmProviderProperties {
     private String defaultEmbeddingProvider;
     private Integer embeddingDimensions = 1024;
     private Map<String, ProviderConfig> providers = new HashMap<>();
+    private AdvisorsConfig advisors = new AdvisorsConfig();
 
     @Data
     public static class ProviderConfig {
@@ -25,5 +26,10 @@ public class LlmProviderProperties {
         private Integer embeddingDimensions;
         private Boolean supportsEmbedding;
         private Double temperature;
+    }
+
+    @Data
+    public static class AdvisorsConfig {
+        private boolean promptSanitizerEnabled = true;
     }
 }

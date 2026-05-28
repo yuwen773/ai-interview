@@ -1,5 +1,7 @@
 package interview.guide.modules.voiceinterview.service;
 
+import interview.guide.modules.llmprovider.service.LlmProviderRegistry;
+import interview.guide.common.ai.PromptSanitizer;
 import interview.guide.modules.resume.model.ResumeEntity;
 import interview.guide.modules.resume.repository.ResumeRepository;
 import interview.guide.modules.voiceinterview.config.VoiceInterviewProperties;
@@ -22,15 +24,20 @@ public class DashscopeLlmService {
 
     private static final String TERMINAL_PUNCTUATION = "。！？；!?;.";
 
-    private final ChatClient.Builder chatClientBuilder;
+    private final LlmProviderRegistry llmProviderRegistry;
     private final VoiceInterviewPromptService promptService;
     private final ResumeRepository resumeRepository;
     private final VoiceInterviewProperties voiceInterviewProperties;
+    private final PromptSanitizer promptSanitizer;
 
     public String chat(String userInput, VoiceInterviewSessionEntity session, List<String> conversationHistory) {
         try {
             PromptContext promptContext = buildPromptContext(userInput, session, conversationHistory);
-            ChatClient chatClient = chatClientBuilder.build();
+
+            String provider = session.getLlmProvider();
+            log.info("[VoiceInterview] Session {} using LLM provider: {}", session.getId(), provider);
+
+            ChatClient chatClient = llmProviderRegistry.getChatClientOrDefault(provider);
 
             ChatClient.CallResponseSpec response = chatClient.prompt()
                 .system(promptContext.systemPrompt())
@@ -55,6 +62,10 @@ public class DashscopeLlmService {
         return chatStreamSentences(userInput, onToken, null, session, conversationHistory);
     }
 
+    /**
+     * 流式调用 LLM，每检测到一个完整句子就回调 onSentence，同时推送实时文本给 onToken。
+     * 返回完整优化后的文本。
+     */
     public String chatStreamSentences(String userInput,
                                        Consumer<String> onToken,
                                        Consumer<String> onSentence,
@@ -62,9 +73,10 @@ public class DashscopeLlmService {
                                        List<String> conversationHistory) {
         try {
             PromptContext promptContext = buildPromptContext(userInput, session, conversationHistory);
-            log.info("[VoiceInterview] Session {} using LLM provider (sentence stream): {}", session.getId(), session.getLlmProvider());
+            String provider = session.getLlmProvider();
+            log.info("[VoiceInterview] Session {} using LLM provider (sentence stream): {}", session.getId(), provider);
 
-            ChatClient chatClient = chatClientBuilder.build();
+            ChatClient chatClient = llmProviderRegistry.getChatClientOrDefault(provider);
             StringBuilder raw = new StringBuilder();
             AtomicLong lastEmitNanos = new AtomicLong(System.nanoTime());
             AtomicInteger lastEmitLength = new AtomicInteger(0);
@@ -83,6 +95,7 @@ public class DashscopeLlmService {
                     }
                     raw.append(token);
 
+                    // 检测句子边界，回调 onSentence
                     if (onSentence != null && hasTerminalSince(token)) {
                         String normalized = normalizeRealtimeText(raw.toString());
                         int currentEnd = normalized.length();
@@ -95,6 +108,7 @@ public class DashscopeLlmService {
                         }
                     }
 
+                    // 实时文本推送
                     if (onToken == null) {
                         return;
                     }
@@ -115,6 +129,7 @@ public class DashscopeLlmService {
                 })
                 .blockLast();
 
+            // 发送最后一段（可能不以终止标点结尾）
             if (onSentence != null) {
                 String normalized = normalizeRealtimeText(raw.toString());
                 if (normalized.length() > lastSentenceEnd.get()) {
@@ -154,11 +169,12 @@ public class DashscopeLlmService {
         if (conversationHistory != null && !conversationHistory.isEmpty()) {
             promptBuilder.append("【之前的对话】\n");
             for (String message : conversationHistory) {
-                promptBuilder.append(message).append("\n");
+                promptBuilder.append(promptSanitizer.sanitize(message)).append("\n");
             }
             promptBuilder.append("\n【当前对话】\n");
         }
-        promptBuilder.append("用户：").append(userInput);
+        promptBuilder.append("用户：").append(
+            promptSanitizer.wrapWithDelimiters("input", promptSanitizer.sanitize(userInput)));
         return new PromptContext(systemPrompt, promptBuilder.toString());
     }
 
