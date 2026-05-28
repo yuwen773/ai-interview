@@ -48,6 +48,8 @@ Layered: `Controller → Service → Repository → Infrastructure`
 | `profile` | User profiling, spaced repetition (SM-2), weak/strong point tracking, semantic dedup |
 | `dashboard` | Summary statistics |
 | `audio` | ASR/TTS adapters |
+| `llmprovider` | LLM Provider dynamic registry (DashScope/OpenAI), encrypted API key storage |
+| `schedule` | Interview schedule management: CRUD, AI parsing (Feishu/Tencent/Zoom), status tracking |
 
 Shared under `common/`:
 - `result/Result<T>` — unified response wrapper (code 200 = success, all errors in HTTP 200 body)
