@@ -58,6 +58,11 @@ public class InterviewParseService {
     // Round number pattern
     private static final Pattern ROUND_NUMBER_PATTERN = Pattern.compile("[一二三四五六七八九十]|\\d");
 
+    // Markdown code block stripping
+    private static final Pattern MARKDOWN_CODE_BLOCK_PATTERN = Pattern.compile("```(?:json)?\\s*([\\s\\S]*?)\\s*```");
+
+    private static final String DEFAULT_INTERVIEW_TYPE_VIDEO = "VIDEO";
+
     private static final String PARSE_PROMPT = """
         你是一个专业的面试邀约信息提取助手。请仔细分析以下文本，提取面试相关信息。
 
@@ -177,7 +182,7 @@ public class InterviewParseService {
                 request.setRoundNumber(parseRoundNumber(roundMatcher.group()));
             }
 
-            request.setInterviewType("VIDEO");
+            request.setInterviewType(DEFAULT_INTERVIEW_TYPE_VIDEO);
             return request;
 
         } catch (Exception e) {
@@ -221,7 +226,7 @@ public class InterviewParseService {
                 request.setPosition(positionMatcher.group(1).trim());
             }
 
-            request.setInterviewType("VIDEO");
+            request.setInterviewType(DEFAULT_INTERVIEW_TYPE_VIDEO);
             return request;
 
         } catch (Exception e) {
@@ -248,7 +253,7 @@ public class InterviewParseService {
                 request.setInterviewTime(parseDateTime(timeStr));
             }
 
-            request.setInterviewType("VIDEO");
+            request.setInterviewType(DEFAULT_INTERVIEW_TYPE_VIDEO);
             return request;
 
         } catch (Exception e) {
@@ -276,8 +281,7 @@ public class InterviewParseService {
 
             String jsonContent = content.trim();
             if (jsonContent.contains("```")) {
-                Pattern pattern = Pattern.compile("```(?:json)?\\s*([\\s\\S]*?)\\s*```");
-                Matcher matcher = pattern.matcher(jsonContent);
+                Matcher matcher = MARKDOWN_CODE_BLOCK_PATTERN.matcher(jsonContent);
                 if (matcher.find()) {
                     jsonContent = matcher.group(1).trim();
                 }
