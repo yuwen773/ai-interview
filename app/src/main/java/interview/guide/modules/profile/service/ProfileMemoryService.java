@@ -23,16 +23,19 @@ public class ProfileMemoryService {
     private final ProfileExtractService extractService;
     private final ProfileUpdateService updateService;
     private final BehaviorSignalService behaviorSignalService;
+    private final ProfileConsolidationService consolidationService;
 
     public ProfileMemoryService(
             InterviewSessionRepository sessionRepo,
             ProfileExtractService extractService,
             ProfileUpdateService updateService,
-            BehaviorSignalService behaviorSignalService) {
+            BehaviorSignalService behaviorSignalService,
+            ProfileConsolidationService consolidationService) {
         this.sessionRepo = sessionRepo;
         this.extractService = extractService;
         this.updateService = updateService;
         this.behaviorSignalService = behaviorSignalService;
+        this.consolidationService = consolidationService;
     }
 
     /**
@@ -88,6 +91,13 @@ public class ProfileMemoryService {
             log.info("Behavior signal update complete: {} signals", signalCount);
         } catch (Exception e) {
             log.warn("Behavior signal update failed, weak/strong profile already applied: {}", e.getMessage(), e);
+        }
+
+        try {
+            int patterns = consolidationService.consolidateIfNeeded(userId);
+            log.info("Profile consolidation complete: {} patterns", patterns);
+        } catch (Exception e) {
+            log.warn("Profile consolidation failed: {}", e.getMessage(), e);
         }
 
         log.info("Mem0 profile update complete: sessionId={}", sessionId);

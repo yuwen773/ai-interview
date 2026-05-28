@@ -23,11 +23,13 @@ class ProfileMemoryServiceTest {
         ProfileExtractService extractService = mock(ProfileExtractService.class);
         ProfileUpdateService updateService = mock(ProfileUpdateService.class);
         BehaviorSignalService behaviorSignalService = mock(BehaviorSignalService.class);
+        ProfileConsolidationService consolidationService = mock(ProfileConsolidationService.class);
         ProfileMemoryService service = new ProfileMemoryService(
             sessionRepo,
             extractService,
             updateService,
-            behaviorSignalService
+            behaviorSignalService,
+            consolidationService
         );
         ProfileExtractResult extraction = new ProfileExtractResult(
             List.of(weakInsight()),
@@ -52,11 +54,13 @@ class ProfileMemoryServiceTest {
         ProfileExtractService extractService = mock(ProfileExtractService.class);
         ProfileUpdateService updateService = mock(ProfileUpdateService.class);
         BehaviorSignalService behaviorSignalService = mock(BehaviorSignalService.class);
+        ProfileConsolidationService consolidationService = mock(ProfileConsolidationService.class);
         ProfileMemoryService service = new ProfileMemoryService(
             sessionRepo,
             extractService,
             updateService,
-            behaviorSignalService
+            behaviorSignalService,
+            consolidationService
         );
         ProfileExtractResult extraction = new ProfileExtractResult(
             List.of(),
