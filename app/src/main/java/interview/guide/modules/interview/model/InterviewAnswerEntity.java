@@ -1,6 +1,7 @@
 package interview.guide.modules.interview.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDateTime;
 
@@ -24,6 +25,7 @@ public class InterviewAnswerEntity {
     // 关联的会话
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id", nullable = false)
+    @BatchSize(size = 20)
     private InterviewSessionEntity session;
     
     // 问题索引

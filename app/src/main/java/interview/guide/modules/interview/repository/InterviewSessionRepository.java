@@ -11,6 +11,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 /**
  * 面试会话Repository
  */
@@ -66,6 +69,11 @@ public interface InterviewSessionRepository extends JpaRepository<InterviewSessi
         Long resumeId,
         List<SessionStatus> statuses
     );
+
+    /**
+     * 分页查询所有会话，按创建时间倒序
+     */
+    Page<InterviewSessionEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     @Query("""
         SELECT s

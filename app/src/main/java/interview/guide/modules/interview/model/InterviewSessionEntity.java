@@ -3,6 +3,7 @@ package interview.guide.modules.interview.model;
 import interview.guide.common.model.AsyncTaskStatus;
 import interview.guide.modules.resume.model.ResumeEntity;
 import jakarta.persistence.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ public class InterviewSessionEntity {
     // 关联的简历
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resume_id", nullable = false)
+    @BatchSize(size = 20)
     private ResumeEntity resume;
     
     // 问题总数
@@ -76,6 +78,7 @@ public class InterviewSessionEntity {
     
     // 面试答案记录
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 20)
     private List<InterviewAnswerEntity> answers = new ArrayList<>();
     
     // 创建时间

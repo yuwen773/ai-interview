@@ -115,13 +115,6 @@ public class FileStorageService {
                 s3Client.putObject(putRequest, RequestBody.fromInputStream(new ByteArrayInputStream(fileBytes), file.getSize()));
                 log.info("文件上传成功: {} -> {}", originalFilename, fileKey);
                 return fileKey;
-            } catch (IOException e) {
-                lastException = e;
-                log.warn("文件上传失败 (尝试 {}/{}): {}", attempt, maxRetries, e.getMessage());
-                if (attempt == maxRetries) {
-                    log.error("读取上传文件失败: {}", e.getMessage(), e);
-                    throw new BusinessException(ErrorCode.STORAGE_UPLOAD_FAILED, "文件读取失败: " + e.getMessage());
-                }
             } catch (S3Exception e) {
                 lastException = e;
                 log.warn("S3上传失败 (尝试 {}/{}): {}", attempt, maxRetries, e.getMessage());
