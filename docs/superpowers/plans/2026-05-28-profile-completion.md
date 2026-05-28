@@ -90,7 +90,7 @@
 - Modify: `app/src/main/java/interview/guide/modules/profile/entity/UserProfileEntity.java`
 - Modify: `app/src/main/java/interview/guide/modules/profile/repository/UserProfileRepository.java`
 
-- [ ] **Step 1: Write repository/entity tests that compile-fail first**
+- [x] **Step 1: Write repository/entity tests that compile-fail first**
 
 Create a focused repository test if an existing JPA test pattern is available; otherwise write service tests in later tasks and use this step to compile-check new entity mappings.
 
@@ -102,7 +102,7 @@ mvn -pl app -DskipTests compile
 
 Expected: FAIL because new entity/repository files do not exist yet.
 
-- [ ] **Step 2: Add migration SQL**
+- [x] **Step 2: Add migration SQL**
 
 Create `V2026-05-28c__complete_user_profile.sql`:
 
@@ -191,7 +191,7 @@ WHERE s0.user_id = '0'
 UPDATE user_strong_points SET user_id = 'default' WHERE user_id = '0';
 ```
 
-- [ ] **Step 3: Add entities**
+- [x] **Step 3: Add entities**
 
 Follow the style of `UserWeakPointEntity`: explicit `@Column(name = "...")`, JSONB via `@Type(JsonType.class)`.
 
@@ -217,7 +217,7 @@ private List<Long> relatedSignalIds = new ArrayList<>();
 
 Add `lastConsolidatedAt` to `UserProfileEntity`.
 
-- [ ] **Step 4: Add repositories**
+- [x] **Step 4: Add repositories**
 
 Repository methods needed:
 
@@ -236,7 +236,7 @@ List<UserProfilePatternEntity> findByUserIdAndStatusOrderByLastSeenDesc(String u
 long countByUserIdAndStatus(String userId, String status);
 ```
 
-- [ ] **Step 5: Compile**
+- [x] **Step 5: Compile**
 
 Run:
 
@@ -246,7 +246,7 @@ mvn -pl app -DskipTests compile
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/src/main/resources/db/migration/V2026-05-28c__complete_user_profile.sql \
@@ -270,7 +270,7 @@ git commit -m "feat(profile): 添加表现画像数据模型"
 - Modify: `app/src/main/java/interview/guide/modules/profile/controller/KnowledgeGraphController.java`
 - Test: `app/src/test/java/interview/guide/modules/profile/service/UserProfileServiceWeakPointStatusTest.java`
 
-- [ ] **Step 1: Write failing tests for weak point status selection**
+- [x] **Step 1: Write failing tests for weak point status selection**
 
 Create `UserProfileServiceWeakPointStatusTest` with Mockito repository mocks. Test:
 
@@ -291,7 +291,7 @@ void shouldQueryImprovedWeakPoints() {
 
 If constructor injection is not available, first refactor `UserProfileService` to constructor injection in the implementation step, then finish the test.
 
-- [ ] **Step 2: Run failing profile tests**
+- [x] **Step 2: Run failing profile tests**
 
 Run:
 
@@ -301,7 +301,7 @@ mvn -pl app -Dtest=UserProfileServiceWeakPointStatusTest test
 
 Expected: FAIL because `WeakPointStatus` and `getWeakPointDtos` do not exist.
 
-- [ ] **Step 3: Add status enum**
+- [x] **Step 3: Add status enum**
 
 Create:
 
@@ -313,7 +313,7 @@ public enum WeakPointStatus {
 }
 ```
 
-- [ ] **Step 4: Add repository methods**
+- [x] **Step 4: Add repository methods**
 
 Add:
 
@@ -342,7 +342,7 @@ List<UserWeakPointEntity> findDueReviewsOptionalTopic(
 );
 ```
 
-- [ ] **Step 5: Implement service method**
+- [x] **Step 5: Implement service method**
 
 Add to `UserProfileService`:
 
@@ -362,7 +362,7 @@ public List<WeakPointDto> getWeakPointDtos(String userId, WeakPointStatus status
 }
 ```
 
-- [ ] **Step 6: Add API endpoint and default user**
+- [x] **Step 6: Add API endpoint and default user**
 
 Modify defaults from `"0"` to `"default"` in:
 
@@ -382,7 +382,7 @@ public Result<List<WeakPointDto>> getWeakPoints(
 }
 ```
 
-- [ ] **Step 7: Run tests**
+- [x] **Step 7: Run tests**
 
 Run:
 
@@ -392,7 +392,7 @@ mvn -pl app -Dtest=UserProfileServiceWeakPointStatusTest,SpacedRepetitionService
 
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/src/main/java/interview/guide/modules/profile app/src/test/java/interview/guide/modules/profile/service/UserProfileServiceWeakPointStatusTest.java

@@ -6,11 +6,12 @@ import interview.guide.modules.profile.entity.UserTopicMasteryEntity;
 import interview.guide.modules.profile.entity.UserWeakPointEntity;
 import interview.guide.modules.profile.model.Sm2Result;
 import interview.guide.modules.profile.model.Sm2State;
+import interview.guide.modules.profile.model.WeakPointStatus;
 import interview.guide.modules.profile.model.dto.*;
 import interview.guide.modules.profile.repository.*;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ import java.util.*;
  * 管理弱项登记、间隔复习、画像查询、面试评估反馈循环等核心业务逻辑
  */
 @Service
+@RequiredArgsConstructor
 public class UserProfileService {
 
     private static final Logger log = LoggerFactory.getLogger(UserProfileService.class);
@@ -35,12 +37,12 @@ public class UserProfileService {
     private static final String SR_NEXT_REVIEW = "next_review";
     private static final String SR_LAST_SCORE = "last_score";
 
-    @Autowired private UserWeakPointRepository weakPointRepo;
-    @Autowired private UserTopicMasteryRepository masteryRepo;
-    @Autowired private UserProfileRepository profileRepo;
-    @Autowired private SpacedRepetitionService srService;
-    @Autowired private UserStrongPointRepository strongPointRepo;
-    @Autowired private ProfileSemanticService semanticService;
+    private final UserWeakPointRepository weakPointRepo;
+    private final UserTopicMasteryRepository masteryRepo;
+    private final UserProfileRepository profileRepo;
+    private final SpacedRepetitionService srService;
+    private final UserStrongPointRepository strongPointRepo;
+    private final ProfileSemanticService semanticService;
 
     /**
      * 批量登记弱项到复习计划
@@ -157,6 +159,22 @@ public class UserProfileService {
         return entities.stream().map(this::toDto).toList();
     }
 
+    /** 按状态获取弱项DTO列表 */
+    public List<WeakPointDto> getWeakPointDtos(String userId, WeakPointStatus status, String topic) {
+        WeakPointStatus resolved = status != null ? status : WeakPointStatus.ACTIVE;
+        String normalizedTopic = blankToNull(topic);
+        List<UserWeakPointEntity> entities = switch (resolved) {
+            case ACTIVE -> normalizedTopic == null
+                ? weakPointRepo.findByUserIdAndIsImprovedFalse(userId)
+                : weakPointRepo.findByUserIdAndTopicAndIsImprovedFalse(userId, normalizedTopic);
+            case IMPROVED -> normalizedTopic == null
+                ? weakPointRepo.findByUserIdAndIsImprovedTrue(userId)
+                : weakPointRepo.findByUserIdAndTopicAndIsImprovedTrue(userId, normalizedTopic);
+            case DUE -> weakPointRepo.findDueReviewsOptionalTopic(userId, normalizedTopic, LocalDate.now());
+        };
+        return entities.stream().map(this::toDto).toList();
+    }
+
     /** 归档长期未见的过时弱项（超过60天或30天且仅观察1-2次） */
     @Transactional
     public int archiveStaleWeakPoints(String userId) {
@@ -265,5 +283,9 @@ public class UserProfileService {
         newState.put(SR_NEXT_REVIEW, result.nextReview().toString());
         newState.put(SR_LAST_SCORE, lastScore);
         return newState;
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
     }
 }
