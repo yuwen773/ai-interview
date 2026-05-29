@@ -23,6 +23,7 @@ const KnowledgeGraphPage = lazy(() => import('./pages/KnowledgeGraphPage'));
 const LandingPage = lazy(() => import('./pages/landing'));
 const VoiceInterviewListPage = lazy(() => import('./pages/voiceinterview/VoiceInterviewListPage'));
 const VoiceInterviewPage = lazy(() => import('./pages/voiceinterview/VoiceInterviewPage'));
+const AvatarInterviewPage = lazy(() => import('./features/avatar-interview/pages/AvatarInterviewPage'));
 
 // Loading component
 const Loading = () => (
@@ -232,6 +233,11 @@ function App() {
               {/* 语音面试 */}
               <Route path="voice-interview" element={<VoiceInterviewListPage />} />
               <Route path="voice-interview/:sessionId" element={<VoiceInterviewPage />} />
+
+              {/* Avatar 面试 - 功能开关控制 */}
+              {import.meta.env.VITE_ENABLE_AVATAR_INTERVIEW === 'true' && (
+                <Route path="avatar-interview" element={<AvatarInterviewPage />} />
+              )}
             </Route>
           </Routes>
         </Suspense>
