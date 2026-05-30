@@ -16,6 +16,7 @@ import interview.guide.modules.interview.voice.model.InterviewTurnResponse;
 import interview.guide.modules.interview.voice.model.InterviewTurnInput;
 import interview.guide.modules.interview.voice.model.InterviewerOutputMode;
 import interview.guide.modules.interview.voice.model.NormalizedAnswer;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,10 +57,18 @@ public class InterviewController {
      */
     @PostMapping("/api/interview/sessions")
     @RateLimit(dimensions = {RateLimit.Dimension.GLOBAL, RateLimit.Dimension.IP}, count = 5)
-    public Result<InterviewSessionDTO> createSession(@Valid @RequestBody CreateInterviewRequest request) {
+    public Result<InterviewSessionDTO> createSession(
+            @Valid @RequestBody CreateInterviewRequest request,
+            HttpServletRequest httpRequest) {
         log.info("创建面试会话，题目数量: {}, 岗位: {}", request.questionCount(), request.jobRole());
-        InterviewSessionDTO session = sessionService.createSession(request);
+        Long userId = (Long) httpRequest.getAttribute("userId");
+        InterviewSessionDTO session = sessionService.createSession(request, userId);
         return Result.success(session);
+    }
+
+    @GetMapping("/api/interview/sessions")
+    public Result<List<SessionListItemDTO>> listSessions() {
+        return Result.success(historyService.listSessions());
     }
 
     @GetMapping("/api/interview/job-roles")

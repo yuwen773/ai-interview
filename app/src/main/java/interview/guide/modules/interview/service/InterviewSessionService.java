@@ -41,7 +41,7 @@ public class InterviewSessionService {
      * 注意：如果已有未完成的会话，不会创建新的，而是返回现有会话
      * 前端应该先调用 findUnfinishedSession 检查，或者使用 forceCreate 参数强制创建
      */
-    public InterviewSessionDTO createSession(CreateInterviewRequest request) {
+    public InterviewSessionDTO createSession(CreateInterviewRequest request, Long userId) {
         // 如果指定了resumeId且未强制创建，检查是否有未完成的会话
         if (request.resumeId() != null && !Boolean.TRUE.equals(request.forceCreate())) {
             Optional<InterviewSessionDTO> unfinishedOpt = findUnfinishedSession(request.resumeId());
@@ -55,9 +55,12 @@ public class InterviewSessionService {
         }
 
         String sessionId = UUID.randomUUID().toString().replace("-", "");
+        String effectiveSkillId = request.effectiveSkillId();
+        String difficulty = request.difficulty() != null ? request.difficulty() : "mid";
+        String jobLabel = effectiveSkillId;
 
-        log.info("创建新面试会话: {}, 题目数量: {}, resumeId: {}, jobRole: {}",
-            sessionId, request.questionCount(), request.resumeId(), request.jobRole());
+        log.info("创建新面试会话: {}, 题目数量: {}, resumeId: {}, skillId: {}, difficulty: {}",
+            sessionId, request.questionCount(), request.resumeId(), effectiveSkillId, difficulty);
 
         // 获取历史问题
         List<String> historicalQuestions = null;
@@ -67,12 +70,13 @@ public class InterviewSessionService {
 
         // 生成面试问题
         TrainingContext context = trainingContextService.buildForInterview(
-            "default",
+            String.valueOf(userId),
             request.jobRole(),
             request.resumeId()
         );
-        List<InterviewQuestionDTO> questions = questionService.generateQuestionsWithContext(
-            request.jobRole(),
+        List<InterviewQuestionDTO> questions = questionService.generateQuestionsBySkill(
+            effectiveSkillId,
+            difficulty,
             request.resumeText(),
             request.questionCount(),
             historicalQuestions,
@@ -84,8 +88,10 @@ public class InterviewSessionService {
             sessionId,
             request.resumeText(),
             request.resumeId(),
+            effectiveSkillId,
+            difficulty,
             request.jobRole(),
-            request.jobRole().getLabel(),
+            jobLabel,
             questions,
             0,
             SessionStatus.CREATED
@@ -95,7 +101,7 @@ public class InterviewSessionService {
         if (request.resumeId() != null) {
             try {
                 persistenceService.saveSession(sessionId, request.resumeId(),
-                    request.jobRole(), request.jobRole().getLabel(),
+                    effectiveSkillId, difficulty, request.jobRole(), jobLabel,
                     questions.size(), questions);
             } catch (Exception e) {
                 log.warn("保存面试会话到数据库失败: {}", e.getMessage());
@@ -106,7 +112,7 @@ public class InterviewSessionService {
             sessionId,
             request.resumeText(),
             request.jobRole(),
-            request.jobRole().getLabel(),
+            jobLabel,
             questions.size(),
             0,
             questions,
@@ -215,6 +221,8 @@ public class InterviewSessionService {
                 entity.getSessionId(),
                 entity.getResume().getResumeText(),
                 entity.getResume().getId(),
+                entity.getSkillId(),
+                entity.getDifficulty(),
                 entity.getJobRole(),
                 entity.getJobLabelSnapshot(),
                 questions,

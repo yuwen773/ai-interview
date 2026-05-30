@@ -56,6 +56,8 @@ class InterviewSessionServiceTest {
             "session-completed",
             "resume-text",
             1L,
+            "java-backend",
+            "mid",
             JobRole.JAVA_BACKEND,
             "Java 后端",
             List.of(InterviewQuestionDTO.create(0, "介绍项目", InterviewQuestionDTO.QuestionType.PROJECT, "项目经历")),
@@ -98,6 +100,8 @@ class InterviewSessionServiceTest {
             "session-old",
             "resume-text",
             1L,
+            "java-backend",
+            "mid",
             JobRole.JAVA_BACKEND,
             "Java 后端",
             List.of(InterviewQuestionDTO.create(0, "介绍项目", InterviewQuestionDTO.QuestionType.PROJECT, "项目经历")),
@@ -109,7 +113,8 @@ class InterviewSessionServiceTest {
         when(sessionCache.getSession("session-old")).thenReturn(Optional.of(cachedSession));
 
         InterviewSessionDTO dto = service.createSession(
-            new CreateInterviewRequest("resume-text", 5, 1L, JobRole.WEB_FRONTEND, false)
+            new CreateInterviewRequest("resume-text", 5, 1L, "java-backend", "mid", JobRole.WEB_FRONTEND, false),
+            1L
         );
 
         assertEquals("session-old", dto.sessionId());
@@ -118,7 +123,8 @@ class InterviewSessionServiceTest {
         verify(questionService, never()).generateQuestions(any(), any(), anyInt(), any());
         verify(questionService, never()).generateQuestionsWithContext(any(), any(), anyInt(), any(), any());
         verify(trainingContextService, never()).buildForInterview(any(), any(), any());
-        verify(persistenceService, never()).saveSession(any(), any(), any(), any(), anyInt(), any());
+        verify(persistenceService, never()).saveSession(any(), any(), any(), any(), any(), any(), anyInt(), any());
+        verify(persistenceService, never()).updateSessionStatus(any(), any());
     }
 
     @Test
@@ -153,34 +159,39 @@ class InterviewSessionServiceTest {
         );
         when(sessionCache.findUnfinishedSessionId(1L)).thenReturn(Optional.empty());
         when(persistenceService.getHistoricalQuestionsByResumeId(1L)).thenReturn(historicalQuestions);
-        when(trainingContextService.buildForInterview("default", JobRole.JAVA_BACKEND, 1L)).thenReturn(context);
-        when(questionService.generateQuestionsWithContext(
-            eq(JobRole.JAVA_BACKEND),
+        when(trainingContextService.buildForInterview("1", JobRole.JAVA_BACKEND, 1L)).thenReturn(context);
+        when(questionService.generateQuestionsBySkill(
+            eq("java-backend"),
+            eq("mid"),
             eq("resume-text"),
             eq(3),
             same(historicalQuestions),
-            same(context)
+            eq(context)
         )).thenReturn(questions);
 
         InterviewSessionDTO dto = service.createSession(
-            new CreateInterviewRequest("resume-text", 3, 1L, JobRole.JAVA_BACKEND, false)
+            new CreateInterviewRequest("resume-text", 3, 1L, "java-backend", "mid", JobRole.JAVA_BACKEND, false),
+            1L
         );
 
         assertEquals(1, dto.totalQuestions());
-        verify(trainingContextService).buildForInterview("default", JobRole.JAVA_BACKEND, 1L);
-        verify(questionService).generateQuestionsWithContext(
-            eq(JobRole.JAVA_BACKEND),
+        verify(trainingContextService).buildForInterview("1", JobRole.JAVA_BACKEND, 1L);
+        verify(questionService).generateQuestionsBySkill(
+            eq("java-backend"),
+            eq("mid"),
             eq("resume-text"),
             eq(3),
             same(historicalQuestions),
-            same(context)
+            eq(context)
         );
         verify(sessionCache).saveSession(
             any(),
             eq("resume-text"),
             eq(1L),
+            any(),
+            any(),
             eq(JobRole.JAVA_BACKEND),
-            eq("Java 后端"),
+            eq("java-backend"),
             same(questions),
             eq(0),
             eq(InterviewSessionDTO.SessionStatus.CREATED)
@@ -211,6 +222,8 @@ class InterviewSessionServiceTest {
             "session-4",
             "resume-text",
             1L,
+            "java-backend",
+            "mid",
             JobRole.JAVA_BACKEND,
             "Java 后端",
             List.of(InterviewQuestionDTO.create(0, "介绍项目", InterviewQuestionDTO.QuestionType.PROJECT, "项目经历")),
@@ -270,6 +283,8 @@ class InterviewSessionServiceTest {
             "session-1",
             "resume-text",
             1L,
+            "algorithm",
+            "mid",
             JobRole.PYTHON_ALGORITHM,
             "Python 算法",
             questions,
@@ -325,6 +340,8 @@ class InterviewSessionServiceTest {
             "session-2",
             "resume-text",
             1L,
+            "java-backend",
+            "mid",
             JobRole.JAVA_BACKEND,
             "Java 后端",
             List.of(InterviewQuestionDTO.create(0, "介绍项目", InterviewQuestionDTO.QuestionType.PROJECT, "项目经历")),
@@ -381,6 +398,8 @@ class InterviewSessionServiceTest {
             "session-3",
             "resume-text",
             1L,
+            "java-backend",
+            "mid",
             JobRole.JAVA_BACKEND,
             "Java 后端",
             List.of(InterviewQuestionDTO.create(0, "介绍项目", InterviewQuestionDTO.QuestionType.PROJECT, "项目经历")),
