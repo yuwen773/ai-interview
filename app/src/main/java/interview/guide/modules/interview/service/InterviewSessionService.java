@@ -34,6 +34,7 @@ public class InterviewSessionService {
     private final InterviewSessionCache sessionCache;
     private final ObjectMapper objectMapper;
     private final EvaluateStreamProducer evaluateStreamProducer;
+    private final TrainingContextService trainingContextService;
 
     /**
      * 创建新的面试会话
@@ -65,11 +66,17 @@ public class InterviewSessionService {
         }
 
         // 生成面试问题
-        List<InterviewQuestionDTO> questions = questionService.generateQuestions(
+        TrainingContext context = trainingContextService.buildForInterview(
+            "default",
+            request.jobRole(),
+            request.resumeId()
+        );
+        List<InterviewQuestionDTO> questions = questionService.generateQuestionsWithContext(
             request.jobRole(),
             request.resumeText(),
             request.questionCount(),
-            historicalQuestions
+            historicalQuestions,
+            context
         );
 
         // 保存到 Redis 缓存

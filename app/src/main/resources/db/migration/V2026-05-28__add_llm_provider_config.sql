@@ -27,8 +27,8 @@ CREATE TABLE llm_global_setting (
 );
 
 -- 初始化默认Provider（DashScope）
-INSERT INTO llm_provider_config (id, base_url, api_key_ciphertext, api_key_nonce, model, supports_embedding, enabled, builtin, created_at, updated_at)
-VALUES ('dashscope', 'https://dashscope.aliyuncs.com/compatible-mode/v1', '', '', 'qwen-plus', true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO llm_provider_config (id, base_url, api_key_ciphertext, api_key_nonce, model, embedding_model, embedding_dimensions, supports_embedding, enabled, builtin, created_at, updated_at)
+VALUES ('dashscope', 'https://dashscope.aliyuncs.com/compatible-mode/v1', '', '', 'qwen-plus', 'text-embedding-v2', 1024, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- 初始化默认设置
 INSERT INTO llm_global_setting (id, default_chat_provider_id, default_embedding_provider_id, created_at, updated_at)

@@ -1,8 +1,12 @@
 package interview.guide.modules.profile.controller;
 
 import interview.guide.common.result.Result;
+import interview.guide.modules.profile.model.WeakPointStatus;
 import interview.guide.modules.profile.model.dto.*;
+import interview.guide.modules.profile.service.BehaviorSignalService;
+import interview.guide.modules.profile.service.ProfileConsolidationService;
 import interview.guide.modules.profile.service.ProfileExtractService;
+import interview.guide.modules.profile.service.ProfileRecommendationService;
 import interview.guide.modules.profile.service.UserProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
@@ -22,6 +26,9 @@ public class ProfileController {
 
     private final UserProfileService profileService;
     private final ProfileExtractService extractService;
+    private final BehaviorSignalService behaviorSignalService;
+    private final ProfileConsolidationService consolidationService;
+    private final ProfileRecommendationService recommendationService;
 
     /**
      * 获取用户画像
@@ -30,7 +37,7 @@ public class ProfileController {
      * @return 用户画像信息，包含知识点掌握度、弱项统计、待复习数量
      */
     @GetMapping
-    public Result<UserProfileDto> getProfile(@RequestParam(defaultValue = "0") String userId) {
+    public Result<UserProfileDto> getProfile(@RequestParam(defaultValue = "default") String userId) {
         return Result.success(profileService.getProfile(userId));
     }
 
@@ -42,8 +49,37 @@ public class ProfileController {
      */
     @GetMapping("/strong-points")
     public Result<List<StrongPointDto>> getStrongPoints(
-            @RequestParam(defaultValue = "0") String userId) {
+            @RequestParam(defaultValue = "default") String userId) {
         return Result.success(profileService.getStrongPoints(userId));
+    }
+
+    @GetMapping("/weak-points")
+    public Result<List<WeakPointDto>> getWeakPoints(
+            @RequestParam(defaultValue = "default") String userId,
+            @RequestParam(defaultValue = "ACTIVE") WeakPointStatus status,
+            @RequestParam(required = false) String topic) {
+        return Result.success(profileService.getWeakPointDtos(userId, status, topic));
+    }
+
+    @GetMapping("/behavior-signals")
+    public Result<List<BehaviorSignalDto>> getBehaviorSignals(
+            @RequestParam(defaultValue = "default") String userId,
+            @RequestParam(required = false) String namespace,
+            @RequestParam(required = false) String status) {
+        return Result.success(behaviorSignalService.getSignals(userId, namespace, status));
+    }
+
+    @GetMapping("/patterns")
+    public Result<List<ProfilePatternDto>> getPatterns(
+            @RequestParam(defaultValue = "default") String userId,
+            @RequestParam(defaultValue = "ACTIVE") String status) {
+        return Result.success(consolidationService.getPatterns(userId, status));
+    }
+
+    @GetMapping("/recommendations")
+    public Result<List<ProfileRecommendationDto>> getRecommendations(
+            @RequestParam(defaultValue = "default") String userId) {
+        return Result.success(recommendationService.getRecommendations(userId));
     }
 
     /**

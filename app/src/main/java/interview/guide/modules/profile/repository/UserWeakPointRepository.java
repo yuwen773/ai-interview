@@ -19,6 +19,15 @@ public interface UserWeakPointRepository extends JpaRepository<UserWeakPointEnti
     /** 查询用户所有未改善的弱项 */
     List<UserWeakPointEntity> findByUserIdAndIsImprovedFalse(String userId);
 
+    /** 查询用户所有已改善的弱项 */
+    List<UserWeakPointEntity> findByUserIdAndIsImprovedTrue(String userId);
+
+    /** 按主题查询用户未改善的弱项 */
+    List<UserWeakPointEntity> findByUserIdAndTopicAndIsImprovedFalse(String userId, String topic);
+
+    /** 按主题查询用户已改善的弱项 */
+    List<UserWeakPointEntity> findByUserIdAndTopicAndIsImprovedTrue(String userId, String topic);
+
     /**
      * 查询指定主题下到期的待复习弱项
      * 按难度因子升序排列（难度因子越低，优先复习）
@@ -49,6 +58,25 @@ public interface UserWeakPointRepository extends JpaRepository<UserWeakPointEnti
         ORDER BY (sr_state->>'ease_factor')::decimal ASC
         """, nativeQuery = true)
     List<UserWeakPointEntity> findAllDueReviews(@Param("userId") String userId, @Param("date") LocalDate date);
+
+    /**
+     * 查询到期待复习的弱项，支持可选主题过滤。
+     * 按难度因子升序排列。
+     */
+    @Query(value = """
+        SELECT * FROM user_weak_points
+        WHERE user_id = :userId
+          AND is_improved = false
+          AND (:topic IS NULL OR topic = :topic)
+          AND sr_state->>'next_review' IS NOT NULL
+          AND (sr_state->>'next_review')::date <= :date
+        ORDER BY (sr_state->>'ease_factor')::decimal ASC
+        """, nativeQuery = true)
+    List<UserWeakPointEntity> findDueReviewsOptionalTopic(
+        @Param("userId") String userId,
+        @Param("topic") String topic,
+        @Param("date") LocalDate date
+    );
 
     /** 查询用户所有弱项的题目文本（用于语义去重匹配） */
     @Query("SELECT w.questionText FROM UserWeakPointEntity w WHERE w.userId = :userId")

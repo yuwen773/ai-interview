@@ -1,7 +1,5 @@
 package interview.guide.modules.interview;
 
-import interview.guide.modules.audio.adapter.TtsAdapter;
-import interview.guide.modules.audio.service.VoiceMetrics;
 import interview.guide.modules.interview.model.InterviewHistorySummaryDTO;
 import interview.guide.modules.interview.service.GrowthCurveService;
 import interview.guide.modules.interview.service.InterviewHistoryService;
@@ -11,7 +9,7 @@ import interview.guide.modules.interview.voice.InterviewTurnProcessor;
 import interview.guide.modules.interview.voice.VoiceTurnGuard;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -44,13 +42,7 @@ class InterviewHistorySummaryIntegrationTest {
     private InterviewTurnProcessor turnProcessor;
 
     @MockitoBean
-    private TtsAdapter ttsAdapter;
-
-    @MockitoBean
     private VoiceTurnGuard voiceTurnGuard;
-
-    @MockitoBean
-    private VoiceMetrics voiceMetrics;
 
     @Test
     void getHistorySummaryShouldReturnStatsAndItems() throws Exception {

@@ -1,11 +1,8 @@
 package interview.guide.modules.interview;
 
 import interview.guide.common.result.Result;
-import interview.guide.modules.audio.adapter.TtsAdapter;
-import interview.guide.modules.audio.service.VoiceMetrics;
 import interview.guide.modules.interview.model.GrowthCurveDTO;
 import interview.guide.modules.interview.model.InterviewQuestionDTO;
-import interview.guide.modules.interview.model.TtsStreamRequest;
 import interview.guide.modules.interview.model.VoiceRecognizeResponse;
 import interview.guide.modules.interview.service.GrowthCurveService;
 import interview.guide.modules.interview.service.InterviewHistoryService;
@@ -21,11 +18,9 @@ import interview.guide.modules.interview.voice.model.NormalizedAnswer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.http.codec.ServerSentEvent;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,9 +39,8 @@ class InterviewControllerTest {
         InterviewPersistenceService persistenceService = mock(InterviewPersistenceService.class);
         GrowthCurveService growthCurveService = mock(GrowthCurveService.class);
         InterviewTurnProcessor turnProcessor = mock(InterviewTurnProcessor.class);
-        TtsAdapter ttsAdapter = mock(TtsAdapter.class);
         InterviewController controller = new InterviewController(
-            sessionService, historyService, persistenceService, growthCurveService, turnProcessor, ttsAdapter, new VoiceTurnGuard(), mock(VoiceMetrics.class)
+            sessionService, historyService, persistenceService, growthCurveService, turnProcessor, new VoiceTurnGuard()
         );
         MockMultipartFile file = new MockMultipartFile("file", "answer.webm", "audio/webm", new byte[] {1, 2, 3});
         when(turnProcessor.recognize(any())).thenReturn(
@@ -70,9 +64,8 @@ class InterviewControllerTest {
         InterviewPersistenceService persistenceService = mock(InterviewPersistenceService.class);
         GrowthCurveService growthCurveService = mock(GrowthCurveService.class);
         InterviewTurnProcessor turnProcessor = mock(InterviewTurnProcessor.class);
-        TtsAdapter ttsAdapter = mock(TtsAdapter.class);
         InterviewController controller = new InterviewController(
-            sessionService, historyService, persistenceService, growthCurveService, turnProcessor, ttsAdapter, new VoiceTurnGuard(), mock(VoiceMetrics.class)
+            sessionService, historyService, persistenceService, growthCurveService, turnProcessor, new VoiceTurnGuard()
         );
         InterviewTurnResponse turnResponse = new InterviewTurnResponse(
             null,
@@ -98,30 +91,6 @@ class InterviewControllerTest {
     }
 
     @Test
-    @DisplayName("题目 TTS 流接口应返回 Base64 音频块")
-    void shouldStreamQuestionTtsAsBase64Sse() {
-        InterviewSessionService sessionService = mock(InterviewSessionService.class);
-        InterviewHistoryService historyService = mock(InterviewHistoryService.class);
-        InterviewPersistenceService persistenceService = mock(InterviewPersistenceService.class);
-        GrowthCurveService growthCurveService = mock(GrowthCurveService.class);
-        InterviewTurnProcessor turnProcessor = mock(InterviewTurnProcessor.class);
-        TtsAdapter ttsAdapter = mock(TtsAdapter.class);
-        InterviewController controller = new InterviewController(
-            sessionService, historyService, persistenceService, growthCurveService, turnProcessor, ttsAdapter, new VoiceTurnGuard(), mock(VoiceMetrics.class)
-        );
-        when(ttsAdapter.synthesize("请介绍你的项目")).thenReturn(new byte[] {1, 2, 3});
-
-        List<ServerSentEvent<String>> events = controller.streamQuestionTts(new TtsStreamRequest("请介绍你的项目"))
-            .collectList()
-            .block();
-
-        assertEquals(1, events.size());
-        assertEquals("audio", events.get(0).event());
-        assertEquals(Base64.getEncoder().encodeToString(new byte[] {1, 2, 3}), events.get(0).data());
-        verify(ttsAdapter).synthesize("请介绍你的项目");
-    }
-
-    @Test
     @DisplayName("成长曲线接口应转发 resumeId 并返回按岗位分组数据")
     void shouldReturnGrowthCurveByResumeId() {
         InterviewSessionService sessionService = mock(InterviewSessionService.class);
@@ -129,9 +98,8 @@ class InterviewControllerTest {
         InterviewPersistenceService persistenceService = mock(InterviewPersistenceService.class);
         GrowthCurveService growthCurveService = mock(GrowthCurveService.class);
         InterviewTurnProcessor turnProcessor = mock(InterviewTurnProcessor.class);
-        TtsAdapter ttsAdapter = mock(TtsAdapter.class);
         InterviewController controller = new InterviewController(
-            sessionService, historyService, persistenceService, growthCurveService, turnProcessor, ttsAdapter, new VoiceTurnGuard(), mock(VoiceMetrics.class)
+            sessionService, historyService, persistenceService, growthCurveService, turnProcessor, new VoiceTurnGuard()
         );
         GrowthCurveDTO dto = new GrowthCurveDTO(7L, List.of());
         when(growthCurveService.getGrowthCurve(7L)).thenReturn(dto);

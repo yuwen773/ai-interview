@@ -8,6 +8,7 @@ import interview.guide.modules.interview.model.InterviewQuestionDTO.QuestionType
 import interview.guide.modules.interview.model.JobRole;
 import interview.guide.modules.interview.model.QuestionBucket;
 import interview.guide.modules.interview.model.QuestionPlan;
+import interview.guide.modules.interview.model.TrainingContext;
 import interview.guide.modules.profile.entity.UserWeakPointEntity;
 import interview.guide.modules.profile.service.UserProfileService;
 import org.slf4j.Logger;
@@ -92,6 +93,22 @@ public class InterviewQuestionService {
 
     public List<InterviewQuestionDTO> generateQuestions(JobRole jobRole, String resumeText, int questionCount) {
         return generateQuestions(jobRole, resumeText, questionCount, null);
+    }
+
+    public List<InterviewQuestionDTO> generateQuestionsWithContext(
+        JobRole jobRole,
+        String resumeText,
+        int questionCount,
+        List<String> historicalQuestions,
+        TrainingContext context
+    ) {
+        return generateQuestionsWithWeakContext(
+            jobRole,
+            resumeText,
+            questionCount,
+            historicalQuestions,
+            context != null ? context.toPromptText() : ""
+        );
     }
 
     /**
