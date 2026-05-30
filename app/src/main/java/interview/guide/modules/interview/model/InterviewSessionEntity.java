@@ -42,7 +42,6 @@ public class InterviewSessionEntity {
     // 关联的简历（可选，支持无简历通用面试）
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resume_id")
-    @BatchSize(size = 20)
     private ResumeEntity resume;
     
     // 问题总数

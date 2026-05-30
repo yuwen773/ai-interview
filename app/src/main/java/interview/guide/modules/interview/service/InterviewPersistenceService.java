@@ -13,7 +13,6 @@ import interview.guide.modules.interview.repository.InterviewSessionRepository;
 import interview.guide.modules.resume.model.ResumeEntity;
 import interview.guide.modules.resume.repository.ResumeRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.core.JacksonException;
@@ -26,14 +25,18 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 面试持久化服务
  * 面试会话和答案的持久化
  */
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InterviewPersistenceService {
+
+    private static final Logger log = LoggerFactory.getLogger(InterviewPersistenceService.class);
     
     private final InterviewSessionRepository sessionRepository;
     private final InterviewAnswerRepository answerRepository;

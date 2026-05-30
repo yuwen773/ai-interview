@@ -4,8 +4,6 @@ import interview.guide.common.annotation.RateLimit;
 import interview.guide.common.exception.BusinessException;
 import interview.guide.common.exception.ErrorCode;
 import interview.guide.common.result.Result;
-import interview.guide.modules.audio.adapter.TtsAdapter;
-import interview.guide.modules.audio.service.VoiceMetrics;
 import interview.guide.modules.interview.model.*;
 import interview.guide.modules.interview.service.InterviewHistoryService;
 import interview.guide.modules.interview.service.InterviewPersistenceService;
@@ -51,9 +49,7 @@ public class InterviewController {
     private final InterviewPersistenceService persistenceService;
     private final GrowthCurveService growthCurveService;
     private final InterviewTurnProcessor turnProcessor;
-    private final TtsAdapter ttsAdapter;
     private final VoiceTurnGuard voiceTurnGuard;
-    private final VoiceMetrics voiceMetrics;
     
     /**
      * 创建面试会话
@@ -156,32 +152,6 @@ public class InterviewController {
         }
     }
 
-    /**
-     * 题目 TTS 流
-     */
-    @PostMapping(value = "/api/interview/tts/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    @RateLimit(dimensions = {RateLimit.Dimension.GLOBAL}, count = 20)
-    public Flux<ServerSentEvent<String>> streamQuestionTts(@RequestBody TtsStreamRequest request) {
-        log.info("题目 TTS 流式合成，文本长度: {}", request.text() == null ? 0 : request.text().length());
-        long startTime = System.nanoTime();
-        try {
-            byte[] audioBytes = ttsAdapter.synthesize(request.text());
-            if (audioBytes == null || audioBytes.length == 0) {
-                // 题目播报属于增强能力，不应因为 TTS 失败而卡住文字面试主线。
-                voiceMetrics.recordTtsFailure(durationMs(startTime), request.text() == null ? 0 : request.text().length(), "controller", "empty_audio");
-                return Flux.empty();
-            }
-            return Flux.just(ServerSentEvent.<String>builder()
-                    .event("audio")
-                    .data(Base64.getEncoder().encodeToString(audioBytes))
-                    .build());
-        } catch (Exception exception) {
-            voiceMetrics.recordTtsFailure(durationMs(startTime), request.text() == null ? 0 : request.text().length(), "controller", exception.getMessage());
-            log.warn("题目 TTS 合成失败，不阻断面试流程: {}", exception.getMessage(), exception);
-            return Flux.empty();
-        }
-    }
-    
     /**
      * 生成面试报告
      */
@@ -310,9 +280,5 @@ public class InterviewController {
             }
         }
         throw new BusinessException(ErrorCode.BAD_REQUEST, "问题索引不能为空");
-    }
-
-    private long durationMs(long startTime) {
-        return (System.nanoTime() - startTime) / 1_000_000;
     }
 }

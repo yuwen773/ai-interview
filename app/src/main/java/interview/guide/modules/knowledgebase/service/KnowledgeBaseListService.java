@@ -12,21 +12,24 @@ import interview.guide.modules.knowledgebase.model.VectorStatus;
 import interview.guide.modules.knowledgebase.repository.KnowledgeBaseRepository;
 import interview.guide.modules.knowledgebase.repository.RagChatMessageRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 知识库查询服务
  * 负责知识库列表和详情的查询
  */
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class KnowledgeBaseListService {
+
+    private static final Logger log = LoggerFactory.getLogger(KnowledgeBaseListService.class);
 
     private final KnowledgeBaseRepository knowledgeBaseRepository;
     private final RagChatMessageRepository ragChatMessageRepository;
