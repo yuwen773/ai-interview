@@ -52,3 +52,6 @@ docs/
 .claude/
 .impeccable.md
 /.zread/
+/.omc/
+/.agents/
+/app/.omc/
