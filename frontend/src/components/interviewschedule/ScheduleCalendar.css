@@ -1,0 +1,222 @@
+/* Time slot height in week/day views */
+.rbc-time-view .rbc-time-content .rbc-timeslot-group {
+  min-height: 60px;
+}
+
+.rbc-time-view .rbc-time-slot {
+  height: 30px;
+}
+
+/* Event styling */
+.rbc-event {
+  min-height: 50px;
+  background: transparent !important;
+  border: none !important;
+}
+
+.rbc-month-view .rbc-event {
+  min-height: auto;
+}
+
+.rbc-time-view .rbc-event-content {
+  overflow: visible;
+}
+
+/* Light mode */
+.rbc-day-slot .rbc-time-slot {
+  border-top: 1px solid var(--color-border) !important;
+}
+
+/* Dark mode */
+.dark .rbc-day-slot .rbc-time-slot {
+  border-top: 1px solid var(--color-border-dark) !important;
+}
+
+.rbc-event-label {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.rbc-time-content {
+  overflow-y: auto;
+}
+
+.rbc-month-row {
+  min-height: 100px;
+}
+
+/* Calendar header overrides */
+.rbc-header {
+  padding: 12px 8px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.dark .rbc-header {
+  color: var(--color-text-dark);
+  border-color: var(--color-border-dark) !important;
+}
+
+/* Off-range / today */
+.dark .rbc-off-range-bg {
+  background: color-mix(in srgb, var(--color-bg-dark) 80%, transparent);
+}
+
+.dark .rbc-today {
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface-dark));
+}
+
+/* Month view cells */
+.rbc-month-view,
+.rbc-time-view,
+.rbc-time-content,
+.rbc-day-slot {
+  border-color: var(--color-border);
+}
+
+.dark .rbc-month-view,
+.dark .rbc-time-view,
+.dark .rbc-time-content,
+.dark .rbc-day-slot {
+  border-color: var(--color-border-dark);
+}
+
+.rbc-month-row + .rbc-month-row {
+  border-color: var(--color-border);
+}
+
+.dark .rbc-month-row + .rbc-month-row {
+  border-color: var(--color-border-dark);
+}
+
+.rbc-day-bg + .rbc-day-bg {
+  border-color: var(--color-border);
+}
+
+.dark .rbc-day-bg + .rbc-day-bg {
+  border-color: var(--color-border-dark);
+}
+
+/* Time gutter */
+.rbc-time-gutter .rbc-timeslot-group {
+  border-color: var(--color-border);
+}
+
+.dark .rbc-time-gutter .rbc-timeslot-group {
+  border-color: var(--color-border-dark);
+}
+
+.rbc-timeslot-group {
+  border-color: var(--color-border);
+}
+
+.dark .rbc-timeslot-group {
+  border-color: var(--color-border-dark);
+}
+
+.rbc-time-header-cell .rbc-header {
+  border-color: var(--color-border);
+}
+
+.dark .rbc-time-header-cell .rbc-header {
+  border-color: var(--color-border-dark);
+}
+
+.rbc-time-header {
+  border-color: var(--color-border);
+}
+
+.dark .rbc-time-header {
+  border-color: var(--color-border-dark);
+}
+
+.rbc-time-view .rbc-allday-cell {
+  border-color: var(--color-border);
+}
+
+.dark .rbc-time-view .rbc-allday-cell {
+  border-color: var(--color-border-dark);
+}
+
+.rbc-current-time-indicator {
+  background-color: var(--color-primary);
+}
+
+/* Time gutter label colors */
+.rbc-label {
+  color: var(--color-text-muted);
+}
+
+.dark .rbc-label {
+  color: var(--color-text-muted-dark);
+}
+
+/* Month view date cells */
+.rbc-date-cell {
+  color: var(--color-text);
+}
+
+.dark .rbc-date-cell {
+  color: var(--color-text-dark);
+}
+
+.rbc-date-cell > a {
+  color: var(--color-text);
+}
+
+.dark .rbc-date-cell > a {
+  color: var(--color-text-dark);
+}
+
+.rbc-off-range > a {
+  color: var(--color-text-muted);
+}
+
+.dark .rbc-off-range > a {
+  color: var(--color-text-muted-dark);
+}
+
+/* Today button */
+.rbc-toolbar button {
+  color: var(--color-text);
+  border-color: var(--color-border);
+  border-radius: 0.75rem;
+}
+
+.dark .rbc-toolbar button {
+  color: var(--color-text-dark);
+  border-color: var(--color-border-dark);
+  background: var(--color-surface-dark);
+}
+
+.rbc-toolbar button.rbc-active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* Row borders */
+.rbc-row {
+  border-color: var(--color-border);
+}
+
+.dark .rbc-row {
+  border-color: var(--color-border-dark);
+}
+
+.rbc-row-content {
+  border-color: var(--color-border);
+}
+
+.dark .rbc-row-content {
+  border-color: var(--color-border-dark);
+}
+
+.rbc-time-view .rbc-row {
+  border-color: var(--color-border);
+}
+
+.dark .rbc-time-view .rbc-row {
+  border-color: var(--color-border-dark);
+}

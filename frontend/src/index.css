@@ -349,6 +349,15 @@
     background: var(--color-text-muted-dark);
   }
 
+  /* 隐藏滚动条 */
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hidden {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   .skeleton {
     background: linear-gradient(90deg, var(--color-surface-raised) 25%, var(--color-border-subtle) 50%, var(--color-surface-raised) 75%);
     background-size: 200% 100%;

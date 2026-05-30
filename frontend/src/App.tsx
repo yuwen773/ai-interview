@@ -20,10 +20,14 @@ const KnowledgeBaseUploadPage = lazy(() => import('./pages/KnowledgeBaseUploadPa
 const KnowledgeBaseManagePage = lazy(() => import('./pages/KnowledgeBaseManagePage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const KnowledgeGraphPage = lazy(() => import('./pages/KnowledgeGraphPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const LandingPage = lazy(() => import('./pages/landing'));
 const VoiceInterviewListPage = lazy(() => import('./pages/voiceinterview/VoiceInterviewListPage'));
 const VoiceInterviewPage = lazy(() => import('./pages/voiceinterview/VoiceInterviewPage'));
+const VoiceInterviewEvaluationPage = lazy(() => import('./pages/voiceinterview/VoiceInterviewEvaluationPage'));
 const AvatarInterviewPage = lazy(() => import('./features/avatar-interview/pages/AvatarInterviewPage'));
+const InterviewHubPage = lazy(() => import('./pages/InterviewHubPage'));
+const InterviewSchedulePage = lazy(() => import('./pages/InterviewSchedulePage'));
 
 // Loading component
 const Loading = () => (
@@ -215,6 +219,12 @@ function App() {
               {/* 面试报告 */}
               <Route path="interviews/report/:sessionId" element={<InterviewReportPageWrapper />} />
 
+              {/* 面试中心 */}
+              <Route path="interview-hub" element={<InterviewHubPage />} />
+
+              {/* 面试日程 */}
+              <Route path="interview-schedule" element={<InterviewSchedulePage />} />
+
               {/* 知识库管理 */}
               <Route path="knowledgebase" element={<KnowledgeBaseManagePageWrapper />} />
 
@@ -230,9 +240,13 @@ function App() {
               {/* 知识图谱 */}
               <Route path="graph" element={<KnowledgeGraphPage />} />
 
+              {/* 系统设置 */}
+              <Route path="settings" element={<SettingsPage />} />
+
               {/* 语音面试 */}
               <Route path="voice-interview" element={<VoiceInterviewListPage />} />
               <Route path="voice-interview/:sessionId" element={<VoiceInterviewPage />} />
+              <Route path="voice-interview/:sessionId/evaluation" element={<VoiceInterviewEvaluationPage />} />
 
               {/* Avatar 面试 - 功能开关控制 */}
               {import.meta.env.VITE_ENABLE_AVATAR_INTERVIEW === 'true' && (
