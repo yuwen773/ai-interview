@@ -1,6 +1,5 @@
 package interview.guide.infrastructure.file;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -8,13 +7,17 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 文件内容类型检测服务
  * 使用 Apache Tika 进行精确的 MIME 类型检测
  */
-@Slf4j
 @Service
 public class ContentTypeDetectionService {
+
+    private static final Logger log = LoggerFactory.getLogger(ContentTypeDetectionService.class);
 
     private final Tika tika;
 

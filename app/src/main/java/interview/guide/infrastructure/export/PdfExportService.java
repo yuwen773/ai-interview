@@ -20,7 +20,6 @@ import interview.guide.modules.interview.model.InterviewSessionEntity;
 import interview.guide.modules.interview.model.ResumeAnalysisResponse;
 import interview.guide.modules.resume.model.ResumeEntity;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,15 +28,19 @@ import java.io.ByteArrayOutputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * PDF导出服务
  * PDF Export Service for resume analysis and interview reports
  */
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PdfExportService {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(PdfExportService.class);
+
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final DeviceRgb HEADER_COLOR = new DeviceRgb(41, 128, 185);
     private static final DeviceRgb SECTION_COLOR = new DeviceRgb(52, 73, 94);
