@@ -17,6 +17,17 @@ const instance: AxiosInstance = axios.create({
 });
 
 /**
+ * 请求拦截器：注入 Authorization header
+ */
+instance.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+/**
  * 响应拦截器
  * 
  * 后端约定：所有响应都是 HTTP 200 + Result

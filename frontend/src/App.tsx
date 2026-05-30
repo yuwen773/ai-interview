@@ -6,6 +6,8 @@ import type { UploadKnowledgeBaseResponse } from './api/knowledgebase';
 import { TaskStatusProvider } from './contexts/TaskStatusContext';
 import { TaskNotification } from './components/TaskNotification';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 
 // Lazy load components
 const UploadPage = lazy(() => import('./pages/UploadPage'));
@@ -140,13 +142,13 @@ function InterviewWrapper() {
     }
   }, [resumeId, location.state]);
 
-  if (!resumeId) {
-    return <Navigate to="/history" replace />;
-  }
-
   const handleBack = () => {
     // 尝试返回详情页，如果失败则返回历史列表
-    navigate(`/history/${resumeId}`, { replace: false });
+    if (resumeId) {
+      navigate(`/history/${resumeId}`, { replace: false });
+    } else {
+      navigate('/history', { replace: false });
+    }
   };
 
   const handleInterviewComplete = (sessionId: string) => {
@@ -168,7 +170,7 @@ function InterviewWrapper() {
   return (
     <Interview
       resumeText={resumeText}
-      resumeId={parseInt(resumeId, 10)}
+      resumeId={resumeId ? parseInt(resumeId, 10) : undefined}
       onBack={handleBack}
       onInterviewComplete={handleInterviewComplete}
     />
@@ -188,12 +190,28 @@ function InterviewReportPageWrapper() {
 }
 
 function App() {
+  const location = useLocation();
+
+  // Auth guard: redirect to /login if no token and trying to access protected routes
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const publicPaths = ['/login', '/register'];
+    const isPublic = publicPaths.includes(location.pathname);
+    if (!token && !isPublic) {
+      window.location.href = '/login';
+    }
+  }, [location.pathname]);
+
   return (
     <BrowserRouter>
       <TaskStatusProvider>
         <ErrorBoundary>
           <Suspense fallback={<Loading />}>
             <Routes>
+            {/* Auth pages */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+
             {/* 着陆页 — 独立路由，不显示侧边栏 */}
             <Route path="/" element={<LandingPage />} />
 
@@ -214,7 +232,7 @@ function App() {
               <Route path="interviews" element={<InterviewHistoryWrapper />} />
 
               {/* 模拟面试 */}
-              <Route path="interview/:resumeId" element={<InterviewWrapper />} />
+              <Route path="interview/:resumeId?" element={<InterviewWrapper />} />
 
               {/* 面试报告 */}
               <Route path="interviews/report/:sessionId" element={<InterviewReportPageWrapper />} />
