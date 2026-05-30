@@ -4,7 +4,6 @@ import interview.guide.common.annotation.RateLimit;
 import interview.guide.common.exception.RateLimitExceededException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -24,15 +23,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 限流 AOP 切面
  * 基于滑动时间窗口实现的多维度原子限流
  */
-@Slf4j
 @Aspect
 @Component
 @RequiredArgsConstructor
 public class RateLimitAspect {
+
+    private static final Logger log = LoggerFactory.getLogger(RateLimitAspect.class);
 
     private final RedissonClient redissonClient;
 
@@ -62,72 +65,94 @@ public class RateLimitAspect {
 
     /**
      * 环绕通知：拦截带 @RateLimit 注解的方法
+     * <p>
+     * 支持可重复注解，同一方法上的所有 @RateLimit 规则独立评估，全部通过才允许请求。
      */
-    @Around("@annotation(rateLimit)")
-    public Object around(ProceedingJoinPoint joinPoint, RateLimit rateLimit) throws Throwable {
+    @Around("@annotation(interview.guide.common.annotation.RateLimit.Container) "
+          + "|| @annotation(rateLimit)")
+    public Object around(ProceedingJoinPoint joinPoint, Object rateLimitOrContainer) throws Throwable {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
         String className = method.getDeclaringClass().getSimpleName();
         String methodName = method.getName();
 
-        // 1. 计算时间窗口（毫秒）
-        long intervalMs = calculateIntervalMs(rateLimit.interval(), rateLimit.timeUnit());
+        // 获取所有 @RateLimit 注解实例（包括可重复注解的多个实例）
+        RateLimit[] allRules = method.getAnnotationsByType(RateLimit.class);
+        if (allRules.length == 0) {
+            allRules = new RateLimit[]{(RateLimit) rateLimitOrContainer};
+        }
 
-        // 2. 根据配置维度动态生成 Redis Keys
-        List<String> keys = generateKeys(className, methodName, rateLimit.dimensions());
+        for (RateLimit rule : allRules) {
+            // 1. 计算时间窗口（毫秒）
+            long intervalMs = calculateIntervalMs(rule.interval(), rule.timeUnit());
 
-        // 3. 调用 Lua 脚本执行原子限流
-        // 使用 StringCodec 确保参数正确传递为字符串
+            // 2. 根据配置维度动态生成 Redis Keys
+            List<String> keys = generateKeys(className, methodName, resolveDimensions(rule));
+
+            // 3. 调用 Lua 脚本执行原子限流
+            Long result = executeRateLimit(keys, intervalMs, rule.count());
+            if (result == null || result == 0) {
+                return handleRateLimitExceeded(joinPoint, rule, keys);
+            }
+        }
+
+        // 所有规则均通过，执行原方法
+        return joinPoint.proceed();
+    }
+
+    /**
+     * 执行单条限流规则的 Lua 脚本
+     */
+    private Long executeRateLimit(List<String> keys, long intervalMs, double count) {
         RScript script = redissonClient.getScript(StringCodec.INSTANCE);
-
-        // 准备参数
         List<Object> keysList = new ArrayList<>(keys);
         Object[] args = {
-                String.valueOf(System.currentTimeMillis()), // ARGV[1]: 当前时间戳
-                String.valueOf(1),                          // ARGV[2]: 申请令牌数（默认1个）
-                String.valueOf(intervalMs),                 // ARGV[3]: 时间窗口
-                String.valueOf(rateLimit.count()),          // ARGV[4]: 最大令牌数
-                UUID.randomUUID().toString()               // ARGV[5]: 请求唯一标识
+                String.valueOf(System.currentTimeMillis()),
+                String.valueOf(1),
+                String.valueOf(intervalMs),
+                String.valueOf(count),
+                UUID.randomUUID().toString()
         };
 
-        Object resultObj;
         try {
-            resultObj = script.evalSha(
+            Object resultObj = script.evalSha(
                     RScript.Mode.READ_WRITE,
                     luaScriptSha,
                     RScript.ReturnType.VALUE,
                     keysList,
                     args
             );
+            return convertToLong(resultObj);
         } catch (Exception e) {
-            // NOSCRIPT 或脚本缓存失效时，重新 LOAD 脚本并重试
             if (e.getMessage() != null && e.getMessage().contains("NOSCRIPT")) {
                 log.warn("限流 Lua 脚本缓存失效，重新加载: {}", e.getMessage());
                 RScript newScript = redissonClient.getScript(StringCodec.INSTANCE);
                 this.luaScriptSha = newScript.scriptLoad(LUA_SCRIPT);
                 log.info("限流 Lua 脚本重新加载完成, SHA1: {}", luaScriptSha);
-                resultObj = newScript.evalSha(
+                Object resultObj = newScript.evalSha(
                         RScript.Mode.READ_WRITE,
                         luaScriptSha,
                         RScript.ReturnType.VALUE,
                         keysList,
                         args
                 );
-            } else {
-                throw e;
+                return convertToLong(resultObj);
             }
+            throw e;
         }
+    }
 
-        // 将结果转换为 Long
-        Long result = convertToLong(resultObj);
-
-        // 4. 处理限流结果
-        if (result == null || result == 0) {
-            return handleRateLimitExceeded(joinPoint, rateLimit, keys);
+    /**
+     * 解析有效限流维度：优先使用 dimension()（新方式），回退到 dimensions()（旧方式兼容）
+     */
+    private RateLimit.Dimension[] resolveDimensions(RateLimit rule) {
+        RateLimit.Dimension[] dims = rule.dimensions();
+        // dimensions() 显式设置了多个维度时，使用旧方式兼容
+        if (dims.length > 1) {
+            return dims;
         }
-
-        // 5. 执行原方法
-        return joinPoint.proceed();
+        // 单维度：统一使用 dimension() 作为规范来源（兼容新旧两种写法）
+        return new RateLimit.Dimension[]{rule.dimension()};
     }
 
     /**
