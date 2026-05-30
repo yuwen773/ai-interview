@@ -45,10 +45,9 @@ public class ProfileConsolidationService {
             .map(last -> last.isBefore(LocalDateTime.now().minusHours(24)))
             .orElse(true);
         boolean enoughSignals = behaviorSignalRepository.countByUserIdAndStatus(userId, ACTIVE) >= 5;
-        List<UserWeakPointEntity> activeWeakPoints = weakPointRepository.findByUserIdAndIsImprovedFalse(userId);
-        boolean enoughWeakPoints = activeWeakPoints.size() >= 10;
+        boolean enoughWeakPoints = weakPointRepository.countByUserIdAndIsImprovedFalse(userId) >= 10;
         boolean crossTopicPattern = hasCrossTopicBehaviorPattern(userId)
-            || hasCrossTopicWeakPointPattern(activeWeakPoints);
+            || hasCrossTopicWeakPointPattern(userId);
         return staleByTime || enoughSignals || enoughWeakPoints || crossTopicPattern;
     }
 
@@ -179,7 +178,8 @@ public class ProfileConsolidationService {
             .anyMatch(signal -> evidenceTopics(signal).size() >= 2);
     }
 
-    private boolean hasCrossTopicWeakPointPattern(List<UserWeakPointEntity> activeWeakPoints) {
+    private boolean hasCrossTopicWeakPointPattern(String userId) {
+        List<UserWeakPointEntity> activeWeakPoints = weakPointRepository.findByUserIdAndIsImprovedFalse(userId);
         return activeWeakPoints.stream()
             .filter(wp -> wp.getTopic() != null && !wp.getTopic().isBlank())
             .collect(Collectors.groupingBy(
@@ -200,9 +200,7 @@ public class ProfileConsolidationService {
     }
 
     private Optional<UserProfilePatternEntity> findActivePattern(String userId, String patternType, String title) {
-        Optional<UserProfilePatternEntity> result = patternRepository
-            .findByUserIdAndPatternTypeAndTitleAndStatus(userId, patternType, title, ACTIVE);
-        return result != null ? result : Optional.empty();
+        return patternRepository.findByUserIdAndPatternTypeAndTitleAndStatus(userId, patternType, title, ACTIVE);
     }
 
     private UserProfilePatternEntity newPattern(String userId, String patternType, String title) {

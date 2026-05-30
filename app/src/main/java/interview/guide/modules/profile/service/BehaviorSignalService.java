@@ -34,13 +34,10 @@ public class BehaviorSignalService {
             signals = repository.findByUserIdAndNamespaceAndStatus(userId, normalizedNamespace, normalizedStatus);
         } else if (normalizedStatus != null) {
             signals = repository.findByUserIdAndStatus(userId, normalizedStatus);
+        } else if (normalizedNamespace != null) {
+            signals = repository.findByUserIdAndNamespace(userId, normalizedNamespace);
         } else {
             signals = repository.findByUserId(userId);
-            if (normalizedNamespace != null) {
-                signals = signals.stream()
-                    .filter(signal -> normalizedNamespace.equals(signal.getNamespace()))
-                    .toList();
-            }
         }
         return signals.stream().map(this::toDto).toList();
     }
@@ -170,6 +167,10 @@ public class BehaviorSignalService {
         );
     }
 
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
     private static String normalizeNamespace(String namespace) {
         String normalized = blankToNull(namespace);
         return normalized != null ? normalized.toLowerCase(Locale.ROOT) : null;
@@ -187,7 +188,4 @@ public class BehaviorSignalService {
         }
     }
 
-    private static String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
-    }
 }

@@ -18,6 +18,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Slf4j
 @Service
@@ -29,32 +32,57 @@ public class TrainingContextService {
     private final ProfileConsolidationService consolidationService;
     private final UserStrongPointRepository strongPointRepository;
 
+    private final ExecutorService executor = Executors.newFixedThreadPool(4);
+
     public TrainingContext buildForInterview(String userId, JobRole jobRole, Long resumeId) {
         try {
-            List<String> weakLines = profileService.getWeakPointDtos(userId, WeakPointStatus.ACTIVE, null).stream()
-                .limit(5)
-                .map(this::weakPointLine)
-                .toList();
-            List<String> lowMasteryLines = profileService.getProfile(userId).topicMasteries().stream()
-                .filter(item -> item.score() < 60)
-                .sorted(Comparator.comparingDouble(TopicMasteryDto::score))
-                .limit(3)
-                .map(item -> "- [掌握度] " + sanitizeForPrompt(item.topic()) + ": " + item.score() + "/100")
-                .toList();
-            List<String> signalLines = behaviorSignalService.getSignals(userId, null, null).stream()
-                .filter(this::isCurrentBehaviorSignal)
-                .limit(3)
-                .map(this::behaviorSignalLine)
-                .toList();
-            List<String> patternLines = consolidationService.getPatterns(userId, "ACTIVE").stream()
-                .limit(2)
-                .map(this::patternLine)
-                .toList();
-            List<String> strongLines = strongPointRepository.findByUserId(userId).stream()
-                .limit(2)
-                .map(this::strongPointLine)
-                .toList();
-            return new TrainingContext(weakLines, lowMasteryLines, signalLines, patternLines, strongLines);
+            CompletableFuture<List<String>> weakFuture = CompletableFuture.supplyAsync(() ->
+                profileService.getWeakPointDtos(userId, WeakPointStatus.ACTIVE, null).stream()
+                    .limit(5)
+                    .map(this::weakPointLine)
+                    .toList()
+            , executor);
+
+            CompletableFuture<List<String>> masteryFuture = CompletableFuture.supplyAsync(() ->
+                profileService.getProfile(userId).topicMasteries().stream()
+                    .filter(item -> item.score() < 60)
+                    .sorted(Comparator.comparingDouble(TopicMasteryDto::score))
+                    .limit(3)
+                    .map(item -> "- [掌握度] " + sanitizeForPrompt(item.topic()) + ": " + item.score() + "/100")
+                    .toList()
+            , executor);
+
+            CompletableFuture<List<String>> signalFuture = CompletableFuture.supplyAsync(() ->
+                behaviorSignalService.getSignals(userId, null, null).stream()
+                    .filter(this::isCurrentBehaviorSignal)
+                    .limit(3)
+                    .map(this::behaviorSignalLine)
+                    .toList()
+            , executor);
+
+            CompletableFuture<List<String>> patternFuture = CompletableFuture.supplyAsync(() ->
+                consolidationService.getPatterns(userId, "ACTIVE").stream()
+                    .limit(2)
+                    .map(this::patternLine)
+                    .toList()
+            , executor);
+
+            CompletableFuture<List<String>> strongFuture = CompletableFuture.supplyAsync(() ->
+                strongPointRepository.findByUserId(userId).stream()
+                    .limit(2)
+                    .map(this::strongPointLine)
+                    .toList()
+            , executor);
+
+            CompletableFuture.allOf(weakFuture, masteryFuture, signalFuture, patternFuture, strongFuture).join();
+
+            return new TrainingContext(
+                weakFuture.join(),
+                masteryFuture.join(),
+                signalFuture.join(),
+                patternFuture.join(),
+                strongFuture.join()
+            );
         } catch (Exception e) {
             log.warn("Build training context failed: {}", e.getMessage());
             return TrainingContext.empty();

@@ -19,6 +19,9 @@ public interface UserWeakPointRepository extends JpaRepository<UserWeakPointEnti
     /** 查询用户所有未改善的弱项 */
     List<UserWeakPointEntity> findByUserIdAndIsImprovedFalse(String userId);
 
+    /** 统计用户未改善的弱项数量 */
+    long countByUserIdAndIsImprovedFalse(String userId);
+
     /** 查询用户所有已改善的弱项 */
     List<UserWeakPointEntity> findByUserIdAndIsImprovedTrue(String userId);
 

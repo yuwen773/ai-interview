@@ -16,6 +16,8 @@ public interface UserBehaviorSignalRepository extends JpaRepository<UserBehavior
 
     List<UserBehaviorSignalEntity> findByUserIdAndNamespaceAndStatus(String userId, String namespace, String status);
 
+    List<UserBehaviorSignalEntity> findByUserIdAndNamespace(String userId, String namespace);
+
     Optional<UserBehaviorSignalEntity> findByUserIdAndNamespaceAndSignalKey(
         String userId,
         String namespace,
