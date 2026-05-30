@@ -2,7 +2,7 @@
 
 ## Tech Stack
 
-- **Backend**: Spring Boot 3.5 + Java 21 + Spring AI 1.1 (DashScope/Qwen)
+- **Backend**: Spring Boot 4.0 + Java 21 + Spring AI 1.1 (DashScope/Qwen)
 - **Frontend**: React 18 + Vite 5 + TailwindCSS 4 + Three.js (VRM avatars)
 - **MiniApp**: Taro 3 (WeChat/Alipay/H5)
 - **Infra**: PostgreSQL 16 (pgvector) + Redis 7 (Redisson) + MinIO
@@ -41,7 +41,7 @@ Layered: `Controller → Service → Repository → Infrastructure`
 | `knowledgebase` | RAG: upload, vectorization (pgvector), similarity search, chat |
 | `profile` | User profiling, spaced repetition (SM-2), weak/strong point tracking |
 | `dashboard` | Summary statistics |
-| `audio` | ASR/TTS adapters |
+| `voiceinterview` | Voice interview: ASR/TTS adapters (DashScope/Qwen) |
 | `llmprovider` | LLM Provider dynamic registry (DashScope/OpenAI), encrypted API key storage |
 | `schedule` | Interview schedule: CRUD, AI parsing (Feishu/Tencent/Zoom), status tracking |
 
@@ -60,7 +60,25 @@ DB: Flyway migrations in `resources/db/migration/`.
 
 ### Frontend (`frontend/src/`)
 
-React Router lazy-loaded pages. Key:
+React Router lazy-loaded pages:
+- `pages/UploadPage` — 简历上传
+- `pages/HistoryPage` — 简历库
+- `pages/ResumeDetailPage` — 简历详情
+- `pages/GrowthCurvePage` — 成长曲线
+- `pages/InterviewPage` — 模拟面试
+- `pages/InterviewHistoryPage` — 面试记录列表
+- `pages/InterviewReportPage` — 面试报告
+- `pages/VoiceInterviewListPage` / `VoiceInterviewPage` / `VoiceInterviewEvaluationPage` — 语音面试（含评估报告）
+- `pages/KnowledgeBaseManagePage` / `UploadPage` / `QueryPage` — 知识库
+- `pages/ProfilePage` — 个人画像
+- `pages/KnowledgeGraphPage` — 知识图谱
+- `pages/SettingsPage` — 系统设置（LLM Provider + ASR/TTS 配置）
+- `pages/InterviewHubPage` — 面试中心（模式/方向/难度选择，最近记录）
+- `pages/InterviewSchedulePage` — 面试日程（日历+列表，AI 解析邀约文本）
+- `pages/landing/` — 着陆页（10个子组件）
+- `features/avatar-interview/` — Avatar 面试（VITE_ENABLE_AVATAR_INTERVIEW 控制）
+
+关键文件：
 - `api/request.ts` — Axios singleton, unwraps `Result<T>`
 - `components/InterviewAvatar/` — Three.js VRM loader with lip-sync and expressions
 

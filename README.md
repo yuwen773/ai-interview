@@ -23,14 +23,15 @@ AI Interview Platform 是一个全栈智能面试模拟平台，提供真实的�
 |------|------|------|
 | Java | 21 | 编程语言 |
 | Spring Boot | 4.0.1 | 应用框架 |
-| Spring AI | 2.0.0-M1 | AI 集成框架 |
+| Spring AI | 2.0.0-M4 | AI 集成框架 |
 | Maven | 3.9 | 构建工具 |
 
 **核心模块**:
-- `audio`: 语音服务（语音识别、语音合成）
+- `voiceinterview`: 语音面试服务（语音识别、语音合成）
 - `interview`: 面试核心业务
 - `knowledgebase`: 知识库管理
 - `resume`: 简历解析与管理
+- `schedule`: 面试日程管理
 
 ### 前端 (React)
 
@@ -154,7 +155,7 @@ ai-interview/
 │       ├── infrastructure/       # 基础设施层
 │       │   └── file/            # 文件存储
 │       └── modules/             # 业务模块
-│           ├── audio/           # 语音服务
+│           ├── voiceinterview/    # 语音面试
 │           ├── interview/       # 面试业务
 │           ├── knowledgebase/   # 知识库
 │           └── resume/          # 简历管理
