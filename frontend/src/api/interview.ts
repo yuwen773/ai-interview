@@ -18,6 +18,20 @@ function toBackendOutputMode(mode: InterviewerOutputMode): 'TEXT' | 'TEXT_VOICE'
   return mode === 'textVoice' ? 'TEXT_VOICE' : 'TEXT';
 }
 
+export interface TextSessionMeta {
+  sessionId: string;
+  skillId: string;
+  difficulty: string;
+  resumeId: number | null;
+  totalQuestions: number;
+  status: string;
+  evaluateStatus: string | null;
+  evaluateError: string | null;
+  overallScore: number | null;
+  createdAt: string;
+  completedAt: string | null;
+}
+
 export const interviewApi = {
   inferAudioFileName(file: Blob, preferredName?: string): string {
     if (preferredName) {
@@ -44,6 +58,13 @@ export const interviewApi = {
     return request.post<InterviewSession>('/api/interview/sessions', req, {
       timeout: 180000, // 3分钟超时，AI生成问题需要时间
     });
+  },
+
+  /**
+   * 列出所有文字面试会话
+   */
+  async listSessions(): Promise<TextSessionMeta[]> {
+    return request.get<TextSessionMeta[]>('/api/interview/sessions');
   },
 
   /**

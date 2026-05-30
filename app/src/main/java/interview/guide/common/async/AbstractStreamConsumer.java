@@ -4,7 +4,6 @@ import interview.guide.common.constant.AsyncTaskStreamConstants;
 import interview.guide.infrastructure.redis.RedisService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.stream.StreamMessageId;
 
 import java.util.Map;
@@ -13,13 +12,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Redis Stream 消费者模板基类。
  * <p>
  * 将消费循环、ACK、重试与生命周期管理收敛到统一模板，子类仅关注业务处理逻辑。
  */
-@Slf4j
 public abstract class AbstractStreamConsumer<T> {
+
+    private static final Logger log = LoggerFactory.getLogger(AbstractStreamConsumer.class);
 
     private final RedisService redisService;
     private final AtomicBoolean running = new AtomicBoolean(false);

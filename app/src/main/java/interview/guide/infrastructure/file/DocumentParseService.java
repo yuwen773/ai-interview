@@ -2,7 +2,6 @@ package interview.guide.infrastructure.file;
 
 import interview.guide.common.exception.BusinessException;
 import interview.guide.common.exception.ErrorCode;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;
@@ -19,14 +18,18 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 通用文档解析服务
  * 使用 Apache Tika 解析多种文档格式，提取文本内容
  * 供知识库和简历模块共同使用
  */
-@Slf4j
 @Service
 public class DocumentParseService {
+
+    private static final Logger log = LoggerFactory.getLogger(DocumentParseService.class);
 
     private static final int MAX_TEXT_LENGTH = 5 * 1024 * 1024; // 5MB
 

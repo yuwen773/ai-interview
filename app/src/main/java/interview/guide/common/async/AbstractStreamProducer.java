@@ -2,16 +2,19 @@ package interview.guide.common.async;
 
 import interview.guide.common.constant.AsyncTaskStreamConstants;
 import interview.guide.infrastructure.redis.RedisService;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Redis Stream 生产者模板基类。
  * 统一消息发送骨架与失败处理逻辑。
  */
-@Slf4j
 public abstract class AbstractStreamProducer<T> {
+
+    private static final Logger log = LoggerFactory.getLogger(AbstractStreamProducer.class);
 
     private final RedisService redisService;
 

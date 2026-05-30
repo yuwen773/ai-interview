@@ -393,4 +393,18 @@ public class QwenTtsService {
     public void setVolume(Integer volume) {
         this.volume = volume;
     }
+
+    public void reload(VoiceInterviewProperties voiceProperties) {
+        VoiceInterviewProperties.QwenTtsConfig tts = voiceProperties.getQwen().getTts();
+        this.model = tts.getModel();
+        this.apiKey = tts.getApiKey();
+        this.voice = tts.getVoice();
+        this.format = tts.getFormat();
+        this.sampleRate = tts.getSampleRate();
+        this.mode = tts.getMode();
+        this.languageType = tts.getLanguageType();
+        this.speechRate = tts.getSpeechRate();
+        this.volume = tts.getVolume();
+        log.info("QwenTtsService reloaded: model={}, voice={}", model, voice);
+    }
 }

@@ -2,7 +2,7 @@ package interview.guide.modules.schedule.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import interview.guide.modules.llmprovider.service.LlmProviderRegistry;
+import interview.guide.common.ai.LlmProviderRegistry;
 import interview.guide.modules.schedule.model.CreateInterviewRequest;
 import interview.guide.modules.schedule.model.ParseResponse;
 import lombok.RequiredArgsConstructor;

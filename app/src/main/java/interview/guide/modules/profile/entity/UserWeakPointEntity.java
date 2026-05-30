@@ -1,6 +1,6 @@
 package interview.guide.modules.profile.entity;
 
-import io.hypersistence.utils.hibernate.type.json.JsonType;
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -56,7 +56,7 @@ public class UserWeakPointEntity {
     private Long sessionId;
 
     // SM-2间隔重复状态（JSONB：interval_days, ease_factor, repetitions, next_review, last_score）
-    @Type(JsonType.class)
+    @Type(JsonBinaryType.class)
     @Column(name = "sr_state", columnDefinition = "jsonb")
     private Map<String, Object> srState = new HashMap<>(Map.of(
         "interval_days", 1,
@@ -67,7 +67,7 @@ public class UserWeakPointEntity {
     ));
 
     // 操作历史记录（JSONB数组，记录每次状态变更）
-    @Type(JsonType.class)
+    @Type(JsonBinaryType.class)
     @Column(name = "history", columnDefinition = "jsonb")
     private List<Map<String, String>> history = new ArrayList<>();
 

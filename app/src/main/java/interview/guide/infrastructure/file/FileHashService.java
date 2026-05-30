@@ -2,7 +2,6 @@ package interview.guide.infrastructure.file;
 
 import interview.guide.common.exception.BusinessException;
 import interview.guide.common.exception.ErrorCode;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -11,13 +10,17 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 文件哈希服务
  * 统一提供文件哈希计算功能，用于文件去重
  */
-@Slf4j
 @Service
 public class FileHashService {
+
+    private static final Logger log = LoggerFactory.getLogger(FileHashService.class);
 
     private static final String HASH_ALGORITHM = "SHA-256";
     private static final int BUFFER_SIZE = 8192;

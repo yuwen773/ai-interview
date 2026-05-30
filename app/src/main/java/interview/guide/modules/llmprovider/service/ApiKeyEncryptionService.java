@@ -1,69 +1,109 @@
 package interview.guide.modules.llmprovider.service;
 
+import interview.guide.common.config.LlmProviderProperties;
 import interview.guide.common.exception.BusinessException;
 import interview.guide.common.exception.ErrorCode;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
+import jakarta.annotation.PostConstruct;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
+import javax.crypto.Cipher;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class ApiKeyEncryptionService {
 
-    private static final String ALGORITHM = "AES/GCM/NoPadding";
-    private static final int GCM_IV_LENGTH = 12;
-    private static final int GCM_TAG_LENGTH = 128;
+  private static final int NONCE_BYTES = 12;
+  private static final int GCM_TAG_BITS = 128;
+  private static final String CIPHER = "AES/GCM/NoPadding";
+  private static final String DEV_FALLBACK_KEY =
+      "interview-guide-dev-only-provider-api-key-encryption";
 
-    private final SecretKey secretKey;
+  private final LlmProviderProperties properties;
+  private final SecureRandom secureRandom = new SecureRandom();
+  private SecretKeySpec secretKey;
 
-    public record EncryptedValue(String nonce, String ciphertext) {}
+  public ApiKeyEncryptionService(LlmProviderProperties properties) {
+    this.properties = properties;
+  }
 
-    public ApiKeyEncryptionService(
-            @Value("${app.ai.security.api-key-encryption-key:}") String encryptionKey) {
-        if (encryptionKey == null || encryptionKey.isBlank()) {
-            encryptionKey = "default-dev-key-32-bytes-long!!";
-        }
-        this.secretKey = new SecretKeySpec(encryptionKey.getBytes(), "AES");
+  @PostConstruct
+  void init() {
+    LlmProviderProperties.SecurityConfig security = properties.getSecurity();
+    String configuredKey = security != null ? security.getApiKeyEncryptionKey() : null;
+    if (configuredKey == null || configuredKey.isBlank()) {
+      if (security != null && security.isRequireEncryptionKey()) {
+        throw new BusinessException(ErrorCode.PROVIDER_CONFIG_READ_FAILED,
+            "APP_AI_CONFIG_ENCRYPTION_KEY 未配置，无法解密 Provider API Key");
+      }
+      log.warn("APP_AI_CONFIG_ENCRYPTION_KEY is not configured; using development fallback key");
+      configuredKey = DEV_FALLBACK_KEY;
     }
+    secretKey = new SecretKeySpec(resolveKeyBytes(configuredKey), "AES");
+  }
 
-    public EncryptedValue encrypt(String plainText) {
-        try {
-            byte[] iv = new byte[GCM_IV_LENGTH];
-            new SecureRandom().nextBytes(iv);
+  public EncryptedValue encrypt(String plainText) {
+    try {
+      byte[] nonce = new byte[NONCE_BYTES];
+      secureRandom.nextBytes(nonce);
 
-            Cipher cipher = Cipher.getInstance(ALGORITHM);
-            GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey, parameterSpec);
+      Cipher cipher = Cipher.getInstance(CIPHER);
+      cipher.init(Cipher.ENCRYPT_MODE, secretKey, new GCMParameterSpec(GCM_TAG_BITS, nonce));
+      byte[] ciphertext = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
 
-            byte[] cipherText = cipher.doFinal(plainText.getBytes());
-
-            return new EncryptedValue(
-                Base64.getEncoder().encodeToString(iv),
-                Base64.getEncoder().encodeToString(cipherText)
-            );
-        } catch (Exception e) {
-            throw new BusinessException(ErrorCode.PROVIDER_CONFIG_WRITE_FAILED, "加密失败: " + e.getMessage());
-        }
+      return new EncryptedValue(
+          Base64.getEncoder().encodeToString(nonce),
+          Base64.getEncoder().encodeToString(ciphertext)
+      );
+    } catch (Exception e) {
+      throw new BusinessException(ErrorCode.PROVIDER_CONFIG_WRITE_FAILED,
+          "加密 Provider API Key 失败: " + e.getMessage());
     }
+  }
 
-    public String decrypt(String nonce, String ciphertext) {
-        try {
-            byte[] iv = Base64.getDecoder().decode(nonce);
-            byte[] cipherText = Base64.getDecoder().decode(ciphertext);
+  public String decrypt(String nonceBase64, String ciphertextBase64) {
+    try {
+      byte[] nonce = Base64.getDecoder().decode(nonceBase64);
+      byte[] ciphertext = Base64.getDecoder().decode(ciphertextBase64);
 
-            Cipher cipher = Cipher.getInstance(ALGORITHM);
-            GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
-            cipher.init(Cipher.DECRYPT_MODE, secretKey, parameterSpec);
-
-            byte[] plainText = cipher.doFinal(cipherText);
-            return new String(plainText);
-        } catch (Exception e) {
-            throw new BusinessException(ErrorCode.PROVIDER_CONFIG_READ_FAILED, "解密失败: " + e.getMessage());
-        }
+      Cipher cipher = Cipher.getInstance(CIPHER);
+      cipher.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(GCM_TAG_BITS, nonce));
+      byte[] plainText = cipher.doFinal(ciphertext);
+      return new String(plainText, StandardCharsets.UTF_8);
+    } catch (Exception e) {
+      throw new BusinessException(ErrorCode.PROVIDER_CONFIG_READ_FAILED,
+          "解密 Provider API Key 失败，请检查 APP_AI_CONFIG_ENCRYPTION_KEY: " + e.getMessage());
     }
+  }
+
+  private byte[] resolveKeyBytes(String configuredKey) {
+    String trimmed = configuredKey.trim();
+    try {
+      byte[] decoded = Base64.getDecoder().decode(trimmed);
+      if (decoded.length == 32) {
+        return decoded;
+      }
+    } catch (IllegalArgumentException ignored) {
+      // Fall through to SHA-256 derivation for human-readable keys.
+    }
+    return sha256(trimmed);
+  }
+
+  private byte[] sha256(String value) {
+    try {
+      return MessageDigest.getInstance("SHA-256")
+          .digest(value.getBytes(StandardCharsets.UTF_8));
+    } catch (Exception e) {
+      throw new BusinessException(ErrorCode.PROVIDER_CONFIG_READ_FAILED,
+          "初始化 Provider API Key 加密密钥失败: " + e.getMessage());
+    }
+  }
+
+  public record EncryptedValue(String nonce, String ciphertext) {
+  }
 }

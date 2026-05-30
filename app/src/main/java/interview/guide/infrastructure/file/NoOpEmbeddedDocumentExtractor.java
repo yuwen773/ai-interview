@@ -1,19 +1,22 @@
 package interview.guide.infrastructure.file;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;
 import org.xml.sax.ContentHandler;
 
 import java.io.InputStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 空操作的嵌入文档提取器
  * 用于禁用 Tika 对嵌入资源（图片、附件等）的解析
  *
  */
-@Slf4j
 public class NoOpEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
+
+    private static final Logger log = LoggerFactory.getLogger(NoOpEmbeddedDocumentExtractor.class);
 
     /**
      * 是否应该解析嵌入文档

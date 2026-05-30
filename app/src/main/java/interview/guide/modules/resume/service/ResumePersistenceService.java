@@ -10,7 +10,6 @@ import interview.guide.modules.resume.model.ResumeEntity;
 import interview.guide.modules.resume.repository.ResumeAnalysisRepository;
 import interview.guide.modules.resume.repository.ResumeRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,14 +20,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 简历持久化服务
  * 简历和评测结果的持久化，简历删除时删除所有关联数据
  */
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResumePersistenceService {
+
+    private static final Logger log = LoggerFactory.getLogger(ResumePersistenceService.class);
 
     private final ResumeRepository resumeRepository;
     private final ResumeAnalysisRepository analysisRepository;

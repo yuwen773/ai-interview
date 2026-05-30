@@ -8,4 +8,13 @@ public record UpdateProviderRequest(
     Integer embeddingDimensions,
     Boolean supportsEmbedding,
     Double temperature
-) {}
+) {
+    public UpdateProviderRequest(
+        String baseUrl,
+        String apiKey,
+        String model,
+        String embeddingModel,
+        Double temperature) {
+        this(baseUrl, apiKey, model, embeddingModel, null, null, temperature);
+    }
+}

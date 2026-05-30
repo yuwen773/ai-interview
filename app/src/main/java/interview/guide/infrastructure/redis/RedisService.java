@@ -1,7 +1,6 @@
 package interview.guide.infrastructure.redis;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.*;
 import org.redisson.api.options.KeysScanOptions;
 import org.redisson.api.stream.StreamAddArgs;
@@ -19,14 +18,18 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Redis 服务封装
  * 提供通用的 Redis 操作，包括缓存、分布式锁、Stream 消息队列等
  */
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RedisService {
+
+    private static final Logger log = LoggerFactory.getLogger(RedisService.class);
 
     private final RedissonClient redissonClient;
 

@@ -1,0 +1,95 @@
+# Spring Boot 4 升级准备 - Boot 3.5 清理检查结果
+
+检查时间: 2026/05/29
+检查范围: app/src/main/java, app/src/main/resources
+
+---
+
+## 检查结果汇总
+
+| 检查项 | 结果 | blocker数量 | warning数量 |
+|--------|------|-------------|-------------|
+| javax.* 残留 | PASS | 0 | 0 |
+| spring.jackson 配置 | PASS | 0 | 0 |
+| 自定义 ObjectMapper | WARNING | 0 | 多处 |
+| JsonSerializer/JsonDeserializer | PASS | 0 | 0 |
+| @JsonComponent/@JsonMixin | PASS | 0 | 0 |
+
+---
+
+## 详细结果
+
+### 1. javax.* 残留检查
+**状态: PASS**
+
+未发现 javax.servlet、javax.persistence 等已弃用的 javax.* API 残留。
+
+注: 代码中使用的 `javax.crypto.*` 是 Java Cryptography Extension API，不属于 Spring Boot 弃用范围。
+
+---
+
+### 2. spring.jackson 配置检查
+**状态: PASS**
+
+未在 yml/properties 文件中发现 spring.jackson 相关配置。
+
+---
+
+### 3. 自定义 ObjectMapper 检查
+**状态: WARNING (Monitor)**
+
+发现多处 ObjectMapper 直接实例化:
+
+| 文件 | 行号 | 说明 |
+|------|------|------|
+| `common/config/JacksonConfig.java` | 15-16 | 基础 ObjectMapper Bean |
+| `common/ai/EvalTagHelper.java` | 14 | 静态 MAPPER 字段 |
+| `infrastructure/export/PdfExportService.java` | - | 注入使用 |
+| `infrastructure/redis/InterviewSessionCache.java` | - | 注入/方法参数使用 |
+| `modules/interview/listener/EvaluateStreamConsumer.java` | - | 注入使用 |
+| `modules/interview/service/InterviewHistoryService.java` | - | 注入使用 |
+| `modules/interview/service/InterviewPersistenceService.java` | - | 注入使用 |
+| `modules/interview/service/InterviewSessionService.java` | - | 注入使用 |
+| `modules/resume/service/ResumeHistoryService.java` | - | 注入使用 |
+| `modules/resume/service/ResumePersistenceService.java` | - | 注入使用 |
+| `modules/schedule/service/InterviewParseService.java` | - | 注入使用 |
+| `modules/voiceinterview/handler/VoiceInterviewWebSocketHandler.java` | - | 注入使用 |
+| `modules/voiceinterview/service/VoiceInterviewEvaluationService.java` | - | 注入使用 |
+
+**风险分析:**
+- Spring Boot 4 仍支持 Jackson (jackson-databind)
+- 直接 `new ObjectMapper()` 实例化会使用默认配置，可能与 Spring Boot 自动配置的 JacksonBehavior 不同
+- Spring Boot 4 可能改变某些 Jackson 默认配置
+
+**建议:**
+- 优先使用 `ObjectMapper` Bean 而不是直接实例化
+- 注意 JacksonConfig 中的自定义配置是否需要在 Spring Boot 4 中显式声明
+
+---
+
+### 4. JsonSerializer/JsonDeserializer 检查
+**状态: PASS**
+
+未发现自定义 JsonSerializer/JsonDeserializer 实现。
+
+---
+
+### 5. @JsonComponent/@JsonMixin 检查
+**状态: PASS**
+
+未发现 @JsonComponent/@JsonMixin 使用。
+
+---
+
+## 修复项 (Blockers)
+无严重阻碍项。
+
+---
+
+## 后续建议
+
+1. **当前阶段 (Boot 3.5)**: 无需强制修复，保持观察
+2. **升级到 Boot 4 前**:
+   - 检查 Spring Boot 4 的 Jackson 默认配置变更
+   - 确保所有 ObjectMapper 都通过 Spring Bean 获取或显式配置所需特性
+   - 验证序列化/反序列化行为未发生变化
