@@ -1,7 +1,9 @@
 package interview.guide.modules.auth;
 
 import interview.guide.modules.auth.controller.AuthController;
-import interview.guide.modules.auth.model.*;
+import interview.guide.modules.auth.model.AuthResponse;
+import interview.guide.modules.auth.model.LoginRequest;
+import interview.guide.modules.auth.model.RegisterRequest;
 import interview.guide.modules.auth.service.AuthService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,5 +50,18 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(400))
                 .andExpect(jsonPath("$.message").value("邮箱已被注册"));
+    }
+
+    @Test
+    void loginWrongPasswordReturnsError() throws Exception {
+        when(authService.login(any(LoginRequest.class)))
+                .thenThrow(new IllegalArgumentException("用户不存在或密码错误"));
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"test@example.com\",\"password\":\"WrongPassword\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(400))
+                .andExpect(jsonPath("$.message").value("用户不存在或密码错误"));
     }
 }
