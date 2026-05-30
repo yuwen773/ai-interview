@@ -45,4 +45,16 @@ class AuthInterceptorTest {
         assertFalse(result);
         assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
     }
+
+    @Test
+    void invalidTokenReturns401() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Bearer invalid.token.here");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        boolean result = interceptor.preHandle(request, response, null);
+
+        assertFalse(result);
+        assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
+    }
 }
