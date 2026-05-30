@@ -1,6 +1,6 @@
 package interview.guide.modules.voiceinterview.service;
 
-import interview.guide.modules.llmprovider.service.LlmProviderRegistry;
+import interview.guide.common.ai.LlmProviderRegistry;
 import interview.guide.common.ai.PromptSanitizer;
 import interview.guide.modules.resume.model.ResumeEntity;
 import interview.guide.modules.resume.repository.ResumeRepository;

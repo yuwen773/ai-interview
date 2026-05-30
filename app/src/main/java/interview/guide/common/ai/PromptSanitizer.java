@@ -1,6 +1,6 @@
 package interview.guide.common.ai;
 
-import interview.guide.modules.llmprovider.config.LlmProviderProperties;
+import interview.guide.common.config.LlmProviderProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

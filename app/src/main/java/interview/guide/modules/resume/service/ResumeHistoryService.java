@@ -12,7 +12,6 @@ import interview.guide.modules.resume.model.ResumeDetailDTO;
 import interview.guide.modules.resume.model.ResumeEntity;
 import interview.guide.modules.resume.model.ResumeListItemDTO;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -21,14 +20,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 简历历史服务
  * 简历历史和导出简历分析报告
  */
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResumeHistoryService {
+
+    private static final Logger log = LoggerFactory.getLogger(ResumeHistoryService.class);
 
     private final ResumePersistenceService resumePersistenceService;
     private final InterviewPersistenceService interviewPersistenceService;
