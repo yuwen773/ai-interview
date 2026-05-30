@@ -63,7 +63,11 @@ public class ResumeEntity {
     // 分析错误信息（失败时记录）
     @Column(length = 500)
     private String analyzeError;
-    
+
+    // 关联用户ID
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
     @PrePersist
     protected void onCreate() {
         uploadedAt = LocalDateTime.now();
@@ -179,5 +183,13 @@ public class ResumeEntity {
 
     public void setAnalyzeError(String analyzeError) {
         this.analyzeError = analyzeError;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 }
