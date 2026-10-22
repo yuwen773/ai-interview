@@ -8,6 +8,7 @@ import FilePreviewModal from '../components/FilePreviewModal';
 import InterviewPanel from '../components/InterviewPanel';
 import InterviewDetailPanel from '../components/InterviewDetailPanel';
 import {formatDateOnly} from '../utils/date';
+import {downloadBlob} from '../utils/download';
 import {CheckSquare, ChevronLeft, Clock, Download, Eye, MessageSquare, Mic, TrendingUp} from 'lucide-react';
 
 interface ResumeDetailPageProps {
@@ -130,14 +131,7 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
     setExporting('analysis');
     try {
       const blob = await historyApi.exportAnalysisPdf(resumeId);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `简历分析报告_${resume?.filename || resumeId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      downloadBlob(blob, `简历分析报告_${resume?.filename || resumeId}.pdf`);
     } catch (err) {
       alert('导出失败，请重试');
     } finally {
@@ -149,14 +143,7 @@ export default function ResumeDetailPage({ resumeId, onBack, onStartInterview, o
     setExporting(sessionId);
     try {
       const blob = await historyApi.exportInterviewPdf(sessionId);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `面试报告_${sessionId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      downloadBlob(blob, `面试报告_${sessionId}.pdf`);
     } catch (err) {
       alert('导出失败，请重试');
     } finally {

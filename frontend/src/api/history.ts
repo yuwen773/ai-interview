@@ -15,6 +15,9 @@ export interface ResumeListItem {
   interviewCount: number;
   analyzeStatus?: AnalyzeStatus;
   analyzeError?: string;
+  /** 对象存储里的相对 key，非空即表示文件存在，下载需走后端接口 */
+  storageKey?: string;
+  /** @deprecated 浏览器不要直连；下载走 downloadResume(id) */
   storageUrl?: string;
 }
 

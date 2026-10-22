@@ -190,10 +190,11 @@ CREATE TABLE IF NOT EXISTS user_weak_points (
 -- 原迁移里的 ((sr_state->>'next_review')::date) 表达式索引建不出来：
 -- text->date 是 STABLE 不是 IMMUTABLE，PostgreSQL 会直接拒绝。到期复习查询
 -- 先按 user_id 过滤，行数很少，部分索引足够。
-CREATE INDEX IF NOT EXISTS idx_weak_due_review ON user_weak_points (user_id) WHERE is_improved = FALSE;
+--
+-- 不要再单独建 (user_id)：它是下面两个复合索引的前缀，查询优化器能直接用，
+-- 单独一份只是多占空间、多一份写放大。
 CREATE INDEX IF NOT EXISTS idx_weak_user_topic ON user_weak_points (user_id, topic) WHERE is_improved = FALSE;
 CREATE INDEX IF NOT EXISTS idx_weak_last_seen  ON user_weak_points (user_id, last_seen) WHERE is_improved = FALSE;
-CREATE INDEX IF NOT EXISTS idx_mastery_user    ON user_topic_mastery (user_id);
 
 CREATE TABLE IF NOT EXISTS user_strong_points (
     id          BIGSERIAL PRIMARY KEY,

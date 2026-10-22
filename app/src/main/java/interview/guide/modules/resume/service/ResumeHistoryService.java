@@ -66,7 +66,8 @@ public class ResumeHistoryService {
                 resume.getAccessCount(),
                 latestScore,
                 lastAnalyzedAt,
-                interviewCount
+                interviewCount,
+                resume.getStorageKey()
             );
         }).toList();
     }

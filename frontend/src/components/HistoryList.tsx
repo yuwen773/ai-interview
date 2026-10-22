@@ -4,6 +4,7 @@ import {AnalyzeStatus, historyApi, ResumeListItem, ResumeStats} from '../api/his
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 import {getScoreColor} from '../utils/score';
 import {formatDate, formatFileSize} from '../utils/date';
+import {downloadBlob} from '../utils/download';
 import {
   AlertCircle,
   CheckCircle,
@@ -151,19 +152,11 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
 
   const handleDownload = async (resume: ResumeListItem, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!resume.storageUrl) return;
-    // 存储地址只用于「文件是否存在」的判断，真正下载走后端流式接口：
-    // 对象存储不对外开放，直连 storageUrl 会打到访问者自己的 localhost。
+    // 下载走后端流式接口，不用 storageUrl：对象存储不对外开放，直连会打到
+    // 访问者自己的 localhost。storageKey 非空才说明对象存储里真的有这个文件。
+    if (!resume.storageKey) return;
     try {
-      const blob = await historyApi.downloadResume(resume.id);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = resume.filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      downloadBlob(await historyApi.downloadResume(resume.id), resume.filename);
     } catch (err) {
       console.error('下载失败', err);
     }
@@ -384,7 +377,7 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {resume.storageUrl && (
+                        {resume.storageKey && (
                           <button
                             onClick={(e) => handleDownload(resume, e)}
                             className="p-2 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-subtle)] dark:hover:bg-[var(--color-primary-subtle-dark)] rounded-lg transition-colors"

@@ -2,6 +2,7 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import {EvaluateStatus, historyApi, InterviewItem} from '../api/history';
 import {formatDate} from '../utils/date';
+import {downloadBlob} from '../utils/download';
 import {deleteSessionAudio} from '../utils/interviewVoiceCache';
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
 import {
@@ -269,14 +270,7 @@ export default function InterviewHistoryPage({ onBack: _onBack, onViewInterview,
     setExporting(sessionId);
     try {
       const blob = await historyApi.exportInterviewPdf(sessionId);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `面试报告_${sessionId.slice(-8)}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      downloadBlob(blob, `面试报告_${sessionId.slice(-8)}.pdf`);
     } catch (err) {
       alert('导出失败，请重试');
     } finally {

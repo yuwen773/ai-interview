@@ -24,6 +24,7 @@ import {knowledgeBaseApi, KnowledgeBaseItem, KnowledgeBaseStats, PreviewMeta, So
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
 import FilePreviewModal from '../components/FilePreviewModal';
 import {formatDateTime, formatFileSize} from '../utils/date';
+import {downloadBlob} from '../utils/download';
 
 interface KnowledgeBaseManagePageProps {
   onUpload: () => void;
@@ -209,14 +210,7 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
   const handleDownload = async (kb: KnowledgeBaseItem) => {
     try {
       const blob = await knowledgeBaseApi.downloadKnowledgeBase(kb.id);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = kb.originalFilename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      downloadBlob(blob, kb.originalFilename);
     } catch (error) {
       console.error('下载失败:', error);
     }
@@ -315,15 +309,7 @@ export default function KnowledgeBaseManagePage({ onUpload, onChat }: KnowledgeB
       if (targetUrl.origin === window.location.origin) {
         const response = await fetch(targetUrl.toString(), { credentials: 'include' });
         if (!response.ok) throw new Error(`下载失败 (${response.status})`);
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = previewMeta.filename ?? '';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(blobUrl);
+        downloadBlob(await response.blob(), previewMeta.filename ?? '');
         return;
       }
     } catch {
