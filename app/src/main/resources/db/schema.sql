@@ -191,10 +191,10 @@ CREATE TABLE IF NOT EXISTS user_weak_points (
 -- text->date 是 STABLE 不是 IMMUTABLE，PostgreSQL 会直接拒绝。到期复习查询
 -- 先按 user_id 过滤，行数很少，部分索引足够。
 --
--- 不要再单独建 (user_id)：它是下面两个复合索引的前缀，查询优化器能直接用，
--- 单独一份只是多占空间、多一份写放大。
+-- 不要再单独建 (user_id)：它是下面复合索引的前缀，查询优化器能直接用，
+-- 单独一份只是多占空间、多一份写放大。last_seen 也同理 —— 归档是在 Java 里
+-- 拿 findByUserIdAndIsImprovedFalse 之后做的，没有 SQL 按 last_seen 过滤或排序。
 CREATE INDEX IF NOT EXISTS idx_weak_user_topic ON user_weak_points (user_id, topic) WHERE is_improved = FALSE;
-CREATE INDEX IF NOT EXISTS idx_weak_last_seen  ON user_weak_points (user_id, last_seen) WHERE is_improved = FALSE;
 
 CREATE TABLE IF NOT EXISTS user_strong_points (
     id          BIGSERIAL PRIMARY KEY,

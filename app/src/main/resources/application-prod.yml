@@ -31,7 +31,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: false
+    # 默认 true 会把 JDBC 连接一直持有到响应体写完。大文件下载期间连接不归还，
+    # 并发几个就能耗尽 Hikari 默认的 10 个连接。
+    open-in-view: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -119,52 +121,16 @@ app:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:https://shumei2.mstp2026.com}
 
   voice-interview:
-    llm-provider: dashscope
+    # 只保留与 VoiceInterviewProperties 默认值不同的项。
+    # asr 的 url / language / format / sample-rate 等，tts 的 voice / format /
+    # sample-rate / mode 等，Java 侧都有同值默认，写在这里只是让人误以为可调。
+    # phase.* 尤其不要写：DurationConfig 目前没有任何读取方，改了不会有任何效果。
     qwen:
       asr:
-        model: qwen3-asr-flash-realtime
-        url: wss://dashscope.aliyuncs.com/api-ws/v1/realtime
         api-key: ${AI_BAILIAN_API_KEY}
-        language: zh
-        format: pcm
-        sample-rate: 16000
-        enable-turn-detection: true
-        turn-detection-type: server_vad
-        turn-detection-silence-duration-ms: 1000
       tts:
         model: qwen-tts-realtime
         api-key: ${AI_BAILIAN_API_KEY}
-        voice: Cherry
-        format: pcm
-        sample-rate: 24000
-        mode: commit
-        language-type: Chinese
-    phase:
-      intro:
-        min-duration: 3
-        suggested-duration: 5
-        max-duration: 8
-        min-questions: 2
-        max-questions: 5
-      tech:
-        min-duration: 8
-        suggested-duration: 10
-        max-duration: 15
-        min-questions: 3
-        max-questions: 8
-      project:
-        min-duration: 8
-        suggested-duration: 10
-        max-duration: 15
-        min-questions: 2
-        max-questions: 5
-      hr:
-        min-duration: 3
-        suggested-duration: 5
-        max-duration: 8
-        min-questions: 2
-        max-questions: 5
-    planned-duration: 30
 
 # 日志只走 stdout，由 systemd 的 StandardOutput 落到 /opt/interview/logs/app.log，
 # 配合 logrotate 按天切分、按大小兜底。
