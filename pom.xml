@@ -69,6 +69,20 @@
                 <scope>import</scope>
             </dependency>
 
+            <!--
+              victools jsonschema 版本必须三件套一致。
+              Spring AI 的 structured output 把 jsonschema-generator 锁在 4.31.1，
+              而 swagger-2 / jackson module 走的是 4.38.0，后者引用的
+              com.github.victools.jsonschema.generator.AnnotationHelper 在 4.31.1 里
+              不存在，运行期会以 NoClassDefFoundError 炸在
+              InterviewQuestionService 的构造器里（编译期发现不了）。
+            -->
+            <dependency>
+                <groupId>com.github.victools</groupId>
+                <artifactId>jsonschema-generator</artifactId>
+                <version>4.38.0</version>
+            </dependency>
+
             <!-- Apache Tika -->
             <dependency>
                 <groupId>org.apache.tika</groupId>

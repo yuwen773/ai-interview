@@ -34,6 +34,8 @@ Thumbs.db
 # Sensitive configs
 app/src/main/resources/application*.yml
 !app/src/main/resources/application.yml.example
+# 生产配置只读环境变量、不含密钥，允许入库
+!app/src/main/resources/application-prod.yml
 
 # Logs
 *.log

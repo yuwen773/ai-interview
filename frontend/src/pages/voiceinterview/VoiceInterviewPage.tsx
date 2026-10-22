@@ -23,8 +23,11 @@ export default function VoiceInterviewPage() {
       return;
     }
 
-    // Connect to existing session
-    const ws = new WebSocket(`ws://localhost:8080/ws/voice-interview/${sessionId}`);
+    // Connect to existing session.
+    // 必须按当前页面协议拼 ws/wss：HTTPS 页面连 ws:// 会被浏览器当混合内容拦掉，
+    // 而写死 localhost:8080 在生产环境指向的是访问者自己的电脑。
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${wsProtocol}//${window.location.host}/ws/voice-interview/${sessionId}`);
     wsRef.current = ws;
 
     ws.onopen = () => setConnected(true);

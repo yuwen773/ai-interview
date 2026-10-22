@@ -149,15 +149,23 @@ export default function HistoryList({ onSelectResume }: HistoryListProps) {
     }
   }, [resumes, loading, loadDataSilent]);
 
-  const handleDownload = (resume: ResumeListItem, e: React.MouseEvent) => {
+  const handleDownload = async (resume: ResumeListItem, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (resume.storageUrl) {
+    if (!resume.storageUrl) return;
+    // 存储地址只用于「文件是否存在」的判断，真正下载走后端流式接口：
+    // 对象存储不对外开放，直连 storageUrl 会打到访问者自己的 localhost。
+    try {
+      const blob = await historyApi.downloadResume(resume.id);
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = resume.storageUrl;
+      link.href = url;
       link.download = resume.filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('下载失败', err);
     }
   };
 

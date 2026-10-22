@@ -1,0 +1,179 @@
+# 生产配置（shumei2.mstp2026.com）
+#
+# 所有密钥走环境变量，由 systemd EnvironmentFile 注入（/opt/interview/app.env, 600）。
+# 本文件不含任何明文密钥，可以随仓库分发。
+#
+# 与 application.yml.example 的差异：
+#   1. 显式声明 qwen asr/tts 的 api-key —— 这两个服务的 @PostConstruct 在 key 为空时
+#      直接抛 IllegalStateException，缺配置时应用根本起不来。
+#   2. 关掉 Hibernate 的 ddl-auto。表结构由 db/schema.sql 一次性建好，
+#      运行期不该再由 Hibernate 改表。
+
+server:
+  port: 8080
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: ai-interview-platform
+  # 不能在这里写 spring.profiles.active —— profile 专属文件里设置该属性会直接启动失败。
+  # 激活方式：systemd 里 Environment=SPRING_PROFILES_ACTIVE=prod
+  threads:
+    virtual:
+      enabled: true
+
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:127.0.0.1}:${POSTGRES_PORT:5432}/${POSTGRES_DB:interview_guide}?characterEncoding=UTF-8
+    username: ${POSTGRES_USER:interview}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+  redis:
+    redisson:
+      config: |
+        singleServerConfig:
+          address: "redis://${REDIS_HOST:127.0.0.1}:${REDIS_PORT:6379}"
+          database: ${REDIS_DATABASE:1}
+          connectionMinimumIdleSize: 4
+          connectionPoolSize: 16
+          subscriptionConnectionMinimumIdleSize: 1
+          subscriptionConnectionPoolSize: 8
+
+  ai:
+    # DashScopeAudioTranscriptionAutoConfiguration 只认 spring.ai.dashscope.api-key，
+    # 不看 openai.* 那把；缺它会连带 AsrService 一起起不来。
+    dashscope:
+      api-key: ${AI_BAILIAN_API_KEY}
+    openai:
+      base-url: ${AI_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode}
+      api-key: ${AI_BAILIAN_API_KEY}
+      chat:
+        options:
+          model: ${AI_MODEL:qwen-plus}
+          temperature: 0.2
+      embedding:
+        options:
+          model: text-embedding-v3
+    retry:
+      max-attempts: 1
+      on-client-errors: false
+    vectorstore:
+      pgvector:
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 1024
+        initialize-schema: true
+        remove-existing-vector-store-table: false
+
+app:
+  ai:
+    structured-max-attempts: 2
+    structured-include-last-error: true
+    rag:
+      rewrite:
+        enabled: true
+      search:
+        short-query-length: 4
+        topk-short: 20
+        topk-medium: 12
+        topk-long: 8
+        min-score-short: 0.18
+        min-score-default: 0.28
+  interview:
+    follow-up-count: 1
+    evaluation:
+      batch-size: 8
+  resume:
+    upload-dir: /opt/interview/resumes
+    allowed-types:
+      - application/pdf
+      - application/msword
+      - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+      - text/plain
+
+  storage:
+    endpoint: ${APP_STORAGE_ENDPOINT:http://127.0.0.1:9000}
+    access-key: ${APP_STORAGE_ACCESS_KEY}
+    secret-key: ${APP_STORAGE_SECRET_KEY}
+    bucket: ${APP_STORAGE_BUCKET:interview-guide}
+    region: ${APP_STORAGE_REGION:us-east-1}
+    # 浏览器侧前缀，由 nginx 反代到对象存储；不能是 127.0.0.1
+    public-base-url: ${APP_STORAGE_PUBLIC_BASE_URL:/s3}
+
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:https://shumei2.mstp2026.com}
+
+  voice-interview:
+    llm-provider: dashscope
+    qwen:
+      asr:
+        model: qwen3-asr-flash-realtime
+        url: wss://dashscope.aliyuncs.com/api-ws/v1/realtime
+        api-key: ${AI_BAILIAN_API_KEY}
+        language: zh
+        format: pcm
+        sample-rate: 16000
+        enable-turn-detection: true
+        turn-detection-type: server_vad
+        turn-detection-silence-duration-ms: 1000
+      tts:
+        model: qwen-tts-realtime
+        api-key: ${AI_BAILIAN_API_KEY}
+        voice: Cherry
+        format: pcm
+        sample-rate: 24000
+        mode: commit
+        language-type: Chinese
+    phase:
+      intro:
+        min-duration: 3
+        suggested-duration: 5
+        max-duration: 8
+        min-questions: 2
+        max-questions: 5
+      tech:
+        min-duration: 8
+        suggested-duration: 10
+        max-duration: 15
+        min-questions: 3
+        max-questions: 8
+      project:
+        min-duration: 8
+        suggested-duration: 10
+        max-duration: 15
+        min-questions: 2
+        max-questions: 5
+      hr:
+        min-duration: 3
+        suggested-duration: 5
+        max-duration: 8
+        min-questions: 2
+        max-questions: 5
+    planned-duration: 30
+
+# 日志只走 stdout，由 systemd 的 StandardOutput 落到 /opt/interview/logs/app.log，
+# 配合 logrotate 按天切分、按大小兜底。
+#
+# 不要再写 logging.file.name：Spring Boot 的默认滚动策略 10MB 一滚、
+# 保留 7 天，滚动时把旧文件改名后立刻删除，而 JVM 还持有那个 inode，
+# 于是后续输出全部写进「已删除但仍被占用」的文件 —— du 看不见，df 却在涨。
+# 2026-10-22 就因为这个把 49G 的根分区写满过（单个句柄涨到 42G）。
+logging:
+  level:
+    root: INFO
+    interview.guide: INFO

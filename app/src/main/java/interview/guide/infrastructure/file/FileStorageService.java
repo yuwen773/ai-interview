@@ -174,8 +174,15 @@ public class FileStorageService {
         }
     }
 
+    /**
+     * 生成浏览器可访问的文件地址。
+     * <p>
+     * 不能直接用 S3 的 endpoint：线上 endpoint 是 127.0.0.1:9000（只监听本机），
+     * 拼出来给浏览器的就是 http://127.0.0.1:9000/... —— 指向访问者自己的电脑。
+     * 这里返回同源相对路径，由 nginx 把 /s3/ 反代到对象存储。
+     */
     public String getFileUrl(String fileKey) {
-        return String.format("%s/%s/%s", storageConfig.getEndpoint(), storageConfig.getBucket(), fileKey);
+        return String.format("%s/%s/%s", storageConfig.getPublicBaseUrl(), storageConfig.getBucket(), fileKey);
     }
 
     /**
