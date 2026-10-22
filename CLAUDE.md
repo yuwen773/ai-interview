@@ -30,7 +30,9 @@ cd uniapp-interview && pnpm dev:weapp                    # WeChat dev
 docker-compose up -d postgres redis minio createbuckets  # Start services
 ```
 
-Environment: copy `.env.example` to `.env`, set `AI_BAILIAN_API_KEY` and `AI_MODEL` (default: qwen-plus).
+Environment: copy `.env.example` to `.env`, set `AI_BAILIAN_API_KEY` and `AI_MODEL`.
+
+**Deploying to prod**: the prod profile is `application-prod.yml` and reads every secret from env vars — never put a key in it. Activate with `SPRING_PROFILES_ACTIVE=prod` in the systemd unit, **not** inside the yml (setting `spring.profiles.active` in a profile-specific file fails at startup). Do not add `logging.file.name`: Spring Boot's default rolling strategy deletes the old file while the JVM still holds the inode, so output lands in an unlinked file that `du` can't see but `df` counts (this filled a 49 GB disk on 2026-10-22).
 
 ## Architecture
 
@@ -60,7 +62,7 @@ Prompt templates: `.st` files in `resources/prompts/` (14 templates for intervie
 
 `infrastructure/`: `RedisService` (Redisson), `FileStorageService` (S3/MinIO), `PdfExportService` (iText 8), `XunfeiWebSocketClient`.
 
-DB migrations: Flyway scripts in `resources/db/migration/`.
+DB schema: `resources/db/schema.sql` is the authoritative baseline (one-shot, run manually before first boot). `resources/db/migration/V*.sql` are historical incremental scripts and are **not executed** — Flyway is not a dependency. Production runs with `ddl-auto: none`; after changing an entity, edit `schema.sql` and apply the same change to the live DB by hand.
 
 ### Frontend (`frontend/src/`)
 
